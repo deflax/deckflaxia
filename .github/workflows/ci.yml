@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  linux:
+    name: Linux configure/build/test/license
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Static analysis prerequisites
+        run: cmake --build build --target static-analysis
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: License report
+        run: cmake --build build --target license-report
+
+      - name: Upload license report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-license-report
+          path: build/license-report.spdx.txt
+
+  macos:
+    name: macOS configure/build/test evidence
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Smoke test
+        run: ./build/DJApp --smoke-test --exit-after-init
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
