@@ -70,7 +70,23 @@ HybridUiShellSnapshot HybridUiShellModel::buildSnapshot(const HybridUiShellInput
         deck.accentName = deckAccentName(deckIndex);
         deck.waveform = renderer_.renderWaveform(rendering::WaveformRenderRequest{"deck:" + std::to_string(deckIndex + 1U), waveformPointsForDeck(input.browserTracks, deckIndex), 640, 160});
         deck.meter = renderer_.renderMeter(rendering::MeterRenderRequest{0.0F, 0.0F, 120});
+
+        auto& mixerDeck = snapshot.mixer.decks[deckIndex];
+        const auto& inputDeck = input.mixer.decks[deckIndex];
+        mixerDeck.componentName = "mixer-deck-strip-" + std::to_string(deckIndex + 1U);
+        mixerDeck.volume = inputDeck.volume;
+        mixerDeck.gain = inputDeck.gain;
+        mixerDeck.eqLow = inputDeck.eqLow;
+        mixerDeck.eqMid = inputDeck.eqMid;
+        mixerDeck.eqHigh = inputDeck.eqHigh;
+        mixerDeck.cueEnabled = inputDeck.cueEnabled;
+        mixerDeck.playing = inputDeck.playing;
+        mixerDeck.meterLeft = inputDeck.meterLeft;
+        mixerDeck.meterRight = inputDeck.meterRight;
     }
+
+    snapshot.mixer.crossfader = input.mixer.crossfader;
+    snapshot.mixer.statusText = "mixer-ready: volume gain eq cue master crossfader command surface";
 
     snapshot.routing.nodeCount = input.routing.nodeCount;
     snapshot.routing.connectionCount = input.routing.connectionCount;
@@ -78,13 +94,33 @@ HybridUiShellSnapshot HybridUiShellModel::buildSnapshot(const HybridUiShellInput
                                       ? "routing-warning: cue shares master output"
                                       : "routing-ready: deck graph snapshot";
 
-    snapshot.pluginChain.slots.reserve(audio::routing::kDeckCount * audio::routing::kPluginSlotsPerDeck);
+    snapshot.pluginChain.slots.reserve((audio::routing::kDeckCount + 1U) * audio::routing::kPluginSlotsPerDeck);
     for (const auto& deck : input.routing.decks) {
         for (const auto& slot : deck.pluginSlots) {
-            snapshot.pluginChain.slots.push_back(PluginSlotViewModel{"plugin-slot-deck-" + std::to_string(deck.deckId.index() + 1U) + "-" + std::to_string(slot.slotIndex + 1U),
-                                                                    pluginSlotStatus(slot.state),
-                                                                    slot.placeholder});
+            PluginSlotViewModel model;
+            model.componentName = "plugin-slot-deck-" + std::to_string(deck.deckId.index() + 1U) + "-" + std::to_string(slot.slotIndex + 1U);
+            model.displayName = "Deck " + std::to_string(deck.deckId.index() + 1U) + " Slot " + std::to_string(slot.slotIndex + 1U);
+            model.statusText = pluginSlotStatus(slot.state);
+            model.boundaryStatus = "in-process deck chain; sandbox helper deferred";
+            model.placeholder = slot.placeholder;
+            model.removable = !slot.placeholder;
+            model.canMoveUp = slot.slotIndex > 0U;
+            model.canMoveDown = slot.slotIndex + 1U < audio::routing::kPluginSlotsPerDeck;
+            model.parameters.push_back(PluginParameterDisplayViewModel{model.componentName + "-generic-gain", "Generic Gain", 0.5});
+            snapshot.pluginChain.slots.push_back(std::move(model));
         }
+    }
+    for (std::size_t slotIndex = 0; slotIndex < audio::routing::kPluginSlotsPerDeck; ++slotIndex) {
+        PluginSlotViewModel model;
+        model.componentName = "plugin-slot-master-" + std::to_string(slotIndex + 1U);
+        model.displayName = "Master Slot " + std::to_string(slotIndex + 1U);
+        model.statusText = "empty master plugin placeholder";
+        model.boundaryStatus = "in-process master chain; sandbox helper deferred";
+        model.placeholder = true;
+        model.canMoveUp = slotIndex > 0U;
+        model.canMoveDown = slotIndex + 1U < audio::routing::kPluginSlotsPerDeck;
+        model.parameters.push_back(PluginParameterDisplayViewModel{model.componentName + "-generic-gain", "Generic Gain", 0.5});
+        snapshot.pluginChain.slots.push_back(std::move(model));
     }
 
     snapshot.midiLearn.learning = input.midiLearn.learning;
@@ -109,9 +145,22 @@ std::string HybridUiShellModel::formatSmokeReport(const HybridUiShellSnapshot& s
     }
     output << "component: " << snapshot.browser.componentName << " tracks=" << snapshot.browser.tracks.size() << " empty=" << (snapshot.browser.empty ? "true" : "false")
            << " status=\"" << snapshot.browser.statusText << "\"\n";
+    output << "component: " << snapshot.mixer.componentName << " deck-strips=" << snapshot.mixer.decks.size()
+           << " crossfader=" << snapshot.mixer.crossfader << " status=\"" << snapshot.mixer.statusText << "\"\n";
+    for (const auto& deck : snapshot.mixer.decks) {
+        output << "mixer-strip: " << deck.componentName << " volume=" << deck.volume << " gain=" << deck.gain
+               << " eq-low=" << deck.eqLow << " eq-mid=" << deck.eqMid << " eq-high=" << deck.eqHigh
+               << " cue=" << (deck.cueEnabled ? "true" : "false") << " playing=" << (deck.playing ? "true" : "false")
+               << " meter-left=" << deck.meterLeft << " meter-right=" << deck.meterRight << '\n';
+    }
     output << "component: " << snapshot.routing.componentName << " nodes=" << snapshot.routing.nodeCount << " connections=" << snapshot.routing.connectionCount << " status=\""
            << snapshot.routing.statusText << "\"\n";
-    output << "component: " << snapshot.pluginChain.componentName << " slots=" << snapshot.pluginChain.slots.size() << " placeholders=true\n";
+    output << "component: " << snapshot.pluginChain.componentName << " slots=" << snapshot.pluginChain.slots.size()
+           << " deck-master=true controls=bypass,remove,reorder,open-editor,close-editor state=save-reload-ready\n";
+    for (const auto& slot : snapshot.pluginChain.slots) {
+        output << "plugin-slot: " << slot.componentName << " name="" << slot.displayName << "" bypassed=" << (slot.bypassed ? "true" : "false")
+               << " params=" << slot.parameters.size() << " boundary="" << slot.boundaryStatus << ""\n";
+    }
     output << "component: " << snapshot.midiLearn.componentName << " learning=" << (snapshot.midiLearn.learning ? "true" : "false") << " mappings=" << snapshot.midiLearn.mappingCount
            << " status=\"" << snapshot.midiLearn.statusText << "\"\n";
     output << "component: " << snapshot.status.componentName << " ok=" << (snapshot.status.ok ? "true" : "false") << " status=\"" << snapshot.status.statusText << "\"\n";
@@ -122,6 +171,7 @@ std::string HybridUiShellModel::formatSmokeReport(const HybridUiShellSnapshot& s
 HybridUiShellInputSnapshot createUiSmokeInput(bool emptyLibrary) {
     HybridUiShellInputSnapshot input;
     input.routing = audio::routing::AudioRoutingGraphSnapshot::createDefault(audio::routing::RoutingDeviceLayout::forChannelCount(4));
+    input.mixer = audio::MixerSnapshot{};
     input.midiLearn = MidiLearnIndicatorSnapshot{false, midi::MidiLearnTargetRegistry::createAlphaDefault().size(), {}};
 
     if (!emptyLibrary) {

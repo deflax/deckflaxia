@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
         if (expect(fullSnapshot.routing.componentName == "routing-panel", "routing component should be named") != 0) {
             return 1;
         }
-        if (expect(fullSnapshot.pluginChain.slots.size() == 16, "plugin chain should expose four slots per deck") != 0) {
+        if (expect(fullSnapshot.pluginChain.slots.size() == 20, "plugin chain should expose four slots per deck plus master") != 0) {
             return 1;
         }
         if (expect(fullSnapshot.midiLearn.componentName == "midi-learn-indicator" && fullSnapshot.midiLearn.mappingCount > 0U,
