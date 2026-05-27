@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(DJApp VERSION 0.1.0 LANGUAGES CXX)
+project(DJApp VERSION 0.1.0 LANGUAGES C CXX)
 
 option(DJAPP_REQUIRE_JUCE "Fail configuration when JUCE is unavailable; required for real playable JUCE validation" OFF)
 option(DJAPP_USE_VENDORED_JUCE "Use a licensed local third_party/JUCE checkout when present" ON)

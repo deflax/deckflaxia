@@ -1,3 +1,5 @@
 build/
 .omo/
 .DS_Store
+build-juce/
+third_party/
