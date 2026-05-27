@@ -9,7 +9,7 @@
 #endif
 
 #if DECKFLAXIA_HAS_JUCE
-#include <JuceHeader.h>
+#include <juce_audio_utils/juce_audio_utils.h>
 #endif
 
 namespace deckflaxia::audio {

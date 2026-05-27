@@ -7,7 +7,8 @@
 #include <memory>
 
 #if DECKFLAXIA_HAS_JUCE
-#include <JuceHeader.h>
+#include <juce_audio_utils/juce_audio_utils.h>
+#include <juce_gui_extra/juce_gui_extra.h>
 #endif
 
 namespace deckflaxia::ui {

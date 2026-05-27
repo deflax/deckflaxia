@@ -6,7 +6,8 @@
 #include <vector>
 
 #if DECKFLAXIA_HAS_JUCE
-#include <JuceHeader.h>
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_gui_extra/juce_gui_extra.h>
 #endif
 
 namespace deckflaxia::plugins {
