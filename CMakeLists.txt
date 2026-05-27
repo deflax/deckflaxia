@@ -169,7 +169,7 @@ target_include_directories(DeckflaxiaUiShell
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 target_compile_features(DeckflaxiaUiShell PUBLIC cxx_std_17)
-target_link_libraries(DeckflaxiaUiShell PUBLIC DeckflaxiaAudio DeckflaxiaDecks DeckflaxiaLibrary DeckflaxiaMidi DeckflaxiaPlugins DeckflaxiaRendering)
+target_link_libraries(DeckflaxiaUiShell PUBLIC DeckflaxiaAnalysis DeckflaxiaAudio DeckflaxiaDecks DeckflaxiaLibrary DeckflaxiaMidi DeckflaxiaPlugins DeckflaxiaRendering)
 
 add_library(DeckflaxiaAlphaSmoke STATIC
     src/app/AlphaSmoke.cpp
@@ -230,8 +230,9 @@ if(DECKFLAXIA_HAS_JUCE)
     target_link_libraries(DeckflaxiaPlugins PUBLIC juce::juce_audio_processors juce::juce_gui_extra)
     target_link_libraries(DeckflaxiaUiShell PUBLIC juce::juce_gui_extra juce::juce_audio_utils)
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        target_link_libraries(DeckflaxiaPlugins PUBLIC juce::pkgconfig_JUCE_BROWSER_LINUX_DEPS)
-        target_link_libraries(DeckflaxiaUiShell PUBLIC juce::pkgconfig_JUCE_BROWSER_LINUX_DEPS)
+        target_link_libraries(DeckflaxiaDecks PUBLIC juce::pkgconfig_JUCE_CURL_LINUX_DEPS)
+        target_link_libraries(DeckflaxiaPlugins PUBLIC juce::pkgconfig_JUCE_BROWSER_LINUX_DEPS juce::pkgconfig_JUCE_CURL_LINUX_DEPS)
+        target_link_libraries(DeckflaxiaUiShell PUBLIC juce::pkgconfig_JUCE_BROWSER_LINUX_DEPS juce::pkgconfig_JUCE_CURL_LINUX_DEPS)
     endif()
 endif()
 

@@ -18,6 +18,7 @@ namespace deckflaxia::ui {
 class MainComponent final : public juce::Component {
 public:
     explicit MainComponent(bool noAudioDevice);
+    ~MainComponent() override;
 
     [[nodiscard]] bool audioDeviceManagerInitialized() const noexcept;
     [[nodiscard]] bool commandManagerPresent() const noexcept;

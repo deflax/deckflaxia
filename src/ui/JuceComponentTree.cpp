@@ -9,8 +9,6 @@
 
 namespace deckflaxia::ui {
 
-namespace {
-
 constexpr std::array<const char*, 9> kRequiredComponentNames{{
     "DeckComponent",
     "MixerComponent",
@@ -279,9 +277,10 @@ public:
 
 #endif
 
-}
 
 #if DECKFLAXIA_HAS_JUCE
+
+MainComponent::~MainComponent() = default;
 
 MainComponent::MainComponent(bool noAudioDevice)
     : snapshot_(shellModel_.buildSnapshot(app::createUiSmokeInput(false))) {
