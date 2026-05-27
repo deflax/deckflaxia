@@ -1,0 +1,11 @@
+{
+  "kind": "deterministic-fallback-plugin",
+  "identifier": "deterministic:gain",
+  "displayName": "Deterministic Gain Fixture",
+  "license": "AGPL-3.0-or-later project test fixture",
+  "parameters": [
+    { "identifier": "gain", "displayName": "Gain", "defaultNormalizedValue": 0.5 }
+  ],
+  "latencyFrames": 0,
+  "honesty": "This is not a VST3 binary and must not be reported as real JUCE VST3 success. It exists so no-JUCE fallback tests can prove deterministic processing, bypass, parameter state, and persistence."
+}

@@ -1,0 +1,85 @@
+{
+  "schema": "djapp-fixtures-v1",
+  "directory": "tests/fixtures/dj-workflow",
+  "hash_algorithm": "fnv1a64",
+  "fixtures": [
+    {
+      "file": "track_120bpm.wav",
+      "format": "wav",
+      "bpm": 120.0,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "duration_seconds": 2.0,
+      "generated": true,
+      "hash": "fnv1a64:e2a8332e8d0a8cd2",
+      "validation": "valid-audio",
+      "note": "generated sine plus deterministic beat clicks"
+    },
+    {
+      "file": "track_128bpm.wav",
+      "format": "wav",
+      "bpm": 128.0,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "duration_seconds": 2.0,
+      "generated": true,
+      "hash": "fnv1a64:90b89e224af0b1c3",
+      "validation": "valid-audio",
+      "note": "generated sine plus deterministic beat clicks"
+    },
+    {
+      "file": "track_95bpm.mp3",
+      "format": "mp3",
+      "bpm": 95.0,
+      "sample_rate_hz": 0,
+      "channels": 0,
+      "duration_seconds": 0.0,
+      "generated": false,
+      "hash": "external-tool-required",
+      "validation": "external-tool-required",
+      "note": "MP3 fixture generation awaits an AGPL-compatible encoder/decoder decision; no fake MP3 is written"
+    },
+    {
+      "file": "corrupt_audio.wav",
+      "format": "wav",
+      "bpm": 0.0,
+      "sample_rate_hz": 0,
+      "channels": 0,
+      "duration_seconds": 0.0,
+      "generated": true,
+      "hash": "fnv1a64:ba9faf2f105faceb",
+      "validation": "corrupt-audio",
+      "note": "malformed RIFF header used for typed error validation"
+    },
+    {
+      "file": "not_audio.txt",
+      "format": "text",
+      "bpm": 0.0,
+      "sample_rate_hz": 0,
+      "channels": 0,
+      "duration_seconds": 0.0,
+      "generated": true,
+      "hash": "fnv1a64:4bfe9370d79a76c6",
+      "validation": "unsupported-format",
+      "note": "non-audio fixture used for typed unsupported-format validation"
+    },
+    {
+      "file": "silence_10s.wav",
+      "format": "wav",
+      "bpm": 0.0,
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "duration_seconds": 10.0,
+      "generated": true,
+      "hash": "fnv1a64:ce33954c29378d4a",
+      "validation": "valid-audio",
+      "note": "generated digital silence"
+    }
+  ],
+  "helpers": {
+    "screenshots": "write PNG captures as .omo/evidence/real-playable-juce/task-{N}-{slug}.png",
+    "rendered_audio_diffs": "write rendered WAVs as task-{N}-{slug}.wav and JSON metrics as task-{N}-{slug}.json",
+    "sqlite_assertions": "write task database snapshots as task-{N}-{slug}.db and assertion logs as task-{N}-{slug}.log",
+    "plugin_fixtures": "place generated AGPL-compatible test plugins under tests/fixtures/plugins with their own manifest.json"
+  }
+}
