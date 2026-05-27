@@ -20,7 +20,12 @@ enum class MidiLearnTargetKind : std::uint8_t {
 
 enum class MidiTargetCommandKind : std::uint8_t {
     SetDeckTransport,
+    SetDeckVolume,
     SetDeckGain,
+    SetDeckEqLow,
+    SetDeckEqMid,
+    SetDeckEqHigh,
+    SetCrossfader,
     SetDeckOutput,
     SetPluginParameter,
     SetSequencerControl,

@@ -43,7 +43,11 @@ MidiLearnTargetRegistry MidiLearnTargetRegistry::createAlphaDefault() {
         const auto deckLabel = std::to_string(deck + 1U);
         addTarget(registry, "deck." + deckLabel + ".transport.play", "Deck " + deckLabel + " Play", MidiLearnTargetKind::DeckTransport, MidiTargetCommandKind::SetDeckTransport, deck, 1);
         addTarget(registry, "deck." + deckLabel + ".transport.cue", "Deck " + deckLabel + " Cue", MidiLearnTargetKind::DeckTransport, MidiTargetCommandKind::SetDeckTransport, deck, 2);
+        addTarget(registry, "mixer.deck." + deckLabel + ".volume", "Deck " + deckLabel + " Volume", MidiLearnTargetKind::MixerRouting, MidiTargetCommandKind::SetDeckVolume, deck);
         addTarget(registry, "mixer.deck." + deckLabel + ".gain", "Deck " + deckLabel + " Gain", MidiLearnTargetKind::MixerRouting, MidiTargetCommandKind::SetDeckGain, deck);
+        addTarget(registry, "mixer.deck." + deckLabel + ".eq.low", "Deck " + deckLabel + " EQ Low", MidiLearnTargetKind::MixerRouting, MidiTargetCommandKind::SetDeckEqLow, deck);
+        addTarget(registry, "mixer.deck." + deckLabel + ".eq.mid", "Deck " + deckLabel + " EQ Mid", MidiLearnTargetKind::MixerRouting, MidiTargetCommandKind::SetDeckEqMid, deck);
+        addTarget(registry, "mixer.deck." + deckLabel + ".eq.high", "Deck " + deckLabel + " EQ High", MidiLearnTargetKind::MixerRouting, MidiTargetCommandKind::SetDeckEqHigh, deck);
         addTarget(registry, "routing.deck." + deckLabel + ".output", "Deck " + deckLabel + " Output", MidiLearnTargetKind::MixerRouting, MidiTargetCommandKind::SetDeckOutput, deck);
         addTarget(registry, "routing.deck." + deckLabel + ".cue", "Deck " + deckLabel + " Cue Send", MidiLearnTargetKind::MixerRouting, MidiTargetCommandKind::SetDeckOutput, deck, 1);
         addTarget(registry, "sequencer.deck." + deckLabel + ".mute", "Sequencer Deck " + deckLabel + " Mute", MidiLearnTargetKind::SequencerControl, MidiTargetCommandKind::SetSequencerControl, deck);
@@ -55,8 +59,19 @@ MidiLearnTargetRegistry MidiLearnTargetRegistry::createAlphaDefault() {
                       MidiTargetCommandKind::SetPluginParameter,
                       deck,
                       slot);
+            addTarget(registry,
+                      "plugin.deck." + deckLabel + ".slot." + std::to_string(slot + 1U) + ".bypass",
+                      "Deck " + deckLabel + " Plugin Slot " + std::to_string(slot + 1U) + " Bypass",
+                      MidiLearnTargetKind::PluginChainParameter,
+                      MidiTargetCommandKind::SetPluginParameter,
+                      deck,
+                      slot);
         }
     }
+    addTarget(registry, "mixer.crossfader", "Mixer Crossfader", MidiLearnTargetKind::MixerRouting, MidiTargetCommandKind::SetCrossfader, 0);
+    addTarget(registry, "browser.action.load-selected", "Browser Load Selected", MidiLearnTargetKind::LibraryAction, MidiTargetCommandKind::TriggerLibraryAction, 0);
+    addTarget(registry, "beatgrid.action.nudge-left", "Beatgrid Nudge Left", MidiLearnTargetKind::LibraryAction, MidiTargetCommandKind::TriggerLibraryAction, 2);
+    addTarget(registry, "beatgrid.action.nudge-right", "Beatgrid Nudge Right", MidiLearnTargetKind::LibraryAction, MidiTargetCommandKind::TriggerLibraryAction, 3);
     addTarget(registry, "library.action.load-selected", "Library Load Selected", MidiLearnTargetKind::LibraryAction, MidiTargetCommandKind::TriggerLibraryAction, 0);
     addTarget(registry, "library.action.focus-search", "Library Focus Search", MidiLearnTargetKind::LibraryAction, MidiTargetCommandKind::TriggerLibraryAction, 1);
     return registry;
