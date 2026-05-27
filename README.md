@@ -4,28 +4,13 @@ Deckflaxia is an AGPL-3.0-or-later native JUCE DJ application workflow. The curr
 
 Start with the runbook for exact setup, build, launch, smoke, sandbox, license, troubleshooting, and deferred-scope commands:
 
-```sh
-cmake -S . -B build-juce -DDECKFLAXIA_REQUIRE_JUCE=ON
-```
-
-Full guide: [docs/user-runbook-developer-operations.md](docs/user-runbook-developer-operations.md). Use it for Linux JUCE setup, GTK/WebKit development packages, stale `CMakeCache.txt` path errors, and native-vs-fallback limitations.
+- [User runbook and developer operations](docs/user-runbook-developer-operations.md)
 
 Related references:
 
 - [Architecture boundaries](docs/architecture/alpha-architecture.md)
 - [CI, license, and static analysis hardening](docs/compliance/ci-license-static-analysis.md)
 - [CMake integration notes](cmake/README.md)
-
-## Local Fallback Check
-
-This container path is fallback-only when JUCE, Rubber Band, native VST3/editor surfaces, system SQLite, fallback WAV encoding, and clangd are missing. It doesn't prove native JUCE success.
-
-```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-cmake --build build
-ctest --test-dir build --output-on-failure
-./build/Deckflaxia --production-dj-workflow-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
-```
 
 ## Deferred Scope
 
