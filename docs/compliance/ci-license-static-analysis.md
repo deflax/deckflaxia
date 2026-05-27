@@ -2,21 +2,36 @@
 
 ## Local CI Parity
 
-Run these commands from the repository root to match the Linux CI flow:
+Run these commands from the repository root to match the Linux fallback infrastructure flow:
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 cmake --build build
 cmake --build build --target static-analysis
+cmake --build build --target plugin-sandbox-helper-packaging-check
 ctest --test-dir build --output-on-failure
 cmake --build build --target license-report
 ```
 
-The license inventory is written to `build/license-report.spdx.txt`. Task evidence should copy that report to `.omo/evidence/task-13-license-report.txt` and capture command output in `.omo/evidence/task-13-local-ci.log`.
+The license inventory is written to `build/license-report.spdx.txt`. Real playable JUCE workflow evidence should copy the generated report or command output to `.omo/evidence/real-playable-juce/task-1-license-report.txt` and capture missing-JUCE required configure output in `.omo/evidence/real-playable-juce/task-1-missing-juce.log`.
+
+## Required JUCE Gate
+
+Presubmit and release-style JUCE validation should configure with:
+
+```sh
+cmake -S . -B build-juce -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDJAPP_REQUIRE_JUCE=ON -DDJAPP_USE_VENDORED_JUCE=ON
+```
+
+When JUCE is not available, this command must fail clearly and explain both supported setup paths: an installed/exported JUCE CMake package via `-DCMAKE_PREFIX_PATH=/path/to/JUCE/install-or-build`, or a licensed local `third_party/JUCE` checkout. Bootstrap fallback configuration remains available only with `DJAPP_REQUIRE_JUCE=OFF` for early CI/dev checks that do not claim JUCE functionality.
+
+The GitHub Actions workflow intentionally has no Windows job. The platform gates are `ubuntu-24.04` and `macos-latest`, and both check out `juce-framework/JUCE` at the pinned `JUCE_REF` into `third_party/JUCE` before running the JUCE-required configure/build/CTest sequence, `plugin-sandbox-helper-packaging-check`, playable smoke, plugin sandbox smoke, current performance-equivalent tempo/overload smokes, and `license-report`. This is a CI-only checkout under JUCE AGPL/commercial terms; JUCE is not vendored in this repository.
+
+`plugin-sandbox-helper-packaging-check` verifies that `DJAppPluginSandboxHelper` was built beside `DJApp` and that `DJAppPluginSandboxHelper --helper-smoke` emits its readiness line. It does not claim OS-level sandbox hardening, notarization, or code signing.
 
 ## macOS Evidence Requirement
 
-The GitHub Actions macOS job configures, builds, runs the smoke test, and runs CTest on `macos-latest`. If a local macOS agent is used instead, run:
+The GitHub Actions macOS job configures, builds, runs helper packaging, CTest, playable smoke, plugin sandbox smoke, current performance-equivalent smokes, and the license report on `macos-latest`. If a local macOS agent is used instead, run the same `build-juce` command sequence from the workflow when JUCE is available. A fallback-only infrastructure check can use:
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -25,7 +40,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-Save the macOS output to `.omo/evidence/task-13-macos-build-test.log` before alpha completion. A Linux-hosted placeholder may document these instructions but must not claim macOS execution.
+Save Task 14 macOS output to `.omo/evidence/real-playable-juce/task-14-macos-ci.log`. A Linux-hosted placeholder may document these instructions but must not claim macOS execution.
 
 ## Static Analysis Prerequisites
 
@@ -35,9 +50,13 @@ Save the macOS output to `.omo/evidence/task-13-macos-build-test.log` before alp
 
 `cmake --build build --target license-report` generates an SPDX-style inventory with:
 
-- DJApp project source license status.
-- JUCE framework status as `LicenseRef-JUCE-Commercial OR GPL-3.0-or-later`.
-- System SQLite C API target as the commercial-compatible persistence dependency.
+- DJApp project source as `AGPL-3.0-or-later`.
+- JUCE framework as `AGPL-3.0-only OR LicenseRef-JUCE-Commercial`.
+- Steinberg VST3 SDK as `MIT`.
+- Rubber Band as optional system `GPL-2.0-or-later` for the guarded primary stretch engine; live playback uses the real-time boundary when present.
+- Signalsmith Stretch as `MIT` for the non-vendored fallback adapter boundary.
+- SoundTouch as `LGPL-2.1-only` for legacy fallback only.
+- System SQLite C API target as the persistence dependency.
 - No-vendored-third-party posture, except an optional local licensed `third_party/JUCE` checkout.
 
-A documented JUCE commercial license or GPL-compatible release decision is a release gate before any distribution. The current alpha repository does not add telemetry, crash upload, accounts, cloud sync, marketplace, or remote logging infrastructure; local logs are for developer diagnostics only and are not uploaded.
+The repository license is AGPL-3.0-or-later. This document and the generated SPDX-style report are engineering compliance aids, not legal advice. The current repository does not add telemetry, crash upload, accounts, cloud sync, marketplace, or remote logging infrastructure; local logs are for developer diagnostics only and are not uploaded.
