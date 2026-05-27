@@ -34,7 +34,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
 ## JUCE Module Headers in Library Targets
 
-Plain `add_library` targets such as `DeckflaxiaPlugins`, `DeckflaxiaUiShell`, and `DeckflaxiaDecks` should include direct JUCE module headers when they compile JUCE-aware code:
+Plain `add_library` targets such as `DeckflaxiaPlugins`, `DeckflaxiaUiShell`, and `DeckflaxiaDecks` should link their required JUCE modules, then include direct JUCE module headers when they compile JUCE-aware code:
 
 ```cpp
 #include <juce_audio_processors/juce_audio_processors.h>
@@ -42,7 +42,7 @@ Plain `add_library` targets such as `DeckflaxiaPlugins`, `DeckflaxiaUiShell`, an
 #include <juce_audio_utils/juce_audio_utils.h>
 ```
 
-Do not include `<JuceHeader.h>` from plain library targets, and do not add `juce_generate_juce_header` to those targets just to make that umbrella header available. Reserve `<JuceHeader.h>` for the JUCE app target created by `juce_add_gui_app` when that target needs it. If direct module headers compile far enough to fail on `gtk/gtk.h`, fix the Linux GTK/WebKit development packages instead of switching back to `JuceHeader.h`.
+Do not include `<JuceHeader.h>` from plain library targets, and do not add `juce_generate_juce_header` to those targets just to make that umbrella header available. Reserve `<JuceHeader.h>` for the JUCE app target created by `juce_add_gui_app` when that target needs it. If direct module headers compile far enough to fail on `gtk/gtk.h`, first confirm `pkg-config --cflags gtk+-x11-3.0` reports GTK include paths, then make sure plain targets compiling or publicly propagating `juce_gui_extra` on Linux link `juce::pkgconfig_JUCE_BROWSER_LINUX_DEPS` with matching visibility so JUCE's GTK/WebKit package flags propagate to downstream targets. Do not switch back to `JuceHeader.h` to mask missing target flags. VST3 hosting code also requires `JUCE_PLUGINHOST_VST3=1` on the target that compiles `juce::VST3PluginFormat`; `DeckflaxiaPlugins` sets this when `DECKFLAXIA_HAS_JUCE` is true.
 
 ## Static Analysis
 

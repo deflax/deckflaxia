@@ -10,6 +10,13 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 #endif
 
+#if DECKFLAXIA_HAS_JUCE
+#ifndef JUCE_PLUGINHOST_VST3
+#define JUCE_PLUGINHOST_VST3 0
+#endif
+#define DECKFLAXIA_HAS_JUCE_VST3_HOST (JUCE_PLUGINHOST_VST3 && (JUCE_MAC || JUCE_WINDOWS || JUCE_LINUX || JUCE_BSD))
+#endif
+
 namespace deckflaxia::plugins {
 
 namespace {
@@ -273,6 +280,7 @@ private:
 
 #if DECKFLAXIA_HAS_JUCE
     void instantiateJucePlugins() {
+#if DECKFLAXIA_HAS_JUCE_VST3_HOST
         if (!juceFormatsRegistered_) {
             formatManager_.addFormat(new juce::VST3PluginFormat());
             juceFormatsRegistered_ = true;
@@ -307,6 +315,10 @@ private:
         if (status_.realVst3Instantiated) {
             status_.unavailableReason.clear();
         }
+#else
+        status_.unavailableSlotCount = chain_.plugins.size();
+        status_.unavailableReason = "JUCE VST3 host support unavailable; deterministic AGPL-compatible fixture processor only";
+#endif
     }
 
     void processJuce(float* interleavedStereo, std::uint32_t frameCount) noexcept {

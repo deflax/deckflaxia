@@ -222,12 +222,17 @@ target_compile_definitions(DeckflaxiaUiShell
 target_compile_definitions(DeckflaxiaPlugins
     PUBLIC
         DECKFLAXIA_HAS_JUCE=$<BOOL:${DECKFLAXIA_HAS_JUCE}>
+        JUCE_PLUGINHOST_VST3=$<BOOL:${DECKFLAXIA_HAS_JUCE}>
 )
 
 if(DECKFLAXIA_HAS_JUCE)
     target_link_libraries(DeckflaxiaDecks PUBLIC juce::juce_audio_utils)
     target_link_libraries(DeckflaxiaPlugins PUBLIC juce::juce_audio_processors juce::juce_gui_extra)
     target_link_libraries(DeckflaxiaUiShell PUBLIC juce::juce_gui_extra juce::juce_audio_utils)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_link_libraries(DeckflaxiaPlugins PUBLIC juce::pkgconfig_JUCE_BROWSER_LINUX_DEPS)
+        target_link_libraries(DeckflaxiaUiShell PUBLIC juce::pkgconfig_JUCE_BROWSER_LINUX_DEPS)
+    endif()
 endif()
 
 if(DECKFLAXIA_HAS_JUCE)
