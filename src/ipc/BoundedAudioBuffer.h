@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace djapp::ipc {
+namespace deckflaxia::ipc {
 
 class BoundedAudioBuffer final {
 public:

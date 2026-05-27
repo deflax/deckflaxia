@@ -9,5 +9,5 @@ int main(int argc, char* argv[]) {
         std::cerr << "FAILED: unknown AlphaSmoke filter " << filter << '\n';
         return 1;
     }
-    return djapp::app::runAlphaSmokeTest(std::cout);
+    return deckflaxia::app::runAlphaSmokeTest(std::cout);
 }

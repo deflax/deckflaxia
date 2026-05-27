@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-namespace djapp::persistence {
+namespace deckflaxia::persistence {
 
 constexpr int kCurrentSchemaVersion = 1;
 

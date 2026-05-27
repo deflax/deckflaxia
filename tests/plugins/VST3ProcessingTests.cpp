@@ -25,11 +25,11 @@ int expectOk(const T& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
-float masterRms(const djapp::decks::FourDeckPlaybackCore& core) {
+float masterRms(const deckflaxia::decks::FourDeckPlaybackCore& core) {
     const auto& buffer = core.lastInterleavedOutput();
     double sum = 0.0;
     for (std::uint32_t frame = 0; frame < 512U; ++frame) {
-        const auto index = static_cast<std::size_t>(frame) * djapp::decks::kFourDeckOutputChannels;
+        const auto index = static_cast<std::size_t>(frame) * deckflaxia::decks::kFourDeckOutputChannels;
         sum += static_cast<double>(buffer[index]) * static_cast<double>(buffer[index]);
         sum += static_cast<double>(buffer[index + 1U]) * static_cast<double>(buffer[index + 1U]);
     }
@@ -37,20 +37,20 @@ float masterRms(const djapp::decks::FourDeckPlaybackCore& core) {
 }
 
 float renderDeckWithPlugin(bool bypassed) {
-    djapp::decks::FourDeckPlaybackCore core;
-    const auto deckId = djapp::core::DeckId::fromIndex(0).value;
-    auto media = djapp::decks::PreparedAudioMedia::deterministicTestWav(4096, 48000);
-    if (expect(core.loadDeck(deckId, djapp::decks::AudioDeckMediaReference::deterministicTestWav(std::move(media))).ok(), "test media should load") != 0) {
+    deckflaxia::decks::FourDeckPlaybackCore core;
+    const auto deckId = deckflaxia::core::DeckId::fromIndex(0).value;
+    auto media = deckflaxia::decks::PreparedAudioMedia::deterministicTestWav(4096, 48000);
+    if (expect(core.loadDeck(deckId, deckflaxia::decks::AudioDeckMediaReference::deterministicTestWav(std::move(media))).ok(), "test media should load") != 0) {
         return 0.0F;
     }
-    const djapp::core::PluginChainDescriptor chain{"deck-a", {djapp::plugins::makeDeterministicGainPlugin(0.25, bypassed)}};
+    const deckflaxia::core::PluginChainDescriptor chain{"deck-a", {deckflaxia::plugins::makeDeterministicGainPlugin(0.25, bypassed)}};
     if (expectOk(core.setDeckPluginChain(deckId, chain), "deck plugin chain configure") != 0) {
         return 0.0F;
     }
-    if (expect(core.play(deckId) == djapp::decks::FourDeckPlaybackError::None, "deck should play") != 0) {
+    if (expect(core.play(deckId) == deckflaxia::decks::FourDeckPlaybackError::None, "deck should play") != 0) {
         return 0.0F;
     }
-    const auto render = core.renderOffline(djapp::audio::AudioRenderConfiguration{48000, 512}, 1);
+    const auto render = core.renderOffline(deckflaxia::audio::AudioRenderConfiguration{48000, 512}, 1);
     if (expect(render.ok(), "offline render should succeed") != 0) {
         return 0.0F;
     }
@@ -71,9 +71,9 @@ int testDeckProcessingChangesAudio() {
 }
 
 int testParametersAndLatency() {
-    djapp::plugins::OfflinePluginChainHost host;
-    const djapp::core::PluginChainDescriptor chain{"deck-a", {djapp::plugins::makeDeterministicGainPlugin(0.5, false)}};
-    if (expectOk(host.configure(djapp::plugins::PluginChainTargetKind::Deck, chain, 48000.0, 512), "plugin host configure") != 0) {
+    deckflaxia::plugins::OfflinePluginChainHost host;
+    const deckflaxia::core::PluginChainDescriptor chain{"deck-a", {deckflaxia::plugins::makeDeterministicGainPlugin(0.5, false)}};
+    if (expectOk(host.configure(deckflaxia::plugins::PluginChainTargetKind::Deck, chain, 48000.0, 512), "plugin host configure") != 0) {
         return 1;
     }
     if (expectOk(host.setParameter(0, "gain", 0.125), "gain parameter set") != 0) {
@@ -86,16 +86,16 @@ int testParametersAndLatency() {
     if (expect(status.latencyFrames == 0U && status.activeSlotCount == 1U, "deterministic plugin should report latency and active slot") != 0) {
         return 1;
     }
-    std::cout << "VST3Processing.ParameterLatency backend=" << djapp::plugins::toString(status.backend)
+    std::cout << "VST3Processing.ParameterLatency backend=" << deckflaxia::plugins::toString(status.backend)
               << " latency=" << status.latencyFrames << " gain=" << host.parameter(0, "gain") << '\n';
     return 0;
 }
 
 int testMasterChainStateReload() {
-    djapp::persistence::PersistenceService service;
-    auto plugin = djapp::plugins::makeDeterministicGainPlugin(0.42, false);
+    deckflaxia::persistence::PersistenceService service;
+    auto plugin = deckflaxia::plugins::makeDeterministicGainPlugin(0.42, false);
     plugin.latencyFrames = 7;
-    const djapp::core::PluginChainDescriptor saved{"master", {plugin}};
+    const deckflaxia::core::PluginChainDescriptor saved{"master", {plugin}};
     if (expectOk(service.pluginChains().save(saved), "master chain save") != 0) {
         return 1;
     }
@@ -111,7 +111,7 @@ int testMasterChainStateReload() {
     if (expect(identical, "master plugin chain state should reload identically") != 0) {
         return 1;
     }
-    djapp::decks::FourDeckPlaybackCore core;
+    deckflaxia::decks::FourDeckPlaybackCore core;
     if (expectOk(core.setMasterPluginChain(loaded.value), "master chain configure after reload") != 0) {
         return 1;
     }
@@ -122,7 +122,7 @@ int testMasterChainStateReload() {
 
 int testSmokeSurface(const std::filesystem::path& fixtures) {
     std::ostringstream output;
-    const auto result = djapp::audio::runVst3ProcessingSmokeTest(output, djapp::audio::AudioDeckSmokeOptions{fixtures, {}, "deck-a"});
+    const auto result = deckflaxia::audio::runVst3ProcessingSmokeTest(output, deckflaxia::audio::AudioDeckSmokeOptions{fixtures, {}, "deck-a"});
     const auto text = output.str();
     if (expect(result == 0, "VST3 processing smoke should pass") != 0) {
         std::cerr << text;

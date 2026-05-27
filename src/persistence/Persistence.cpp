@@ -5,11 +5,11 @@
 #include <sstream>
 #include <utility>
 
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
 #include <sqlite3.h>
 #endif
 
-namespace djapp::persistence {
+namespace deckflaxia::persistence {
 
 namespace {
 
@@ -99,7 +99,7 @@ std::vector<core::PluginDescriptor::ParameterState> deserializePluginParameters(
 }
 
 struct Statement final {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     sqlite3_stmt* handle{};
     Statement() = default;
     Statement(const Statement&) = delete;
@@ -120,7 +120,7 @@ struct Statement final {
 }
 
 struct SQLiteConnection final {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     sqlite3* db{};
     bool open{};
     PersistenceError openError{PersistenceError::None};
@@ -133,7 +133,7 @@ struct SQLiteConnection final {
 
 namespace {
 
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
 
 PersistenceError sqliteError(int code) noexcept {
     if (code == SQLITE_BUSY || code == SQLITE_LOCKED) {
@@ -304,7 +304,7 @@ PersistenceUnitResult MigrationRunner::migrateToCurrent(InMemoryPersistenceStore
         if (!store.sqlite_->open) {
             return PersistenceUnitResult::failure(store.sqlite_->openError);
         }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
         const auto migrated = runMigrationSql(store.sqlite_);
         if (!migrated.ok()) {
             return migrated;
@@ -361,7 +361,7 @@ PersistenceUnitResult AppPreferencesRepository::put(AppPreference preference) {
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "INSERT OR REPLACE INTO preferences(key, value) VALUES(?, ?)");
         if (!statement.ok()) {
@@ -380,7 +380,7 @@ PersistenceUnitResult AppPreferencesRepository::put(AppPreference preference) {
 }
 
 PersistenceResult<std::string> AppPreferencesRepository::get(const std::string& key) const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT value FROM preferences WHERE key=?");
         if (!statement.ok()) {
@@ -415,7 +415,7 @@ PersistenceUnitResult RoutingConfigRepository::save(RoutingConfigRecord record) 
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "INSERT OR REPLACE INTO routing_config(deck_index, main_output, cue_enabled) VALUES(?, ?, ?)");
         if (!statement.ok()) {
@@ -432,7 +432,7 @@ PersistenceUnitResult RoutingConfigRepository::save(RoutingConfigRecord record) 
 }
 
 PersistenceResult<RoutingConfigRecord> RoutingConfigRepository::load(std::size_t deckIndex) const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT main_output, cue_enabled FROM routing_config WHERE deck_index=?");
         if (!statement.ok()) {
@@ -468,7 +468,7 @@ PersistenceUnitResult PluginScanCacheRepository::upsert(PluginScanCacheRecord re
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "INSERT OR REPLACE INTO plugin_scan_cache(plugin_id, display_name, path, blacklisted) VALUES(?, ?, ?, ?)");
         if (!statement.ok()) {
@@ -490,7 +490,7 @@ PersistenceUnitResult PluginScanCacheRepository::markBlacklisted(std::string plu
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "UPDATE plugin_scan_cache SET blacklisted=? WHERE plugin_id=?");
         if (!statement.ok()) {
@@ -514,7 +514,7 @@ PersistenceUnitResult PluginScanCacheRepository::markBlacklisted(std::string plu
 }
 
 PersistenceResult<std::vector<PluginScanCacheRecord>> PluginScanCacheRepository::list() const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT plugin_id, display_name, path, blacklisted FROM plugin_scan_cache ORDER BY plugin_id");
         if (!statement.ok()) {
@@ -546,7 +546,7 @@ PersistenceUnitResult MidiMappingsRepository::save(core::MidiLearnMapping mappin
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "INSERT OR REPLACE INTO midi_mappings(target_id, target_name, channel, controller) VALUES(?, ?, ?, ?)");
         if (!statement.ok()) {
@@ -564,7 +564,7 @@ PersistenceUnitResult MidiMappingsRepository::save(core::MidiLearnMapping mappin
 }
 
 PersistenceResult<std::vector<core::MidiLearnMapping>> MidiMappingsRepository::list() const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT target_id, target_name, channel, controller FROM midi_mappings ORDER BY target_id");
         if (!statement.ok()) {
@@ -596,7 +596,7 @@ PersistenceUnitResult LibraryTracksRepository::upsert(core::LibraryTrack track) 
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "INSERT OR REPLACE INTO library_tracks(track_id, title, artist, bpm, first_beat_seconds, musical_key) VALUES(?, ?, ?, ?, ?, ?)");
         if (!statement.ok()) {
@@ -616,7 +616,7 @@ PersistenceUnitResult LibraryTracksRepository::upsert(core::LibraryTrack track) 
 }
 
 PersistenceResult<core::LibraryTrack> LibraryTracksRepository::findById(const std::string& id) const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT track_id, title, artist, bpm, first_beat_seconds, musical_key FROM library_tracks WHERE track_id=?");
         if (!statement.ok()) {
@@ -639,7 +639,7 @@ PersistenceResult<core::LibraryTrack> LibraryTracksRepository::findById(const st
 }
 
 PersistenceResult<std::vector<core::LibraryTrack>> LibraryTracksRepository::list() const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT track_id, title, artist, bpm, first_beat_seconds, musical_key FROM library_tracks ORDER BY track_id");
         if (!statement.ok()) {
@@ -671,7 +671,7 @@ PersistenceUnitResult CratesRepository::save(core::Crate crate) {
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "INSERT OR REPLACE INTO crates(crate_id, name, track_ids) VALUES(?, ?, ?)");
         if (!statement.ok()) {
@@ -689,7 +689,7 @@ PersistenceUnitResult CratesRepository::save(core::Crate crate) {
 }
 
 PersistenceResult<core::Crate> CratesRepository::findById(const std::string& id) const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT crate_id, name, track_ids FROM crates WHERE crate_id=?");
         if (!statement.ok()) {
@@ -721,7 +721,7 @@ PersistenceUnitResult PlaylistsRepository::save(core::Playlist playlist) {
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "INSERT OR REPLACE INTO playlists(playlist_id, name, track_ids) VALUES(?, ?, ?)");
         if (!statement.ok()) {
@@ -739,7 +739,7 @@ PersistenceUnitResult PlaylistsRepository::save(core::Playlist playlist) {
 }
 
 PersistenceResult<core::Playlist> PlaylistsRepository::findById(const std::string& id) const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT playlist_id, name, track_ids FROM playlists WHERE playlist_id=?");
         if (!statement.ok()) {
@@ -771,7 +771,7 @@ PersistenceUnitResult TrackMetadataRepository::save(TrackMetadataRecord record) 
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "INSERT OR REPLACE INTO track_metadata(track_id, bpm, first_beat_seconds, musical_key) VALUES(?, ?, ?, ?)");
         if (!statement.ok()) {
@@ -789,7 +789,7 @@ PersistenceUnitResult TrackMetadataRepository::save(TrackMetadataRecord record) 
 }
 
 PersistenceResult<TrackMetadataRecord> TrackMetadataRepository::load(const std::string& trackId) const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT track_id, bpm, first_beat_seconds, musical_key FROM track_metadata WHERE track_id=?");
         if (!statement.ok()) {
@@ -819,7 +819,7 @@ PersistenceUnitResult TrackMetadataRepository::saveCueMarkers(const std::string&
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "INSERT OR REPLACE INTO cue_markers(track_id, markers) VALUES(?, ?)");
         if (!statement.ok()) {
@@ -836,7 +836,7 @@ PersistenceUnitResult TrackMetadataRepository::saveCueMarkers(const std::string&
 }
 
 PersistenceResult<std::vector<CueMarkerRecord>> TrackMetadataRepository::loadCueMarkers(const std::string& trackId) const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT markers FROM cue_markers WHERE track_id=?");
         if (!statement.ok()) {
@@ -868,7 +868,7 @@ PersistenceUnitResult AnalysisJobsRepository::upsert(core::AnalysisJob job) {
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "INSERT OR REPLACE INTO analysis_jobs(job_id, track_id, status, progress) VALUES(?, ?, ?, ?)");
         if (!statement.ok()) {
@@ -886,7 +886,7 @@ PersistenceUnitResult AnalysisJobsRepository::upsert(core::AnalysisJob job) {
 }
 
 PersistenceResult<core::AnalysisJob> AnalysisJobsRepository::findById(const std::string& id) const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT job_id, track_id, status, progress FROM analysis_jobs WHERE job_id=?");
         if (!statement.ok()) {
@@ -909,7 +909,7 @@ PersistenceResult<core::AnalysisJob> AnalysisJobsRepository::findById(const std:
 }
 
 PersistenceResult<std::vector<core::AnalysisJob>> AnalysisJobsRepository::list() const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT job_id, track_id, status, progress FROM analysis_jobs ORDER BY job_id");
         if (!statement.ok()) {
@@ -941,7 +941,7 @@ PersistenceUnitResult DeckStateRepository::save(DeckStateRecord record) {
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "INSERT OR REPLACE INTO deck_state(deck_index, deck_type, main_output, cue_enabled, playing, position_beats, loaded_track_id, source_bpm, target_bpm, tempo_sync_enabled, pitch_lock_enabled, pitch_shift_cents, stretch_bypass) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         if (!statement.ok()) {
@@ -968,7 +968,7 @@ PersistenceUnitResult DeckStateRepository::save(DeckStateRecord record) {
 }
 
 PersistenceResult<DeckStateRecord> DeckStateRepository::load(std::size_t deckIndex) const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT deck_index, deck_type, main_output, cue_enabled, playing, position_beats, loaded_track_id, source_bpm, target_bpm, tempo_sync_enabled, pitch_lock_enabled, pitch_shift_cents, stretch_bypass FROM deck_state WHERE deck_index=?");
         if (!statement.ok()) {
@@ -997,7 +997,7 @@ PersistenceResult<DeckStateRecord> DeckStateRepository::load(std::size_t deckInd
 }
 
 PersistenceResult<std::vector<DeckStateRecord>> DeckStateRepository::list() const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT deck_index, deck_type, main_output, cue_enabled, playing, position_beats, loaded_track_id, source_bpm, target_bpm, tempo_sync_enabled, pitch_lock_enabled, pitch_shift_cents, stretch_bypass FROM deck_state ORDER BY deck_index");
         if (!statement.ok()) {
@@ -1038,7 +1038,7 @@ PersistenceUnitResult PluginChainsRepository::save(core::PluginChainDescriptor c
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         const auto begin = execSql(store_->sqlite_, "BEGIN IMMEDIATE");
         if (!begin.ok()) {
@@ -1089,7 +1089,7 @@ PersistenceUnitResult PluginChainsRepository::save(core::PluginChainDescriptor c
 }
 
 PersistenceResult<core::PluginChainDescriptor> PluginChainsRepository::load(const std::string& chainId) const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto exists = prepareSql(store_->sqlite_, "SELECT chain_id FROM plugin_chains WHERE chain_id=?");
         if (!exists.ok()) {
@@ -1139,7 +1139,7 @@ PersistenceUnitResult AudioDevicePreferencesRepository::save(AudioDevicePreferen
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "INSERT OR REPLACE INTO audio_device_preferences(device_id, display_name, sample_rate_hz, buffer_frames, degraded) VALUES(?, ?, ?, ?, ?)");
         if (!statement.ok()) {
@@ -1158,7 +1158,7 @@ PersistenceUnitResult AudioDevicePreferencesRepository::save(AudioDevicePreferen
 }
 
 PersistenceResult<AudioDevicePreferenceRecord> AudioDevicePreferencesRepository::load(const std::string& deviceId) const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT device_id, display_name, sample_rate_hz, buffer_frames, degraded FROM audio_device_preferences WHERE device_id=?");
         if (!statement.ok()) {
@@ -1186,7 +1186,7 @@ PersistenceUnitResult SandboxHealthRepository::save(SandboxHealthRecord record) 
     if (!writable.ok()) {
         return writable;
     }
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "INSERT OR REPLACE INTO sandbox_health(component, healthy, detail) VALUES(?, ?, ?)");
         if (!statement.ok()) {
@@ -1203,7 +1203,7 @@ PersistenceUnitResult SandboxHealthRepository::save(SandboxHealthRecord record) 
 }
 
 PersistenceResult<SandboxHealthRecord> SandboxHealthRepository::load(const std::string& component) const {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     if (usesSQLite(*store_)) {
         auto statement = prepareSql(store_->sqlite_, "SELECT component, healthy, detail FROM sandbox_health WHERE component=?");
         if (!statement.ok()) {
@@ -1225,7 +1225,7 @@ PersistenceService::PersistenceService() : store_(std::make_shared<InMemoryPersi
 
 PersistenceService::PersistenceService(std::string sqlitePath) : store_(std::make_shared<InMemoryPersistenceStore>()) {
     store_->sqlite_ = std::make_shared<SQLiteConnection>();
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     sqlite3* database{};
     const int result = sqlite3_open_v2(sqlitePath.c_str(), &database, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
     store_->sqlite_->db = database;

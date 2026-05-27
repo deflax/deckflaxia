@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-namespace djapp::decks {
+namespace deckflaxia::decks {
 
 constexpr std::size_t kAudioDeckChannels = 2;
 constexpr std::size_t kMaxPreparedAudioFrames = 600000;

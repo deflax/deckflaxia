@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(DJApp VERSION 0.1.0 LANGUAGES C CXX)
+project(Deckflaxia VERSION 0.1.0 LANGUAGES C CXX)
 
-option(DJAPP_REQUIRE_JUCE "Fail configuration when JUCE is unavailable; required for real playable JUCE validation" OFF)
-option(DJAPP_USE_VENDORED_JUCE "Use a licensed local third_party/JUCE checkout when present" ON)
+option(DECKFLAXIA_REQUIRE_JUCE "Fail configuration when JUCE is unavailable; required for real playable JUCE validation" OFF)
+option(DECKFLAXIA_USE_VENDORED_JUCE "Use a licensed local third_party/JUCE checkout when present" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,9 +14,9 @@ include(cmake/JuceIntegration.cmake)
 
 add_custom_target(license-report
     COMMAND ${CMAKE_COMMAND}
-        -DDJAPP_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
-        -DDJAPP_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-        -DDJAPP_LICENSE_REPORT=${CMAKE_CURRENT_BINARY_DIR}/license-report.spdx.txt
+        -DDECKFLAXIA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DDECKFLAXIA_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+        -DDECKFLAXIA_LICENSE_REPORT=${CMAKE_CURRENT_BINARY_DIR}/license-report.spdx.txt
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/LicenseReport.cmake
     BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/license-report.spdx.txt
     COMMENT "Writing SPDX-style dependency license inventory"
@@ -25,257 +25,257 @@ add_custom_target(license-report
 
 add_custom_target(static-analysis
     COMMAND ${CMAKE_COMMAND}
-        -DDJAPP_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DDECKFLAXIA_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/StaticAnalysis.cmake
     COMMENT "Checking static-analysis tool prerequisites"
     VERBATIM
 )
 
-add_library(DJAppCore STATIC
+add_library(DeckflaxiaCore STATIC
     src/core/DomainModels.cpp
 )
-target_include_directories(DJAppCore
+target_include_directories(DeckflaxiaCore
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_compile_features(DJAppCore PUBLIC cxx_std_17)
+target_compile_features(DeckflaxiaCore PUBLIC cxx_std_17)
 
-add_library(DJAppAudio STATIC
+add_library(DeckflaxiaAudio STATIC
     src/audio/AudioEngine.cpp
     src/audio/MixerControls.cpp
     src/audio/TimeStretchEngine.cpp
     src/audio/routing/AudioRoutingGraph.cpp
 )
-target_include_directories(DJAppAudio
+target_include_directories(DeckflaxiaAudio
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_compile_features(DJAppAudio PUBLIC cxx_std_17)
-target_link_libraries(DJAppAudio PUBLIC DJAppCore)
-find_path(DJAPP_RUBBERBAND_INCLUDE_DIR rubberband/RubberBandStretcher.h)
-find_library(DJAPP_RUBBERBAND_LIBRARY NAMES rubberband RubberBand)
-if(DJAPP_RUBBERBAND_INCLUDE_DIR AND DJAPP_RUBBERBAND_LIBRARY)
-    target_compile_definitions(DJAppAudio PUBLIC DJAPP_HAS_RUBBERBAND=1)
-    target_include_directories(DJAppAudio PUBLIC ${DJAPP_RUBBERBAND_INCLUDE_DIR})
-    target_link_libraries(DJAppAudio PUBLIC ${DJAPP_RUBBERBAND_LIBRARY})
+target_compile_features(DeckflaxiaAudio PUBLIC cxx_std_17)
+target_link_libraries(DeckflaxiaAudio PUBLIC DeckflaxiaCore)
+find_path(DECKFLAXIA_RUBBERBAND_INCLUDE_DIR rubberband/RubberBandStretcher.h)
+find_library(DECKFLAXIA_RUBBERBAND_LIBRARY NAMES rubberband RubberBand)
+if(DECKFLAXIA_RUBBERBAND_INCLUDE_DIR AND DECKFLAXIA_RUBBERBAND_LIBRARY)
+    target_compile_definitions(DeckflaxiaAudio PUBLIC DECKFLAXIA_HAS_RUBBERBAND=1)
+    target_include_directories(DeckflaxiaAudio PUBLIC ${DECKFLAXIA_RUBBERBAND_INCLUDE_DIR})
+    target_link_libraries(DeckflaxiaAudio PUBLIC ${DECKFLAXIA_RUBBERBAND_LIBRARY})
     message(STATUS "Rubber Band found; enabling guarded primary real-time time-stretch boundary")
 else()
-    target_compile_definitions(DJAppAudio PUBLIC DJAPP_HAS_RUBBERBAND=0)
+    target_compile_definitions(DeckflaxiaAudio PUBLIC DECKFLAXIA_HAS_RUBBERBAND=0)
     message(STATUS "Rubber Band not found; enabling Signalsmith-compatible guarded fallback time-stretch boundary")
 endif()
 
-add_library(DJAppMidi STATIC
+add_library(DeckflaxiaMidi STATIC
     src/midi/MidiBuffer.cpp
     src/midi/MidiLearn.cpp
 )
-target_include_directories(DJAppMidi
+target_include_directories(DeckflaxiaMidi
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_compile_features(DJAppMidi PUBLIC cxx_std_17)
-target_link_libraries(DJAppMidi PUBLIC DJAppCore)
+target_compile_features(DeckflaxiaMidi PUBLIC cxx_std_17)
+target_link_libraries(DeckflaxiaMidi PUBLIC DeckflaxiaCore)
 
-add_library(DJAppDecks STATIC
+add_library(DeckflaxiaDecks STATIC
     src/audio/AudioDeckSmoke.cpp
     src/audio/JuceAudioDeviceEngine.cpp
     src/decks/AudioDeck.cpp
     src/decks/FourDeckPlaybackCore.cpp
     src/decks/SequencerDeck.cpp
 )
-target_include_directories(DJAppDecks
+target_include_directories(DeckflaxiaDecks
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_compile_features(DJAppDecks PUBLIC cxx_std_17)
-target_link_libraries(DJAppDecks PUBLIC DJAppAudio DJAppMidi)
+target_compile_features(DeckflaxiaDecks PUBLIC cxx_std_17)
+target_link_libraries(DeckflaxiaDecks PUBLIC DeckflaxiaAudio DeckflaxiaMidi)
 
 find_package(SQLite3 QUIET)
 
-add_library(DJAppPersistence STATIC
+add_library(DeckflaxiaPersistence STATIC
     src/persistence/Persistence.cpp
 )
-target_include_directories(DJAppPersistence
+target_include_directories(DeckflaxiaPersistence
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_compile_features(DJAppPersistence PUBLIC cxx_std_17)
-target_link_libraries(DJAppPersistence PUBLIC DJAppCore)
+target_compile_features(DeckflaxiaPersistence PUBLIC cxx_std_17)
+target_link_libraries(DeckflaxiaPersistence PUBLIC DeckflaxiaCore)
 if(SQLite3_FOUND)
-    target_compile_definitions(DJAppPersistence PUBLIC DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE=1)
-    target_link_libraries(DJAppPersistence PUBLIC SQLite::SQLite3)
+    target_compile_definitions(DeckflaxiaPersistence PUBLIC DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE=1)
+    target_link_libraries(DeckflaxiaPersistence PUBLIC SQLite::SQLite3)
 else()
-    target_compile_definitions(DJAppPersistence PUBLIC DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE=0)
+    target_compile_definitions(DeckflaxiaPersistence PUBLIC DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE=0)
 endif()
-target_link_libraries(DJAppDecks PUBLIC DJAppPersistence)
+target_link_libraries(DeckflaxiaDecks PUBLIC DeckflaxiaPersistence)
 
-add_library(DJAppLibrary STATIC
+add_library(DeckflaxiaLibrary STATIC
     src/library/AudioImport.cpp
     src/library/LibraryModel.cpp
 )
-target_include_directories(DJAppLibrary
+target_include_directories(DeckflaxiaLibrary
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_compile_features(DJAppLibrary PUBLIC cxx_std_17)
-target_link_libraries(DJAppLibrary PUBLIC DJAppPersistence)
+target_compile_features(DeckflaxiaLibrary PUBLIC cxx_std_17)
+target_link_libraries(DeckflaxiaLibrary PUBLIC DeckflaxiaPersistence)
 
-add_library(DJAppAnalysis STATIC
+add_library(DeckflaxiaAnalysis STATIC
     src/analysis/AnalysisPipeline.cpp
     src/analysis/WaveformCache.cpp
 )
-target_include_directories(DJAppAnalysis
+target_include_directories(DeckflaxiaAnalysis
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_compile_features(DJAppAnalysis PUBLIC cxx_std_17)
-target_link_libraries(DJAppAnalysis PUBLIC DJAppLibrary)
+target_compile_features(DeckflaxiaAnalysis PUBLIC cxx_std_17)
+target_link_libraries(DeckflaxiaAnalysis PUBLIC DeckflaxiaLibrary)
 
-add_library(DJAppPlugins STATIC
+add_library(DeckflaxiaPlugins STATIC
     src/plugins/PluginManager.cpp
     src/plugins/PluginChainProcessor.cpp
     src/plugins/PluginSandbox.cpp
 )
-target_include_directories(DJAppPlugins
+target_include_directories(DeckflaxiaPlugins
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_compile_features(DJAppPlugins PUBLIC cxx_std_17)
-target_link_libraries(DJAppPlugins PUBLIC DJAppAudio DJAppPersistence)
-target_link_libraries(DJAppDecks PUBLIC DJAppPlugins)
+target_compile_features(DeckflaxiaPlugins PUBLIC cxx_std_17)
+target_link_libraries(DeckflaxiaPlugins PUBLIC DeckflaxiaAudio DeckflaxiaPersistence)
+target_link_libraries(DeckflaxiaDecks PUBLIC DeckflaxiaPlugins)
 
-add_executable(DJAppPluginSandboxHelper
+add_executable(DeckflaxiaPluginSandboxHelper
     src/ipc/PluginSandboxHelperMain.cpp
 )
-target_include_directories(DJAppPluginSandboxHelper PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_compile_features(DJAppPluginSandboxHelper PRIVATE cxx_std_17)
+target_include_directories(DeckflaxiaPluginSandboxHelper PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_compile_features(DeckflaxiaPluginSandboxHelper PRIVATE cxx_std_17)
 
-add_library(DJAppRendering STATIC
+add_library(DeckflaxiaRendering STATIC
     src/rendering/WaveformRenderer.cpp
 )
-target_include_directories(DJAppRendering
+target_include_directories(DeckflaxiaRendering
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_compile_features(DJAppRendering PUBLIC cxx_std_17)
+target_compile_features(DeckflaxiaRendering PUBLIC cxx_std_17)
 
-add_library(DJAppUiShell STATIC
+add_library(DeckflaxiaUiShell STATIC
     src/app/UiShell.cpp
     src/ui/BrowserWaveformBeatgrid.cpp
     src/ui/JuceComponentTree.cpp
     src/ui/VST3EditorUi.cpp
 )
-target_include_directories(DJAppUiShell
+target_include_directories(DeckflaxiaUiShell
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_compile_features(DJAppUiShell PUBLIC cxx_std_17)
-target_link_libraries(DJAppUiShell PUBLIC DJAppAudio DJAppDecks DJAppLibrary DJAppMidi DJAppPlugins DJAppRendering)
+target_compile_features(DeckflaxiaUiShell PUBLIC cxx_std_17)
+target_link_libraries(DeckflaxiaUiShell PUBLIC DeckflaxiaAudio DeckflaxiaDecks DeckflaxiaLibrary DeckflaxiaMidi DeckflaxiaPlugins DeckflaxiaRendering)
 
-add_library(DJAppAlphaSmoke STATIC
+add_library(DeckflaxiaAlphaSmoke STATIC
     src/app/AlphaSmoke.cpp
     src/app/PlayableSmoke.cpp
 )
-target_include_directories(DJAppAlphaSmoke
+target_include_directories(DeckflaxiaAlphaSmoke
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_compile_features(DJAppAlphaSmoke PUBLIC cxx_std_17)
-target_link_libraries(DJAppAlphaSmoke PUBLIC DJAppAnalysis DJAppDecks DJAppPlugins DJAppUiShell)
+target_compile_features(DeckflaxiaAlphaSmoke PUBLIC cxx_std_17)
+target_link_libraries(DeckflaxiaAlphaSmoke PUBLIC DeckflaxiaAnalysis DeckflaxiaDecks DeckflaxiaPlugins DeckflaxiaUiShell)
 
-add_library(DJAppBootstrap STATIC
+add_library(DeckflaxiaBootstrap STATIC
     src/app/Bootstrap.cpp
 )
-target_include_directories(DJAppBootstrap
+target_include_directories(DeckflaxiaBootstrap
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
-target_compile_features(DJAppBootstrap PUBLIC cxx_std_17)
-target_link_libraries(DJAppBootstrap PUBLIC DJAppAudio)
+target_compile_features(DeckflaxiaBootstrap PUBLIC cxx_std_17)
+target_link_libraries(DeckflaxiaBootstrap PUBLIC DeckflaxiaAudio)
 
-djapp_configure_juce(DJApp)
+deckflaxia_configure_juce(Deckflaxia)
 
-target_compile_definitions(DJAppAudio
+target_compile_definitions(DeckflaxiaAudio
     PUBLIC
-        DJAPP_HAS_JUCE=$<BOOL:${DJAPP_HAS_JUCE}>
+        DECKFLAXIA_HAS_JUCE=$<BOOL:${DECKFLAXIA_HAS_JUCE}>
 )
 
-target_compile_definitions(DJAppLibrary
+target_compile_definitions(DeckflaxiaLibrary
     PUBLIC
-        DJAPP_HAS_JUCE=$<BOOL:${DJAPP_HAS_JUCE}>
+        DECKFLAXIA_HAS_JUCE=$<BOOL:${DECKFLAXIA_HAS_JUCE}>
 )
 
-target_compile_definitions(DJAppAnalysis
+target_compile_definitions(DeckflaxiaAnalysis
     PUBLIC
-        DJAPP_HAS_JUCE=$<BOOL:${DJAPP_HAS_JUCE}>
+        DECKFLAXIA_HAS_JUCE=$<BOOL:${DECKFLAXIA_HAS_JUCE}>
 )
 
-target_compile_definitions(DJAppDecks
+target_compile_definitions(DeckflaxiaDecks
     PUBLIC
-        DJAPP_HAS_JUCE=$<BOOL:${DJAPP_HAS_JUCE}>
+        DECKFLAXIA_HAS_JUCE=$<BOOL:${DECKFLAXIA_HAS_JUCE}>
 )
 
-target_compile_definitions(DJAppUiShell
+target_compile_definitions(DeckflaxiaUiShell
     PUBLIC
-        DJAPP_HAS_JUCE=$<BOOL:${DJAPP_HAS_JUCE}>
+        DECKFLAXIA_HAS_JUCE=$<BOOL:${DECKFLAXIA_HAS_JUCE}>
 )
 
-target_compile_definitions(DJAppPlugins
+target_compile_definitions(DeckflaxiaPlugins
     PUBLIC
-        DJAPP_HAS_JUCE=$<BOOL:${DJAPP_HAS_JUCE}>
+        DECKFLAXIA_HAS_JUCE=$<BOOL:${DECKFLAXIA_HAS_JUCE}>
 )
 
-if(DJAPP_HAS_JUCE)
-    target_link_libraries(DJAppDecks PUBLIC juce::juce_audio_utils)
-    target_link_libraries(DJAppPlugins PUBLIC juce::juce_audio_processors juce::juce_gui_extra)
-    target_link_libraries(DJAppUiShell PUBLIC juce::juce_gui_extra juce::juce_audio_utils)
+if(DECKFLAXIA_HAS_JUCE)
+    target_link_libraries(DeckflaxiaDecks PUBLIC juce::juce_audio_utils)
+    target_link_libraries(DeckflaxiaPlugins PUBLIC juce::juce_audio_processors juce::juce_gui_extra)
+    target_link_libraries(DeckflaxiaUiShell PUBLIC juce::juce_gui_extra juce::juce_audio_utils)
 endif()
 
-if(DJAPP_HAS_JUCE)
-    target_sources(DJApp PRIVATE src/app/Main.cpp)
-    target_link_libraries(DJApp PRIVATE DJAppBootstrap DJAppUiShell DJAppAlphaSmoke DJAppDecks)
+if(DECKFLAXIA_HAS_JUCE)
+    target_sources(Deckflaxia PRIVATE src/app/Main.cpp)
+    target_link_libraries(Deckflaxia PRIVATE DeckflaxiaBootstrap DeckflaxiaUiShell DeckflaxiaAlphaSmoke DeckflaxiaDecks)
 else()
-    add_executable(DJApp src/app/Main.cpp)
-    target_link_libraries(DJApp PRIVATE DJAppBootstrap DJAppUiShell DJAppAlphaSmoke DJAppDecks)
+    add_executable(Deckflaxia src/app/Main.cpp)
+    target_link_libraries(Deckflaxia PRIVATE DeckflaxiaBootstrap DeckflaxiaUiShell DeckflaxiaAlphaSmoke DeckflaxiaDecks)
 endif()
 
-target_compile_features(DJApp PRIVATE cxx_std_17)
-add_dependencies(DJApp DJAppPluginSandboxHelper)
+target_compile_features(Deckflaxia PRIVATE cxx_std_17)
+add_dependencies(Deckflaxia DeckflaxiaPluginSandboxHelper)
 
-add_custom_command(TARGET DJApp POST_BUILD
+add_custom_command(TARGET Deckflaxia POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:DJAppPluginSandboxHelper>
-        $<TARGET_FILE_DIR:DJApp>
-    COMMENT "Copying DJAppPluginSandboxHelper beside DJApp for sandbox smoke tests"
+        $<TARGET_FILE:DeckflaxiaPluginSandboxHelper>
+        $<TARGET_FILE_DIR:Deckflaxia>
+    COMMENT "Copying DeckflaxiaPluginSandboxHelper beside Deckflaxia for sandbox smoke tests"
     VERBATIM
 )
 
 add_custom_target(plugin-sandbox-helper-packaging-check
     COMMAND ${CMAKE_COMMAND}
-        -DDJAPP_APP_PATH=$<TARGET_FILE:DJApp>
-        -DDJAPP_HELPER_PATH=$<TARGET_FILE:DJAppPluginSandboxHelper>
+        -DDECKFLAXIA_APP_PATH=$<TARGET_FILE:Deckflaxia>
+        -DDECKFLAXIA_HELPER_PATH=$<TARGET_FILE:DeckflaxiaPluginSandboxHelper>
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/PluginSandboxPackagingCheck.cmake
-    DEPENDS DJApp DJAppPluginSandboxHelper
-    COMMENT "Checking DJAppPluginSandboxHelper build output and app-relative location"
+    DEPENDS Deckflaxia DeckflaxiaPluginSandboxHelper
+    COMMENT "Checking DeckflaxiaPluginSandboxHelper build output and app-relative location"
     VERBATIM
 )
 
-target_compile_definitions(DJAppBootstrap
+target_compile_definitions(DeckflaxiaBootstrap
     PUBLIC
-        DJAPP_HAS_JUCE=$<BOOL:${DJAPP_HAS_JUCE}>
+        DECKFLAXIA_HAS_JUCE=$<BOOL:${DECKFLAXIA_HAS_JUCE}>
 )
 
-add_executable(DJAppTests
+add_executable(DeckflaxiaTests
     tests/BootstrapTests.cpp
 )
-target_link_libraries(DJAppTests PRIVATE DJAppBootstrap)
-target_compile_features(DJAppTests PRIVATE cxx_std_17)
+target_link_libraries(DeckflaxiaTests PRIVATE DeckflaxiaBootstrap)
+target_compile_features(DeckflaxiaTests PRIVATE cxx_std_17)
 
-add_test(NAME DJAppTests COMMAND DJAppTests)
+add_test(NAME DeckflaxiaTests COMMAND DeckflaxiaTests)
 
 add_executable(RealTimeSafetyContracts
     tests/RealTimeSafetyContracts.cpp
 )
-target_link_libraries(RealTimeSafetyContracts PRIVATE DJAppBootstrap)
+target_link_libraries(RealTimeSafetyContracts PRIVATE DeckflaxiaBootstrap)
 target_compile_features(RealTimeSafetyContracts PRIVATE cxx_std_17)
 
 add_test(NAME RealTimeSafetyContracts COMMAND RealTimeSafetyContracts)
@@ -283,7 +283,7 @@ add_test(NAME RealTimeSafetyContracts COMMAND RealTimeSafetyContracts)
 add_executable(CoreDomainTests
     tests/core/CoreDomainTests.cpp
 )
-target_link_libraries(CoreDomainTests PRIVATE DJAppCore)
+target_link_libraries(CoreDomainTests PRIVATE DeckflaxiaCore)
 target_compile_features(CoreDomainTests PRIVATE cxx_std_17)
 
 add_test(NAME CoreDomain.All COMMAND CoreDomainTests)
@@ -295,7 +295,7 @@ add_test(NAME CoreDomain.Descriptors COMMAND CoreDomainTests descriptors)
 add_executable(AudioEngineTests
     tests/audio/AudioEngineTests.cpp
 )
-target_link_libraries(AudioEngineTests PRIVATE DJAppAudio)
+target_link_libraries(AudioEngineTests PRIVATE DeckflaxiaAudio)
 target_compile_features(AudioEngineTests PRIVATE cxx_std_17)
 
 add_test(NAME AudioEngine.All COMMAND AudioEngineTests)
@@ -307,7 +307,7 @@ add_test(NAME AudioEngine.NoDevice COMMAND AudioEngineTests no-device)
 add_executable(AudioRoutingGraphTests
     tests/audio/AudioRoutingGraphTests.cpp
 )
-target_link_libraries(AudioRoutingGraphTests PRIVATE DJAppAudio)
+target_link_libraries(AudioRoutingGraphTests PRIVATE DeckflaxiaAudio)
 target_compile_features(AudioRoutingGraphTests PRIVATE cxx_std_17)
 
 add_test(NAME AudioGraph.All COMMAND AudioRoutingGraphTests)
@@ -318,7 +318,7 @@ add_test(NAME AudioGraph.PendingUpdate COMMAND AudioRoutingGraphTests pending)
 add_executable(AudioDeckTests
     tests/decks/AudioDeckTests.cpp
 )
-target_link_libraries(AudioDeckTests PRIVATE DJAppDecks)
+target_link_libraries(AudioDeckTests PRIVATE DeckflaxiaDecks)
 target_compile_features(AudioDeckTests PRIVATE cxx_std_17)
 
 add_test(NAME AudioDeck.All COMMAND AudioDeckTests)
@@ -326,53 +326,53 @@ add_test(NAME AudioDeck.ValidFile COMMAND AudioDeckTests valid)
 add_test(NAME AudioDeck.CorruptFile COMMAND AudioDeckTests corrupt)
 add_test(NAME AudioDeck.Transport COMMAND AudioDeckTests transport)
 
-set(DJAPP_DJ_WORKFLOW_FIXTURE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/dj-workflow)
+set(DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/dj-workflow)
 
 add_executable(JuceAudioDeckTests
     tests/decks/JuceAudioDeckTests.cpp
 )
-target_link_libraries(JuceAudioDeckTests PRIVATE DJAppDecks)
+target_link_libraries(JuceAudioDeckTests PRIVATE DeckflaxiaDecks)
 target_compile_features(JuceAudioDeckTests PRIVATE cxx_std_17)
 
-add_test(NAME JuceAudioDeck.All COMMAND JuceAudioDeckTests all ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME JuceAudioDeck.FourDeckCore COMMAND JuceAudioDeckTests core ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME JuceAudioDeck.Errors COMMAND JuceAudioDeckTests errors ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME JuceAudioDeck.FixtureRender COMMAND JuceAudioDeckTests fixture ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME JuceAudioDeck.All COMMAND JuceAudioDeckTests all ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME JuceAudioDeck.FourDeckCore COMMAND JuceAudioDeckTests core ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME JuceAudioDeck.Errors COMMAND JuceAudioDeckTests errors ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME JuceAudioDeck.FixtureRender COMMAND JuceAudioDeckTests fixture ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
 
 add_executable(TimeStretchTests
     tests/audio/TimeStretchTests.cpp
 )
-target_link_libraries(TimeStretchTests PRIVATE DJAppDecks DJAppPersistence)
+target_link_libraries(TimeStretchTests PRIVATE DeckflaxiaDecks DeckflaxiaPersistence)
 target_compile_features(TimeStretchTests PRIVATE cxx_std_17)
 
-add_test(NAME TimeStretch.All COMMAND TimeStretchTests all ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME TimeStretch.TempoSync COMMAND TimeStretchTests tempo ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME TimeStretch.PitchLock COMMAND TimeStretchTests pitch ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME TimeStretch.OverloadFallback COMMAND TimeStretchTests overload ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME TimeStretch.Persistence COMMAND TimeStretchTests persistence ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME TimeStretch.All COMMAND TimeStretchTests all ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME TimeStretch.TempoSync COMMAND TimeStretchTests tempo ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME TimeStretch.PitchLock COMMAND TimeStretchTests pitch ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME TimeStretch.OverloadFallback COMMAND TimeStretchTests overload ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME TimeStretch.Persistence COMMAND TimeStretchTests persistence ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
 
-if(DJAPP_HAS_JUCE)
-    add_test(NAME JuceAudioDeck.AppSmoke COMMAND DJApp --audio-deck-smoke-test --fixtures ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} --exit-after-init)
+if(DECKFLAXIA_HAS_JUCE)
+    add_test(NAME JuceAudioDeck.AppSmoke COMMAND Deckflaxia --audio-deck-smoke-test --fixtures ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} --exit-after-init)
 endif()
-add_test(NAME TimeStretch.TempoSyncSmoke COMMAND DJApp --tempo-sync-smoke-test --fixtures ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} --exit-after-init)
-add_test(NAME TimeStretch.OverloadSmoke COMMAND DJApp --time-stretch-overload-smoke-test --fixtures ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} --exit-after-init)
+add_test(NAME TimeStretch.TempoSyncSmoke COMMAND Deckflaxia --tempo-sync-smoke-test --fixtures ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} --exit-after-init)
+add_test(NAME TimeStretch.OverloadSmoke COMMAND Deckflaxia --time-stretch-overload-smoke-test --fixtures ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} --exit-after-init)
 
 add_executable(MixerMidiTests
     tests/audio/MixerMidiTests.cpp
 )
-target_link_libraries(MixerMidiTests PRIVATE DJAppDecks DJAppPersistence)
+target_link_libraries(MixerMidiTests PRIVATE DeckflaxiaDecks DeckflaxiaPersistence)
 target_compile_features(MixerMidiTests PRIVATE cxx_std_17)
 
-add_test(NAME MixerMidi.All COMMAND MixerMidiTests all ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME MixerMidi.Crossfader COMMAND MixerMidiTests crossfader ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME MixerMidi.PersistenceDispatch COMMAND MixerMidiTests midi ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME MixerMidi.SmokeSurface COMMAND MixerMidiTests smoke ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME MixerMidi.AppSmoke COMMAND DJApp --mixer-smoke-test --fixtures ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} --render ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-9-crossfade.wav --exit-after-init)
+add_test(NAME MixerMidi.All COMMAND MixerMidiTests all ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME MixerMidi.Crossfader COMMAND MixerMidiTests crossfader ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME MixerMidi.PersistenceDispatch COMMAND MixerMidiTests midi ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME MixerMidi.SmokeSurface COMMAND MixerMidiTests smoke ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME MixerMidi.AppSmoke COMMAND Deckflaxia --mixer-smoke-test --fixtures ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} --render ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-9-crossfade.wav --exit-after-init)
 
 add_executable(SequencerTests
     tests/midi/SequencerTests.cpp
 )
-target_link_libraries(SequencerTests PRIVATE DJAppDecks)
+target_link_libraries(SequencerTests PRIVATE DeckflaxiaDecks)
 target_compile_features(SequencerTests PRIVATE cxx_std_17)
 
 add_test(NAME Sequencer.All COMMAND SequencerTests)
@@ -383,7 +383,7 @@ add_test(NAME Sequencer.TempoChange COMMAND SequencerTests tempo)
 add_executable(MidiLearnTests
     tests/midi/MidiLearnTests.cpp
 )
-target_link_libraries(MidiLearnTests PRIVATE DJAppMidi DJAppPersistence)
+target_link_libraries(MidiLearnTests PRIVATE DeckflaxiaMidi DeckflaxiaPersistence)
 target_compile_features(MidiLearnTests PRIVATE cxx_std_17)
 
 add_test(NAME MidiLearn.All COMMAND MidiLearnTests)
@@ -395,7 +395,7 @@ add_test(NAME MidiLearn.ReconnectDispatch COMMAND MidiLearnTests reconnect)
 add_executable(PersistenceTests
     tests/persistence/PersistenceTests.cpp
 )
-target_link_libraries(PersistenceTests PRIVATE DJAppPersistence)
+target_link_libraries(PersistenceTests PRIVATE DeckflaxiaPersistence)
 target_compile_features(PersistenceTests PRIVATE cxx_std_17)
 
 add_test(NAME Persistence.All COMMAND PersistenceTests)
@@ -410,7 +410,7 @@ add_test(NAME SQLitePersistence.LockedDatabase COMMAND PersistenceTests sqlite-l
 add_executable(LibraryAnalysisTests
     tests/library/LibraryAnalysisTests.cpp
 )
-target_link_libraries(LibraryAnalysisTests PRIVATE DJAppAnalysis)
+target_link_libraries(LibraryAnalysisTests PRIVATE DeckflaxiaAnalysis)
 target_compile_features(LibraryAnalysisTests PRIVATE cxx_std_17)
 
 add_test(NAME Library.All COMMAND LibraryAnalysisTests)
@@ -423,7 +423,7 @@ add_test(NAME Analysis.ResumeJob COMMAND LibraryAnalysisTests analysis-resume)
 add_executable(UiShellTests
     tests/ui/UiShellTests.cpp
 )
-target_link_libraries(UiShellTests PRIVATE DJAppUiShell)
+target_link_libraries(UiShellTests PRIVATE DeckflaxiaUiShell)
 target_compile_features(UiShellTests PRIVATE cxx_std_17)
 
 add_test(NAME UiShell.All COMMAND UiShellTests)
@@ -432,7 +432,7 @@ add_test(NAME UiShell.EmptyLibrary COMMAND UiShellTests empty)
 add_executable(JuceUiSmokeTests
     tests/ui/JuceUiSmokeTests.cpp
 )
-target_link_libraries(JuceUiSmokeTests PRIVATE DJAppUiShell)
+target_link_libraries(JuceUiSmokeTests PRIVATE DeckflaxiaUiShell)
 target_compile_features(JuceUiSmokeTests PRIVATE cxx_std_17)
 
 add_test(NAME JuceUi.ModelSnapshot COMMAND JuceUiSmokeTests snapshot)
@@ -441,27 +441,27 @@ add_test(NAME JuceUi.UnavailableSurface COMMAND JuceUiSmokeTests unavailable)
 add_executable(BrowserWaveformBeatgridTests
     tests/ui/BrowserWaveformBeatgridTests.cpp
 )
-target_link_libraries(BrowserWaveformBeatgridTests PRIVATE DJAppUiShell DJAppAnalysis)
+target_link_libraries(BrowserWaveformBeatgridTests PRIVATE DeckflaxiaUiShell DeckflaxiaAnalysis)
 target_compile_features(BrowserWaveformBeatgridTests PRIVATE cxx_std_17)
 
-add_test(NAME BrowserWaveformBeatgrid.All COMMAND BrowserWaveformBeatgridTests all ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME BrowserWaveformBeatgrid.ImportClassification COMMAND BrowserWaveformBeatgridTests import ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME BrowserWaveformBeatgrid.WaveformPrimitive COMMAND BrowserWaveformBeatgridTests waveform ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME BrowserWaveformBeatgrid.BeatgridPersistence COMMAND BrowserWaveformBeatgridTests beatgrid ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME BrowserWaveformBeatgrid.All COMMAND BrowserWaveformBeatgridTests all ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME BrowserWaveformBeatgrid.ImportClassification COMMAND BrowserWaveformBeatgridTests import ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME BrowserWaveformBeatgrid.WaveformPrimitive COMMAND BrowserWaveformBeatgridTests waveform ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME BrowserWaveformBeatgrid.BeatgridPersistence COMMAND BrowserWaveformBeatgridTests beatgrid ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
 
-if(DJAPP_HAS_JUCE)
-    add_test(NAME JuceUi.ComponentTree COMMAND DJApp --juce-ui-smoke-test --dump-components --exit-after-init)
-    add_test(NAME JuceUi.Screenshot COMMAND DJApp --juce-ui-smoke-test --screenshot ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-6-ui.png --exit-after-init)
+if(DECKFLAXIA_HAS_JUCE)
+    add_test(NAME JuceUi.ComponentTree COMMAND Deckflaxia --juce-ui-smoke-test --dump-components --exit-after-init)
+    add_test(NAME JuceUi.Screenshot COMMAND Deckflaxia --juce-ui-smoke-test --screenshot ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-6-ui.png --exit-after-init)
 else()
-    add_test(NAME JuceUi.ComponentTreeUnavailable COMMAND DJApp --juce-ui-smoke-test --dump-components --exit-after-init)
-    add_test(NAME JuceUi.ScreenshotUnavailable COMMAND DJApp --juce-ui-smoke-test --screenshot ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-6-ui.png --exit-after-init)
+    add_test(NAME JuceUi.ComponentTreeUnavailable COMMAND Deckflaxia --juce-ui-smoke-test --dump-components --exit-after-init)
+    add_test(NAME JuceUi.ScreenshotUnavailable COMMAND Deckflaxia --juce-ui-smoke-test --screenshot ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-6-ui.png --exit-after-init)
     set_tests_properties(JuceUi.ScreenshotUnavailable PROPERTIES WILL_FAIL TRUE)
 endif()
 
 add_executable(PluginManagerTests
     tests/plugins/PluginManagerTests.cpp
 )
-target_link_libraries(PluginManagerTests PRIVATE DJAppPlugins DJAppDecks)
+target_link_libraries(PluginManagerTests PRIVATE DeckflaxiaPlugins DeckflaxiaDecks)
 target_compile_features(PluginManagerTests PRIVATE cxx_std_17)
 
 add_test(NAME Plugin.All COMMAND PluginManagerTests)
@@ -469,86 +469,86 @@ add_test(NAME Plugin.ScanCache COMMAND PluginManagerTests scan-cache)
 add_test(NAME Plugin.Blacklist COMMAND PluginManagerTests blacklist)
 add_test(NAME Plugin.SequencerMidiRouting COMMAND PluginManagerTests midi-routing)
 
-set(DJAPP_PLUGIN_FIXTURE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/plugins)
+set(DECKFLAXIA_PLUGIN_FIXTURE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/plugins)
 
 add_executable(VST3ProcessingTests
     tests/plugins/VST3ProcessingTests.cpp
 )
-target_link_libraries(VST3ProcessingTests PRIVATE DJAppDecks DJAppPlugins DJAppPersistence)
+target_link_libraries(VST3ProcessingTests PRIVATE DeckflaxiaDecks DeckflaxiaPlugins DeckflaxiaPersistence)
 target_compile_features(VST3ProcessingTests PRIVATE cxx_std_17)
 
-add_test(NAME VST3Processing.All COMMAND VST3ProcessingTests all ${DJAPP_PLUGIN_FIXTURE_DIR})
-add_test(NAME VST3Processing.DeckProcessingChangesAudio COMMAND VST3ProcessingTests deck ${DJAPP_PLUGIN_FIXTURE_DIR})
-add_test(NAME VST3Processing.ParameterLatency COMMAND VST3ProcessingTests parameters ${DJAPP_PLUGIN_FIXTURE_DIR})
-add_test(NAME VST3Processing.MasterChainStateReload COMMAND VST3ProcessingTests master-state ${DJAPP_PLUGIN_FIXTURE_DIR})
-add_test(NAME VST3Processing.SmokeSurface COMMAND VST3ProcessingTests smoke ${DJAPP_PLUGIN_FIXTURE_DIR})
-add_test(NAME VST3Processing.AppSmoke COMMAND DJApp --vst3-processing-smoke-test --chain deck-a --fixtures ${DJAPP_PLUGIN_FIXTURE_DIR} --render ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-10-deck-vst3.wav --exit-after-init)
+add_test(NAME VST3Processing.All COMMAND VST3ProcessingTests all ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
+add_test(NAME VST3Processing.DeckProcessingChangesAudio COMMAND VST3ProcessingTests deck ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
+add_test(NAME VST3Processing.ParameterLatency COMMAND VST3ProcessingTests parameters ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
+add_test(NAME VST3Processing.MasterChainStateReload COMMAND VST3ProcessingTests master-state ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
+add_test(NAME VST3Processing.SmokeSurface COMMAND VST3ProcessingTests smoke ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
+add_test(NAME VST3Processing.AppSmoke COMMAND Deckflaxia --vst3-processing-smoke-test --chain deck-a --fixtures ${DECKFLAXIA_PLUGIN_FIXTURE_DIR} --render ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-10-deck-vst3.wav --exit-after-init)
 
 add_executable(VST3EditorUiTests
     tests/ui/VST3EditorUiTests.cpp
 )
-target_link_libraries(VST3EditorUiTests PRIVATE DJAppUiShell DJAppDecks DJAppPlugins DJAppPersistence)
+target_link_libraries(VST3EditorUiTests PRIVATE DeckflaxiaUiShell DeckflaxiaDecks DeckflaxiaPlugins DeckflaxiaPersistence)
 target_compile_features(VST3EditorUiTests PRIVATE cxx_std_17)
 
-add_test(NAME VST3EditorUi.All COMMAND VST3EditorUiTests all ${DJAPP_PLUGIN_FIXTURE_DIR})
-add_test(NAME VST3EditorUi.ModelControls COMMAND VST3EditorUiTests model ${DJAPP_PLUGIN_FIXTURE_DIR})
-add_test(NAME VST3EditorUi.NoEditorGenericFallback COMMAND VST3EditorUiTests no-editor ${DJAPP_PLUGIN_FIXTURE_DIR})
-add_test(NAME VST3EditorUi.AppSmoke COMMAND DJApp --vst3-editor-smoke-test --fixtures ${DJAPP_PLUGIN_FIXTURE_DIR} --screenshot ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-11-editor.png --exit-after-init)
+add_test(NAME VST3EditorUi.All COMMAND VST3EditorUiTests all ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
+add_test(NAME VST3EditorUi.ModelControls COMMAND VST3EditorUiTests model ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
+add_test(NAME VST3EditorUi.NoEditorGenericFallback COMMAND VST3EditorUiTests no-editor ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
+add_test(NAME VST3EditorUi.AppSmoke COMMAND Deckflaxia --vst3-editor-smoke-test --fixtures ${DECKFLAXIA_PLUGIN_FIXTURE_DIR} --screenshot ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-11-editor.png --exit-after-init)
 
 
 add_executable(PluginSandboxTests
     tests/plugins/PluginSandboxTests.cpp
 )
-target_link_libraries(PluginSandboxTests PRIVATE DJAppPlugins DJAppPersistence)
+target_link_libraries(PluginSandboxTests PRIVATE DeckflaxiaPlugins DeckflaxiaPersistence)
 target_compile_features(PluginSandboxTests PRIVATE cxx_std_17)
 
-add_test(NAME PluginSandbox.All COMMAND PluginSandboxTests all ${DJAPP_PLUGIN_FIXTURE_DIR} $<TARGET_FILE:DJAppPluginSandboxHelper>)
-add_test(NAME PluginSandbox.HelperLimit COMMAND PluginSandboxTests limit ${DJAPP_PLUGIN_FIXTURE_DIR} $<TARGET_FILE:DJAppPluginSandboxHelper>)
-add_test(NAME PluginSandbox.CrashRestartBlacklist COMMAND PluginSandboxTests crash ${DJAPP_PLUGIN_FIXTURE_DIR} $<TARGET_FILE:DJAppPluginSandboxHelper>)
-add_test(NAME PluginSandbox.ControlIpc COMMAND PluginSandboxTests control ${DJAPP_PLUGIN_FIXTURE_DIR} $<TARGET_FILE:DJAppPluginSandboxHelper>)
-add_test(NAME PluginSandbox.AudioRoundtrip COMMAND PluginSandboxTests audio ${DJAPP_PLUGIN_FIXTURE_DIR} $<TARGET_FILE:DJAppPluginSandboxHelper>)
-add_test(NAME PluginSandbox.SmokeSurface COMMAND PluginSandboxTests smoke ${DJAPP_PLUGIN_FIXTURE_DIR} $<TARGET_FILE:DJAppPluginSandboxHelper>)
-add_test(NAME PluginSandbox.AppSmoke COMMAND DJApp --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures ${DJAPP_PLUGIN_FIXTURE_DIR} --exit-after-init)
+add_test(NAME PluginSandbox.All COMMAND PluginSandboxTests all ${DECKFLAXIA_PLUGIN_FIXTURE_DIR} $<TARGET_FILE:DeckflaxiaPluginSandboxHelper>)
+add_test(NAME PluginSandbox.HelperLimit COMMAND PluginSandboxTests limit ${DECKFLAXIA_PLUGIN_FIXTURE_DIR} $<TARGET_FILE:DeckflaxiaPluginSandboxHelper>)
+add_test(NAME PluginSandbox.CrashRestartBlacklist COMMAND PluginSandboxTests crash ${DECKFLAXIA_PLUGIN_FIXTURE_DIR} $<TARGET_FILE:DeckflaxiaPluginSandboxHelper>)
+add_test(NAME PluginSandbox.ControlIpc COMMAND PluginSandboxTests control ${DECKFLAXIA_PLUGIN_FIXTURE_DIR} $<TARGET_FILE:DeckflaxiaPluginSandboxHelper>)
+add_test(NAME PluginSandbox.AudioRoundtrip COMMAND PluginSandboxTests audio ${DECKFLAXIA_PLUGIN_FIXTURE_DIR} $<TARGET_FILE:DeckflaxiaPluginSandboxHelper>)
+add_test(NAME PluginSandbox.SmokeSurface COMMAND PluginSandboxTests smoke ${DECKFLAXIA_PLUGIN_FIXTURE_DIR} $<TARGET_FILE:DeckflaxiaPluginSandboxHelper>)
+add_test(NAME PluginSandbox.AppSmoke COMMAND Deckflaxia --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures ${DECKFLAXIA_PLUGIN_FIXTURE_DIR} --exit-after-init)
 add_test(NAME PluginSandbox.HelperPackaging COMMAND ${CMAKE_COMMAND}
-    -DDJAPP_APP_PATH=$<TARGET_FILE:DJApp>
-    -DDJAPP_HELPER_PATH=$<TARGET_FILE:DJAppPluginSandboxHelper>
+    -DDECKFLAXIA_APP_PATH=$<TARGET_FILE:Deckflaxia>
+    -DDECKFLAXIA_HELPER_PATH=$<TARGET_FILE:DeckflaxiaPluginSandboxHelper>
     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/PluginSandboxPackagingCheck.cmake)
 
 add_executable(PlayableSmokeTests
     tests/PlayableSmokeTests.cpp
 )
-target_link_libraries(PlayableSmokeTests PRIVATE DJAppAlphaSmoke)
+target_link_libraries(PlayableSmokeTests PRIVATE DeckflaxiaAlphaSmoke)
 target_compile_features(PlayableSmokeTests PRIVATE cxx_std_17)
 
-add_test(NAME PlayableSmoke.All COMMAND PlayableSmokeTests all ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/task-13-restart-test.db)
-add_test(NAME PlayableSmoke.Workflow COMMAND PlayableSmokeTests workflow ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/task-13-restart-test.db)
-add_test(NAME PlayableSmoke.Restart COMMAND PlayableSmokeTests restart ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/task-13-restart-test.db)
-add_test(NAME ProductionWorkflowSmoke.Library COMMAND PlayableSmokeTests production ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/task-16-restart-test.db)
-add_test(NAME ScopeAudit.Library COMMAND PlayableSmokeTests scope-audit ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/task-16-restart-test.db)
-add_test(NAME PlayableSmoke.AppSmoke COMMAND DJApp --playable-smoke-test --fixtures ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} --screenshot ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-13-playable.png --render ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-13-mix.wav --exit-after-init)
-add_test(NAME PlayableSmoke.AppRestart COMMAND DJApp --playable-smoke-test --fixtures ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} --db ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-13-restart.db --exit-after-init)
-add_test(NAME PlayableSmoke.AppRestartRestore COMMAND DJApp --playable-smoke-test --fixtures ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} --db ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-13-restart.db --expect-restored-session --exit-after-init)
+add_test(NAME PlayableSmoke.All COMMAND PlayableSmokeTests all ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/task-13-restart-test.db)
+add_test(NAME PlayableSmoke.Workflow COMMAND PlayableSmokeTests workflow ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/task-13-restart-test.db)
+add_test(NAME PlayableSmoke.Restart COMMAND PlayableSmokeTests restart ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/task-13-restart-test.db)
+add_test(NAME ProductionWorkflowSmoke.Library COMMAND PlayableSmokeTests production ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/task-16-restart-test.db)
+add_test(NAME ScopeAudit.Library COMMAND PlayableSmokeTests scope-audit ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/task-16-restart-test.db)
+add_test(NAME PlayableSmoke.AppSmoke COMMAND Deckflaxia --playable-smoke-test --fixtures ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} --screenshot ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-13-playable.png --render ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-13-mix.wav --exit-after-init)
+add_test(NAME PlayableSmoke.AppRestart COMMAND Deckflaxia --playable-smoke-test --fixtures ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} --db ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-13-restart.db --exit-after-init)
+add_test(NAME PlayableSmoke.AppRestartRestore COMMAND Deckflaxia --playable-smoke-test --fixtures ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} --db ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-13-restart.db --expect-restored-session --exit-after-init)
 set_tests_properties(PlayableSmoke.AppRestartRestore PROPERTIES DEPENDS PlayableSmoke.AppRestart)
-add_test(NAME ProductionWorkflowSmoke.AppSmoke COMMAND DJApp --production-dj-workflow-smoke-test --fixtures ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} --exit-after-init)
-add_test(NAME ScopeAudit.AppSmoke COMMAND DJApp --scope-audit --forbid "Windows,recording,smart playlists,samplers,streaming,DVS,timecode,Rekordbox,Serato,cloud,accounts,marketplace,per-plugin sandbox,embedded plugin editor" --paths src tests docs cmake)
+add_test(NAME ProductionWorkflowSmoke.AppSmoke COMMAND Deckflaxia --production-dj-workflow-smoke-test --fixtures ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} --exit-after-init)
+add_test(NAME ScopeAudit.AppSmoke COMMAND Deckflaxia --scope-audit --forbid "Windows,recording,smart playlists,samplers,streaming,DVS,timecode,Rekordbox,Serato,cloud,accounts,marketplace,per-plugin sandbox,embedded plugin editor" --paths src tests docs cmake)
 set_tests_properties(ProductionWorkflowSmoke.Library ScopeAudit.Library ProductionWorkflowSmoke.AppSmoke ScopeAudit.AppSmoke PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(PerformanceHardeningTests
     tests/PerformanceHardeningTests.cpp
 )
-target_link_libraries(PerformanceHardeningTests PRIVATE DJAppAlphaSmoke DJAppDecks DJAppPlugins DJAppPersistence)
+target_link_libraries(PerformanceHardeningTests PRIVATE DeckflaxiaAlphaSmoke DeckflaxiaDecks DeckflaxiaPlugins DeckflaxiaPersistence)
 target_compile_features(PerformanceHardeningTests PRIVATE cxx_std_17)
 
-add_test(NAME PerformanceHardening.All COMMAND PerformanceHardeningTests all ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME PerformanceHardening.Budgets COMMAND PerformanceHardeningTests budgets ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME PerformanceHardening.Faults COMMAND PerformanceHardeningTests faults ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME PerformanceHardening.AppSmoke COMMAND DJApp --performance-smoke-test --fixtures ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR} --sample-rate 48000 --buffer-size 512 --exit-after-init)
+add_test(NAME PerformanceHardening.All COMMAND PerformanceHardeningTests all ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME PerformanceHardening.Budgets COMMAND PerformanceHardeningTests budgets ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME PerformanceHardening.Faults COMMAND PerformanceHardeningTests faults ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME PerformanceHardening.AppSmoke COMMAND Deckflaxia --performance-smoke-test --fixtures ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR} --sample-rate 48000 --buffer-size 512 --exit-after-init)
 set_tests_properties(PerformanceHardening.All PerformanceHardening.Budgets PerformanceHardening.Faults PerformanceHardening.AppSmoke PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(AlphaSmokeTests
     tests/AlphaSmokeTests.cpp
 )
-target_link_libraries(AlphaSmokeTests PRIVATE DJAppAlphaSmoke)
+target_link_libraries(AlphaSmokeTests PRIVATE DeckflaxiaAlphaSmoke)
 target_compile_features(AlphaSmokeTests PRIVATE cxx_std_17)
 
 add_test(NAME AlphaSmoke.All COMMAND AlphaSmokeTests)
@@ -557,7 +557,7 @@ add_test(NAME AlphaSmoke.EndToEnd COMMAND AlphaSmokeTests end-to-end)
 add_executable(EdgeCaseTests
     tests/EdgeCaseTests.cpp
 )
-target_link_libraries(EdgeCaseTests PRIVATE DJAppAlphaSmoke)
+target_link_libraries(EdgeCaseTests PRIVATE DeckflaxiaAlphaSmoke)
 target_compile_features(EdgeCaseTests PRIVATE cxx_std_17)
 
 add_test(NAME EdgeCases.All COMMAND EdgeCaseTests)
@@ -574,6 +574,6 @@ add_executable(FixtureTests
 )
 target_compile_features(FixtureTests PRIVATE cxx_std_17)
 
-add_test(NAME Fixtures.All COMMAND FixtureTests all ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME Fixtures.Generate COMMAND FixtureTests generate ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
-add_test(NAME Fixtures.CorruptAudio COMMAND FixtureTests corrupt ${DJAPP_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME Fixtures.All COMMAND FixtureTests all ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME Fixtures.Generate COMMAND FixtureTests generate ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME Fixtures.CorruptAudio COMMAND FixtureTests corrupt ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})

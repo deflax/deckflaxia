@@ -17,9 +17,9 @@ struct LoggerService {};
 struct BlockingMutexService {};
 struct AnalysisService {};
 
-class FixedCommandQueue final : public djapp::audio::AudioGraphCommandQueue {
+class FixedCommandQueue final : public deckflaxia::audio::AudioGraphCommandQueue {
 public:
-    bool tryPushFromMessageThread(const djapp::audio::AudioGraphCommand& command) noexcept override {
+    bool tryPushFromMessageThread(const deckflaxia::audio::AudioGraphCommand& command) noexcept override {
         if (count_ == commands_.size()) {
             return false;
         }
@@ -29,7 +29,7 @@ public:
         return true;
     }
 
-    bool tryPopForAudioThread(djapp::audio::AudioGraphCommand& command) noexcept override {
+    bool tryPopForAudioThread(deckflaxia::audio::AudioGraphCommand& command) noexcept override {
         if (readIndex_ == count_) {
             return false;
         }
@@ -40,7 +40,7 @@ public:
     }
 
 private:
-    std::array<djapp::audio::AudioGraphCommand, 4> commands_{};
+    std::array<deckflaxia::audio::AudioGraphCommand, 4> commands_{};
     std::size_t count_{};
     std::size_t readIndex_{};
 };
@@ -55,44 +55,44 @@ int expect(bool condition, const std::string& message) {
 
 }
 
-static_assert(djapp::audio::areAudioCallbackDependenciesAllowed<
-              const djapp::audio::ImmutableAudioSnapshot&,
-              djapp::audio::AudioGraphCommandQueue&,
-              djapp::audio::AudioCallbackContract>);
-static_assert(!djapp::audio::isAudioCallbackDependencyAllowed<UiPanelService>);
-static_assert(!djapp::audio::isAudioCallbackDependencyAllowed<DatabaseService>);
-static_assert(!djapp::audio::isAudioCallbackDependencyAllowed<PluginScanService>);
-static_assert(!djapp::audio::isAudioCallbackDependencyAllowed<FilesystemImportService>);
-static_assert(!djapp::audio::isAudioCallbackDependencyAllowed<LoggerService>);
-static_assert(!djapp::audio::isAudioCallbackDependencyAllowed<BlockingMutexService>);
-static_assert(!djapp::audio::isAudioCallbackDependencyAllowed<AnalysisService>);
-static_assert(!djapp::audio::isAudioCallbackDependencyAllowed<djapp::app::UiToEngineCommandQueue>);
-static_assert(!djapp::audio::isAudioCallbackDependencyAllowed<djapp::core::CancellableBackgroundWorker>);
-static_assert(std::is_trivially_copyable_v<djapp::audio::AudioGraphCommand>);
-static_assert(std::is_trivially_copyable_v<djapp::audio::ImmutableAudioSnapshot>);
-static_assert(djapp::audio::kAlphaSampleRateBufferMatrix.size() == 6);
+static_assert(deckflaxia::audio::areAudioCallbackDependenciesAllowed<
+              const deckflaxia::audio::ImmutableAudioSnapshot&,
+              deckflaxia::audio::AudioGraphCommandQueue&,
+              deckflaxia::audio::AudioCallbackContract>);
+static_assert(!deckflaxia::audio::isAudioCallbackDependencyAllowed<UiPanelService>);
+static_assert(!deckflaxia::audio::isAudioCallbackDependencyAllowed<DatabaseService>);
+static_assert(!deckflaxia::audio::isAudioCallbackDependencyAllowed<PluginScanService>);
+static_assert(!deckflaxia::audio::isAudioCallbackDependencyAllowed<FilesystemImportService>);
+static_assert(!deckflaxia::audio::isAudioCallbackDependencyAllowed<LoggerService>);
+static_assert(!deckflaxia::audio::isAudioCallbackDependencyAllowed<BlockingMutexService>);
+static_assert(!deckflaxia::audio::isAudioCallbackDependencyAllowed<AnalysisService>);
+static_assert(!deckflaxia::audio::isAudioCallbackDependencyAllowed<deckflaxia::app::UiToEngineCommandQueue>);
+static_assert(!deckflaxia::audio::isAudioCallbackDependencyAllowed<deckflaxia::core::CancellableBackgroundWorker>);
+static_assert(std::is_trivially_copyable_v<deckflaxia::audio::AudioGraphCommand>);
+static_assert(std::is_trivially_copyable_v<deckflaxia::audio::ImmutableAudioSnapshot>);
+static_assert(deckflaxia::audio::kAlphaSampleRateBufferMatrix.size() == 6);
 
 int main() {
     FixedCommandQueue queue;
-    djapp::app::UiToEngineCommandQueue uiCommands(queue);
-    const djapp::audio::ImmutableAudioSnapshot snapshot{42, 0.75F, 4};
-    const djapp::audio::AudioCallbackContract callback(snapshot, queue);
+    deckflaxia::app::UiToEngineCommandQueue uiCommands(queue);
+    const deckflaxia::audio::ImmutableAudioSnapshot snapshot{42, 0.75F, 4};
+    const deckflaxia::audio::AudioCallbackContract callback(snapshot, queue);
 
     if (expect(callback.snapshot().revision() == 42, "callback contract should expose immutable snapshot") != 0) {
         return 1;
     }
 
-    const djapp::audio::AudioGraphCommand command{djapp::audio::AudioGraphCommandKind::SetDeckGain, 2, 0.5F, 0};
+    const deckflaxia::audio::AudioGraphCommand command{deckflaxia::audio::AudioGraphCommandKind::SetDeckGain, 2, 0.5F, 0};
     if (expect(uiCommands.trySendFromMessageThread(command), "message thread should enqueue graph command") != 0) {
         return 1;
     }
 
-    djapp::audio::AudioGraphCommand popped{};
+    deckflaxia::audio::AudioGraphCommand popped{};
     if (expect(callback.commandQueue().tryPopForAudioThread(popped), "audio thread should pop graph command") != 0) {
         return 1;
     }
 
-    if (expect(popped.kind == djapp::audio::AudioGraphCommandKind::SetDeckGain, "command kind should round trip") != 0) {
+    if (expect(popped.kind == deckflaxia::audio::AudioGraphCommandKind::SetDeckGain, "command kind should round trip") != 0) {
         return 1;
     }
 

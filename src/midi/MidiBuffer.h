@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace djapp::midi {
+namespace deckflaxia::midi {
 
 constexpr std::size_t kMaxMidiEventsPerBlock = 128;
 

@@ -4,7 +4,7 @@
 
 #include <ostream>
 
-namespace djapp::ui {
+namespace deckflaxia::ui {
 
 std::vector<BrowserTableRowModel> BrowserWaveformBeatgridModel::buildBrowserRows(const std::vector<library::AudioImportClassification>& imports) const {
     std::vector<BrowserTableRowModel> rows;

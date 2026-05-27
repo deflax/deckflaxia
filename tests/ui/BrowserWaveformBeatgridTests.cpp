@@ -19,7 +19,7 @@ int expect(bool condition, const std::string& message) {
     return 0;
 }
 
-std::vector<djapp::library::FilesystemEntry> fixtureEntries(const std::filesystem::path& fixtureDir) {
+std::vector<deckflaxia::library::FilesystemEntry> fixtureEntries(const std::filesystem::path& fixtureDir) {
     return {{(fixtureDir / "track_120bpm.wav").string(), true},
             {(fixtureDir / "track_128bpm.wav").string(), true},
             {(fixtureDir / "track_95bpm.mp3").string(), true},
@@ -29,50 +29,50 @@ std::vector<djapp::library::FilesystemEntry> fixtureEntries(const std::filesyste
 }
 
 int testImportClassification(const std::filesystem::path& fixtureDir) {
-    const auto imports = djapp::library::classifyAudioImports(fixtureEntries(fixtureDir));
+    const auto imports = deckflaxia::library::classifyAudioImports(fixtureEntries(fixtureDir));
     if (expect(imports.size() == 6U, "fixture import classification should cover all entries") != 0) {
         return 1;
     }
     if (expect(imports[0].importable() && imports[0].format == "wav", "WAV fixture should be importable") != 0) {
         return 1;
     }
-    if (expect(imports[3].error == djapp::library::AudioImportError::CorruptAudio, "corrupt WAV should return typed corrupt error") != 0) {
+    if (expect(imports[3].error == deckflaxia::library::AudioImportError::CorruptAudio, "corrupt WAV should return typed corrupt error") != 0) {
         return 1;
     }
-    if (expect(imports[4].error == djapp::library::AudioImportError::UnsupportedFormat, "text fixture should return typed unsupported error") != 0) {
+    if (expect(imports[4].error == deckflaxia::library::AudioImportError::UnsupportedFormat, "text fixture should return typed unsupported error") != 0) {
         return 1;
     }
-    if (expect(imports[5].error == djapp::library::AudioImportError::NotRegularFile, "folder entry should return typed regular-file error") != 0) {
+    if (expect(imports[5].error == deckflaxia::library::AudioImportError::NotRegularFile, "folder entry should return typed regular-file error") != 0) {
         return 1;
     }
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
     if (expect(imports[2].format == "mp3", "JUCE MP3 entry should reach platform codec path") != 0) {
         return 1;
     }
 #else
-    if (expect(imports[2].error == djapp::library::AudioImportError::ExternalToolRequired, "fallback MP3 should remain external-tool-required") != 0) {
+    if (expect(imports[2].error == deckflaxia::library::AudioImportError::ExternalToolRequired, "fallback MP3 should remain external-tool-required") != 0) {
         return 1;
     }
 #endif
-    const djapp::ui::BrowserWaveformBeatgridModel model;
+    const deckflaxia::ui::BrowserWaveformBeatgridModel model;
     const auto rows = model.buildBrowserRows(imports);
     if (expect(rows.size() == imports.size() && rows[0].trackId.find("track:") == 0U, "browser table rows should expose deterministic track ids") != 0) {
         return 1;
     }
-    std::cout << "BrowserWaveformBeatgrid.ImportClassification wav=importable mp3=" << djapp::library::toString(imports[2].error)
-              << " corrupt=" << djapp::library::toString(imports[3].error) << " text=" << djapp::library::toString(imports[4].error) << '\n';
+    std::cout << "BrowserWaveformBeatgrid.ImportClassification wav=importable mp3=" << deckflaxia::library::toString(imports[2].error)
+              << " corrupt=" << deckflaxia::library::toString(imports[3].error) << " text=" << deckflaxia::library::toString(imports[4].error) << '\n';
     return 0;
 }
 
 int testWaveformPrimitive(const std::filesystem::path& fixtureDir) {
-    const auto imports = djapp::library::classifyAudioImports(fixtureEntries(fixtureDir));
-    const djapp::analysis::WaveformCacheModel cache;
+    const auto imports = deckflaxia::library::classifyAudioImports(fixtureEntries(fixtureDir));
+    const deckflaxia::analysis::WaveformCacheModel cache;
     const auto wav = cache.buildPrimitiveMetadata("track:wav", imports[0]);
     const auto corrupt = cache.buildPrimitiveMetadata("track:corrupt", imports[3]);
     if (expect(wav.summaryPointCount == 128U && std::abs(wav.durationSeconds - 2.0) < 0.000001, "WAV waveform primitive metadata should be deterministic") != 0) {
         return 1;
     }
-    if (expect(corrupt.summaryPointCount == 0U && corrupt.importError == djapp::library::AudioImportError::CorruptAudio, "corrupt waveform should not fake primitives") != 0) {
+    if (expect(corrupt.summaryPointCount == 0U && corrupt.importError == deckflaxia::library::AudioImportError::CorruptAudio, "corrupt waveform should not fake primitives") != 0) {
         return 1;
     }
     std::cout << "BrowserWaveformBeatgrid.WaveformPrimitive points=" << wav.summaryPointCount << " juce-thumbnail=" << (wav.juceThumbnailAvailable ? "available" : "unavailable") << '\n';
@@ -80,9 +80,9 @@ int testWaveformPrimitive(const std::filesystem::path& fixtureDir) {
 }
 
 int testBeatgridPersistence(const std::filesystem::path&) {
-    using namespace djapp::core;
-    using namespace djapp::persistence;
-    using namespace djapp::ui;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::persistence;
+    using namespace deckflaxia::ui;
 
     PersistenceService service;
     const auto track = LibraryTrack{"track:beatgrid-edit", "Beatgrid Edit", "Fixture", BeatgridMetadata::fromBpm(120.0, 0.0).value, MusicalKey::Unknown};

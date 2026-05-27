@@ -20,13 +20,13 @@ int expect(bool condition, const std::string& message) {
 }
 
 float renderWithPluginEditorRoundTrip(bool bypassed) {
-    djapp::decks::FourDeckPlaybackCore core;
-    const auto deckId = djapp::core::DeckId::fromIndex(0).value;
-    auto media = djapp::decks::PreparedAudioMedia::deterministicTestWav(4096, 48000);
-    if (!core.loadDeck(deckId, djapp::decks::AudioDeckMediaReference::deterministicTestWav(std::move(media))).ok()) {
+    deckflaxia::decks::FourDeckPlaybackCore core;
+    const auto deckId = deckflaxia::core::DeckId::fromIndex(0).value;
+    auto media = deckflaxia::decks::PreparedAudioMedia::deterministicTestWav(4096, 48000);
+    if (!core.loadDeck(deckId, deckflaxia::decks::AudioDeckMediaReference::deterministicTestWav(std::move(media))).ok()) {
         return 0.0F;
     }
-    djapp::core::PluginChainDescriptor chain{"deck-a", {djapp::plugins::makeDeterministicGainPlugin(0.25, bypassed)}};
+    deckflaxia::core::PluginChainDescriptor chain{"deck-a", {deckflaxia::plugins::makeDeterministicGainPlugin(0.25, bypassed)}};
     if (!core.setDeckPluginChain(deckId, chain).ok()) {
         return 0.0F;
     }
@@ -35,17 +35,17 @@ float renderWithPluginEditorRoundTrip(bool bypassed) {
     if (!open.genericParameterSurfaceAvailable || close.open) {
         return 0.0F;
     }
-    if (core.play(deckId) != djapp::decks::FourDeckPlaybackError::None) {
+    if (core.play(deckId) != deckflaxia::decks::FourDeckPlaybackError::None) {
         return 0.0F;
     }
-    const auto render = core.renderOffline(djapp::audio::AudioRenderConfiguration{48000, 512}, 1);
+    const auto render = core.renderOffline(deckflaxia::audio::AudioRenderConfiguration{48000, 512}, 1);
     if (!render.ok()) {
         return 0.0F;
     }
     const auto& buffer = core.lastInterleavedOutput();
     double sum = 0.0;
     for (std::uint32_t frame = 0; frame < 512U; ++frame) {
-        const auto index = static_cast<std::size_t>(frame) * djapp::decks::kFourDeckOutputChannels;
+        const auto index = static_cast<std::size_t>(frame) * deckflaxia::decks::kFourDeckOutputChannels;
         sum += static_cast<double>(buffer[index]) * static_cast<double>(buffer[index]);
         sum += static_cast<double>(buffer[index + 1U]) * static_cast<double>(buffer[index + 1U]);
     }
@@ -53,17 +53,17 @@ float renderWithPluginEditorRoundTrip(bool bypassed) {
 }
 
 int testModelControls() {
-    auto first = djapp::plugins::makeDeterministicGainPlugin(0.5, false);
-    auto second = djapp::plugins::makeDeterministicGainPlugin(0.25, false);
+    auto first = deckflaxia::plugins::makeDeterministicGainPlugin(0.5, false);
+    auto second = deckflaxia::plugins::makeDeterministicGainPlugin(0.25, false);
     second.identifier = "deterministic:gain-b";
     second.displayName = "Deterministic Gain B";
-    djapp::core::PluginChainDescriptor chain{"deck-a", {first, second}};
+    deckflaxia::core::PluginChainDescriptor chain{"deck-a", {first, second}};
 
-    djapp::plugins::OfflinePluginChainHost host;
-    if (expect(host.configure(djapp::plugins::PluginChainTargetKind::Deck, chain, 48000.0, 512).ok(), "host configure should pass") != 0) {
+    deckflaxia::plugins::OfflinePluginChainHost host;
+    if (expect(host.configure(deckflaxia::plugins::PluginChainTargetKind::Deck, chain, 48000.0, 512).ok(), "host configure should pass") != 0) {
         return 1;
     }
-    auto model = djapp::ui::buildPluginChainEditorModel(djapp::plugins::PluginChainTargetKind::Deck, host.chainState(), host.status());
+    auto model = deckflaxia::ui::buildPluginChainEditorModel(deckflaxia::plugins::PluginChainTargetKind::Deck, host.chainState(), host.status());
     if (expect(model.slots.size() == 2U, "model should expose chain slots") != 0) {
         return 1;
     }
@@ -73,20 +73,20 @@ int testModelControls() {
     if (expect(model.sandboxStatus.find("cross-process") != std::string::npos, "model should disclose sandbox boundary") != 0) {
         return 1;
     }
-    if (expect(djapp::ui::setPluginSlotBypass(chain, 0, true) && chain.plugins[0].bypassed, "bypass command should mutate chain") != 0) {
+    if (expect(deckflaxia::ui::setPluginSlotBypass(chain, 0, true) && chain.plugins[0].bypassed, "bypass command should mutate chain") != 0) {
         return 1;
     }
-    if (expect(djapp::ui::setPluginParameter(chain, 0, "gain", 0.125), "parameter command should mutate chain") != 0) {
+    if (expect(deckflaxia::ui::setPluginParameter(chain, 0, "gain", 0.125), "parameter command should mutate chain") != 0) {
         return 1;
     }
-    if (expect(djapp::ui::movePluginSlot(chain, 1, 0) && chain.plugins[0].displayName == "Deterministic Gain B", "reorder command should move slots") != 0) {
+    if (expect(deckflaxia::ui::movePluginSlot(chain, 1, 0) && chain.plugins[0].displayName == "Deterministic Gain B", "reorder command should move slots") != 0) {
         return 1;
     }
-    if (expect(djapp::ui::removePluginSlot(chain, 1) && chain.plugins.size() == 1U, "remove command should delete slot") != 0) {
+    if (expect(deckflaxia::ui::removePluginSlot(chain, 1) && chain.plugins.size() == 1U, "remove command should delete slot") != 0) {
         return 1;
     }
-    djapp::core::PluginChainDescriptor reloaded;
-    if (expect(djapp::ui::saveAndReloadPluginChain(chain, reloaded) && reloaded.plugins.size() == 1U, "state should save and reload") != 0) {
+    deckflaxia::core::PluginChainDescriptor reloaded;
+    if (expect(deckflaxia::ui::saveAndReloadPluginChain(chain, reloaded) && reloaded.plugins.size() == 1U, "state should save and reload") != 0) {
         return 1;
     }
     std::cout << "VST3EditorUi.ModelControls slots=" << model.slots.size() << " controls=" << model.slots[0].controls.size() << '\n';
@@ -95,7 +95,7 @@ int testModelControls() {
 
 int testNoEditorGenericFallback(const std::filesystem::path& fixtures) {
     std::ostringstream output;
-    const auto result = djapp::ui::runVst3EditorSmokeTest(output, djapp::ui::VST3EditorSmokeOptions{fixtures, ".omo/evidence/real-playable-juce/task-11-editor.png"});
+    const auto result = deckflaxia::ui::runVst3EditorSmokeTest(output, deckflaxia::ui::VST3EditorSmokeOptions{fixtures, ".omo/evidence/real-playable-juce/task-11-editor.png"});
     const auto text = output.str();
     if (expect(result == 0, "editor smoke should pass through fallback surface") != 0) {
         std::cerr << text;

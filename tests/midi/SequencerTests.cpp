@@ -14,35 +14,35 @@ int expect(bool condition, const std::string& message) {
     return 0;
 }
 
-bool eventMatches(const djapp::midi::MidiBufferEvent& event,
+bool eventMatches(const deckflaxia::midi::MidiBufferEvent& event,
                   std::uint32_t offset,
-                  djapp::midi::MidiMessageKind kind,
+                  deckflaxia::midi::MidiMessageKind kind,
                   std::uint8_t note,
                   std::uint8_t velocity) {
     return event.sampleOffset == offset && event.message.kind == kind && event.message.note == note && event.message.velocity == velocity;
 }
 
-djapp::core::MasterClockState runningClock(double bpm, double positionBeats) {
-    auto clock = djapp::core::MasterClockState::stopped(bpm);
+deckflaxia::core::MasterClockState runningClock(double bpm, double positionBeats) {
+    auto clock = deckflaxia::core::MasterClockState::stopped(bpm);
     clock.positionBeats = positionBeats;
     clock.start();
     return clock;
 }
 
-djapp::core::MidiStepPattern fourOnPattern() {
-    auto pattern = djapp::core::MidiStepPattern::sixteenStepDefault(60);
-    pattern.steps[0] = djapp::core::MidiStep{true, 60, 100, 0.25};
-    pattern.steps[1] = djapp::core::MidiStep{true, 62, 90, 0.25};
-    pattern.steps[2] = djapp::core::MidiStep{true, 64, 80, 0.25};
-    pattern.steps[3] = djapp::core::MidiStep{true, 65, 70, 0.25};
+deckflaxia::core::MidiStepPattern fourOnPattern() {
+    auto pattern = deckflaxia::core::MidiStepPattern::sixteenStepDefault(60);
+    pattern.steps[0] = deckflaxia::core::MidiStep{true, 60, 100, 0.25};
+    pattern.steps[1] = deckflaxia::core::MidiStep{true, 62, 90, 0.25};
+    pattern.steps[2] = deckflaxia::core::MidiStep{true, 64, 80, 0.25};
+    pattern.steps[3] = deckflaxia::core::MidiStep{true, 65, 70, 0.25};
     return pattern;
 }
 
 int testDeterministicOffsets() {
-    using namespace djapp::audio;
-    using namespace djapp::core;
-    using namespace djapp::decks;
-    using namespace djapp::midi;
+    using namespace deckflaxia::audio;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::decks;
+    using namespace deckflaxia::midi;
 
     MidiStepSequencerDeck deck(DeckId::fromIndex(0).value);
     deck.setPattern(fourOnPattern());
@@ -85,9 +85,9 @@ int testDeterministicOffsets() {
 }
 
 int testMutedStep() {
-    using namespace djapp::audio;
-    using namespace djapp::core;
-    using namespace djapp::decks;
+    using namespace deckflaxia::audio;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::decks;
 
     MidiStepSequencerDeck deck(DeckId::fromIndex(1).value);
     auto pattern = MidiStepPattern::sixteenStepDefault(36);
@@ -104,10 +104,10 @@ int testMutedStep() {
 }
 
 int testTempoChange() {
-    using namespace djapp::audio;
-    using namespace djapp::core;
-    using namespace djapp::decks;
-    using namespace djapp::midi;
+    using namespace deckflaxia::audio;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::decks;
+    using namespace deckflaxia::midi;
 
     MidiStepSequencerDeck deck(DeckId::fromIndex(2).value);
     deck.setPattern(fourOnPattern());

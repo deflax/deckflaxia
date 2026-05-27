@@ -16,48 +16,48 @@ int expect(bool condition, const std::string& message) {
     return 0;
 }
 
-int expectOk(const djapp::library::FolderImportResult& result, const std::string& message) {
+int expectOk(const deckflaxia::library::FolderImportResult& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
-int expectOk(const djapp::library::LibraryUnitResult& result, const std::string& message) {
+int expectOk(const deckflaxia::library::LibraryUnitResult& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
 template <typename T>
-int expectOk(const djapp::library::LibraryResult<T>& result, const std::string& message) {
+int expectOk(const deckflaxia::library::LibraryResult<T>& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
-int expectOk(const djapp::analysis::AnalysisRunResult& result, const std::string& message) {
+int expectOk(const deckflaxia::analysis::AnalysisRunResult& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
-djapp::core::BackgroundJobTicket libraryTicket(std::uint64_t id) {
-    return djapp::core::BackgroundJobTicket{id, djapp::core::BackgroundJobKind::PersistLibraryChange, djapp::core::BackgroundWorkerRole::DatabaseWorker};
+deckflaxia::core::BackgroundJobTicket libraryTicket(std::uint64_t id) {
+    return deckflaxia::core::BackgroundJobTicket{id, deckflaxia::core::BackgroundJobKind::PersistLibraryChange, deckflaxia::core::BackgroundWorkerRole::DatabaseWorker};
 }
 
-djapp::core::BackgroundJobTicket analysisTicket(std::uint64_t id) {
-    return djapp::core::BackgroundJobTicket{id, djapp::core::BackgroundJobKind::AnalyzeTrack, djapp::core::BackgroundWorkerRole::AnalysisPool};
+deckflaxia::core::BackgroundJobTicket analysisTicket(std::uint64_t id) {
+    return deckflaxia::core::BackgroundJobTicket{id, deckflaxia::core::BackgroundJobKind::AnalyzeTrack, deckflaxia::core::BackgroundWorkerRole::AnalysisPool};
 }
 
-djapp::library::ProLibraryRepository makeLibrary(djapp::persistence::PersistenceService& service) {
-    return djapp::library::ProLibraryRepository{service.libraryTracks(), service.crates(), service.playlists(), service.trackMetadata()};
+deckflaxia::library::ProLibraryRepository makeLibrary(deckflaxia::persistence::PersistenceService& service) {
+    return deckflaxia::library::ProLibraryRepository{service.libraryTracks(), service.crates(), service.playlists(), service.trackMetadata()};
 }
 
-djapp::library::FolderImportRequest twoTrackImport() {
-    return djapp::library::FolderImportRequest{1,
+deckflaxia::library::FolderImportRequest twoTrackImport() {
+    return deckflaxia::library::FolderImportRequest{1,
                                               "crate-alpha",
                                               "Alpha Crate",
-                                              {djapp::library::FilesystemEntry{"/music/alpha.wav", true},
-                                               djapp::library::FilesystemEntry{"/music/readme.txt", true},
-                                               djapp::library::FilesystemEntry{"/music/beta.FLAC", true}}};
+                                              {deckflaxia::library::FilesystemEntry{"/music/alpha.wav", true},
+                                               deckflaxia::library::FilesystemEntry{"/music/readme.txt", true},
+                                               deckflaxia::library::FilesystemEntry{"/music/beta.FLAC", true}}};
 }
 
 int testImportCrate() {
-    using namespace djapp::core;
-    using namespace djapp::library;
-    using namespace djapp::persistence;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::library;
+    using namespace deckflaxia::persistence;
 
     PersistenceService service;
     ProLibraryRepository library = makeLibrary(service);
@@ -94,9 +94,9 @@ int testImportCrate() {
 }
 
 int testMetadataPersistence() {
-    using namespace djapp::core;
-    using namespace djapp::library;
-    using namespace djapp::persistence;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::library;
+    using namespace deckflaxia::persistence;
 
     PersistenceService service;
     ProLibraryRepository library = makeLibrary(service);
@@ -127,8 +127,8 @@ int testMetadataPersistence() {
 }
 
 int testDeletedTrackHandling() {
-    using namespace djapp::library;
-    using namespace djapp::persistence;
+    using namespace deckflaxia::library;
+    using namespace deckflaxia::persistence;
 
     PersistenceService service;
     ProLibraryRepository library = makeLibrary(service);
@@ -140,7 +140,7 @@ int testDeletedTrackHandling() {
     if (expectOk(library.markTrackMissingByPath("/music/alpha.wav"), "deleted track missing mark") != 0) {
         return 1;
     }
-    const auto track = library.findBrowserTrack(djapp::library::trackIdFromPath("/music/alpha.wav"));
+    const auto track = library.findBrowserTrack(deckflaxia::library::trackIdFromPath("/music/alpha.wav"));
     if (expectOk(track, "missing browser track") != 0) {
         return 1;
     }
@@ -148,8 +148,8 @@ int testDeletedTrackHandling() {
 }
 
 int testHugeScanCancellation() {
-    using namespace djapp::library;
-    using namespace djapp::persistence;
+    using namespace deckflaxia::library;
+    using namespace deckflaxia::persistence;
 
     PersistenceService service;
     ProLibraryRepository library = makeLibrary(service);
@@ -172,10 +172,10 @@ int testHugeScanCancellation() {
 }
 
 int testAnalysisResumeJob() {
-    using namespace djapp::analysis;
-    using namespace djapp::core;
-    using namespace djapp::library;
-    using namespace djapp::persistence;
+    using namespace deckflaxia::analysis;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::library;
+    using namespace deckflaxia::persistence;
 
     PersistenceService service;
     ProLibraryRepository library = makeLibrary(service);

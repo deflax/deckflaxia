@@ -20,14 +20,14 @@ The license inventory is written to `build/license-report.spdx.txt`. Real playab
 Presubmit and release-style JUCE validation should configure with:
 
 ```sh
-cmake -S . -B build-juce -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDJAPP_REQUIRE_JUCE=ON -DDJAPP_USE_VENDORED_JUCE=ON
+cmake -S . -B build-juce -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDECKFLAXIA_REQUIRE_JUCE=ON -DDECKFLAXIA_USE_VENDORED_JUCE=ON
 ```
 
-When JUCE is not available, this command must fail clearly and explain both supported setup paths: an installed/exported JUCE CMake package via `-DCMAKE_PREFIX_PATH=/path/to/JUCE/install-or-build`, or a licensed local `third_party/JUCE` checkout. Bootstrap fallback configuration remains available only with `DJAPP_REQUIRE_JUCE=OFF` for early CI/dev checks that do not claim JUCE functionality.
+When JUCE is not available, this command must fail clearly and explain both supported setup paths: an installed/exported JUCE CMake package via `-DCMAKE_PREFIX_PATH=/path/to/JUCE/install-or-build`, or a licensed local `third_party/JUCE` checkout. Bootstrap fallback configuration remains available only with `DECKFLAXIA_REQUIRE_JUCE=OFF` for early CI/dev checks that do not claim JUCE functionality.
 
 The GitHub Actions workflow intentionally has no Windows job. The platform gates are `ubuntu-24.04` and `macos-latest`, and both check out `juce-framework/JUCE` at the pinned `JUCE_REF` into `third_party/JUCE` before running the JUCE-required configure/build/CTest sequence, `plugin-sandbox-helper-packaging-check`, playable smoke, plugin sandbox smoke, current performance-equivalent tempo/overload smokes, and `license-report`. This is a CI-only checkout under JUCE AGPL/commercial terms; JUCE is not vendored in this repository.
 
-`plugin-sandbox-helper-packaging-check` verifies that `DJAppPluginSandboxHelper` was built beside `DJApp` and that `DJAppPluginSandboxHelper --helper-smoke` emits its readiness line. It does not claim OS-level sandbox hardening, notarization, or code signing.
+`plugin-sandbox-helper-packaging-check` verifies that `DeckflaxiaPluginSandboxHelper` was built beside `Deckflaxia` and that `DeckflaxiaPluginSandboxHelper --helper-smoke` emits its readiness line. It does not claim OS-level sandbox hardening, notarization, or code signing.
 
 ## macOS Evidence Requirement
 
@@ -36,7 +36,7 @@ The GitHub Actions macOS job configures, builds, runs helper packaging, CTest, p
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 cmake --build build
-./build/DJApp --smoke-test --exit-after-init
+./build/Deckflaxia --smoke-test --exit-after-init
 ctest --test-dir build --output-on-failure
 ```
 
@@ -50,7 +50,7 @@ Save Task 14 macOS output to `.omo/evidence/real-playable-juce/task-14-macos-ci.
 
 `cmake --build build --target license-report` generates an SPDX-style inventory with:
 
-- DJApp project source as `AGPL-3.0-or-later`.
+- Deckflaxia project source as `AGPL-3.0-or-later`.
 - JUCE framework as `AGPL-3.0-only OR LicenseRef-JUCE-Commercial`.
 - Steinberg VST3 SDK as `MIT`.
 - Rubber Band as optional system `GPL-2.0-or-later` for the guarded primary stretch engine; live playback uses the real-time boundary when present.

@@ -23,7 +23,7 @@ jobs:
           path: third_party/JUCE
 
       - name: Configure JUCE-required build
-        run: cmake -S . -B build-juce -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDJAPP_REQUIRE_JUCE=ON -DDJAPP_USE_VENDORED_JUCE=ON
+        run: cmake -S . -B build-juce -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDECKFLAXIA_REQUIRE_JUCE=ON -DDECKFLAXIA_USE_VENDORED_JUCE=ON
 
       - name: Build JUCE-required app and helper
         run: cmake --build build-juce
@@ -38,15 +38,15 @@ jobs:
         run: ctest --test-dir build-juce --output-on-failure
 
       - name: Playable smoke test
-        run: ./build-juce/DJApp --playable-smoke-test --fixtures tests/fixtures/dj-workflow --screenshot .omo/evidence/real-playable-juce/task-14-linux-playable.png --render .omo/evidence/real-playable-juce/task-14-linux-mix.wav --exit-after-init
+        run: ./build-juce/Deckflaxia --playable-smoke-test --fixtures tests/fixtures/dj-workflow --screenshot .omo/evidence/real-playable-juce/task-14-linux-playable.png --render .omo/evidence/real-playable-juce/task-14-linux-mix.wav --exit-after-init
 
       - name: Plugin sandbox smoke test
-        run: ./build-juce/DJApp --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures tests/fixtures/plugins --exit-after-init
+        run: ./build-juce/Deckflaxia --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures tests/fixtures/plugins --exit-after-init
 
       - name: Performance current equivalent smoke gate
         run: |
-          ./build-juce/DJApp --tempo-sync-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
-          ./build-juce/DJApp --time-stretch-overload-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
+          ./build-juce/Deckflaxia --tempo-sync-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
+          ./build-juce/Deckflaxia --time-stretch-overload-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
 
       - name: License report gate
         run: cmake --build build-juce --target license-report
@@ -72,7 +72,7 @@ jobs:
           path: third_party/JUCE
 
       - name: Configure JUCE-required build
-        run: cmake -S . -B build-juce -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDJAPP_REQUIRE_JUCE=ON -DDJAPP_USE_VENDORED_JUCE=ON
+        run: cmake -S . -B build-juce -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDECKFLAXIA_REQUIRE_JUCE=ON -DDECKFLAXIA_USE_VENDORED_JUCE=ON
 
       - name: Build JUCE-required app and helper
         run: cmake --build build-juce
@@ -84,15 +84,15 @@ jobs:
         run: ctest --test-dir build-juce --output-on-failure
 
       - name: Playable smoke test
-        run: ./build-juce/DJApp --playable-smoke-test --fixtures tests/fixtures/dj-workflow --screenshot .omo/evidence/real-playable-juce/task-14-macos-playable.png --render .omo/evidence/real-playable-juce/task-14-macos-mix.wav --exit-after-init
+        run: ./build-juce/Deckflaxia --playable-smoke-test --fixtures tests/fixtures/dj-workflow --screenshot .omo/evidence/real-playable-juce/task-14-macos-playable.png --render .omo/evidence/real-playable-juce/task-14-macos-mix.wav --exit-after-init
 
       - name: Plugin sandbox smoke test
-        run: ./build-juce/DJApp --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures tests/fixtures/plugins --exit-after-init
+        run: ./build-juce/Deckflaxia --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures tests/fixtures/plugins --exit-after-init
 
       - name: Performance current equivalent smoke gate
         run: |
-          ./build-juce/DJApp --tempo-sync-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
-          ./build-juce/DJApp --time-stretch-overload-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
+          ./build-juce/Deckflaxia --tempo-sync-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
+          ./build-juce/Deckflaxia --time-stretch-overload-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
 
       - name: License report gate
         run: cmake --build build-juce --target license-report

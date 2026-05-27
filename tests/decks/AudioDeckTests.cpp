@@ -15,12 +15,12 @@ int expect(bool condition, const std::string& message) {
     return 0;
 }
 
-int expectLoadOk(const djapp::decks::AudioDeckLoadResult& result, const std::string& message) {
+int expectLoadOk(const deckflaxia::decks::AudioDeckLoadResult& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
-int expectLoadError(const djapp::decks::AudioDeckLoadResult& result,
-                    djapp::decks::AudioDeckLoadError error,
+int expectLoadError(const deckflaxia::decks::AudioDeckLoadResult& result,
+                    deckflaxia::decks::AudioDeckLoadError error,
                     const std::string& message) {
     if (expect(!result.ok(), message + " should fail") != 0) {
         return 1;
@@ -29,10 +29,10 @@ int expectLoadError(const djapp::decks::AudioDeckLoadResult& result,
 }
 
 int testValidFileRender() {
-    using namespace djapp::audio;
-    using namespace djapp::audio::routing;
-    using namespace djapp::core;
-    using namespace djapp::decks;
+    using namespace deckflaxia::audio;
+    using namespace deckflaxia::audio::routing;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::decks;
 
     AudioRoutingGraphController routing(RoutingDeviceLayout::forChannelCount(4));
     const auto deckId = DeckId::fromIndex(0).value;
@@ -79,10 +79,10 @@ int testValidFileRender() {
 }
 
 int testCorruptFilePreservesState() {
-    using namespace djapp::audio;
-    using namespace djapp::audio::routing;
-    using namespace djapp::core;
-    using namespace djapp::decks;
+    using namespace deckflaxia::audio;
+    using namespace deckflaxia::audio::routing;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::decks;
 
     AudioRoutingGraphController routing(RoutingDeviceLayout::forChannelCount(2));
     const auto deckId = DeckId::fromIndex(1).value;
@@ -133,10 +133,10 @@ int testCorruptFilePreservesState() {
 }
 
 int testTransportStopCue() {
-    using namespace djapp::audio;
-    using namespace djapp::audio::routing;
-    using namespace djapp::core;
-    using namespace djapp::decks;
+    using namespace deckflaxia::audio;
+    using namespace deckflaxia::audio::routing;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::decks;
 
     const auto deckId = DeckId::fromIndex(2).value;
     AudioFileDeck deck(deckId);

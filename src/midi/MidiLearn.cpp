@@ -5,7 +5,7 @@
 #include <sstream>
 #include <utility>
 
-namespace djapp::midi {
+namespace deckflaxia::midi {
 
 namespace {
 

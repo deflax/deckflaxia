@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace djapp::audio {
+namespace deckflaxia::audio {
 
 enum class AudioGraphCommandKind : std::uint8_t {
     SetTransportState,

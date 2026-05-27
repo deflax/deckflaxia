@@ -9,7 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace djapp::audio {
+namespace deckflaxia::audio {
 
 constexpr std::size_t kMixerDeckCount = routing::kDeckCount;
 constexpr std::size_t kMixerCommandCapacity = 48;

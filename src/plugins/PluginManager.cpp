@@ -4,7 +4,7 @@
 #include <cctype>
 #include <utility>
 
-namespace djapp::plugins {
+namespace deckflaxia::plugins {
 
 namespace {
 

@@ -24,30 +24,30 @@ std::filesystem::path fixtureDirectory(int argc, char* argv[]) {
     return std::filesystem::path("tests/fixtures/dj-workflow");
 }
 
-int loadFixtureDeck(djapp::decks::FourDeckPlaybackCore& core,
+int loadFixtureDeck(deckflaxia::decks::FourDeckPlaybackCore& core,
                     std::size_t deckIndex,
                     const std::filesystem::path& path) {
-    djapp::decks::PreparedAudioMedia media;
-    const auto fileLoad = djapp::decks::loadPcm16WavFileToPreparedMedia(path, media);
+    deckflaxia::decks::PreparedAudioMedia media;
+    const auto fileLoad = deckflaxia::decks::loadPcm16WavFileToPreparedMedia(path, media);
     if (expect(fileLoad.ok(), path.filename().string() + " should load as prepared fixture media") != 0) {
         return 1;
     }
-    const auto deckId = djapp::core::DeckId::fromIndex(deckIndex).value;
-    const auto load = core.loadDeck(deckId, djapp::decks::AudioDeckMediaReference::preparedAudio(std::move(media)));
+    const auto deckId = deckflaxia::core::DeckId::fromIndex(deckIndex).value;
+    const auto load = core.loadDeck(deckId, deckflaxia::decks::AudioDeckMediaReference::preparedAudio(std::move(media)));
     if (expect(load.ok(), "prepared fixture should load into deck") != 0) {
         return 1;
     }
-    return expect(core.play(deckId) == djapp::decks::FourDeckPlaybackError::None, "deck should enter play state");
+    return expect(core.play(deckId) == deckflaxia::decks::FourDeckPlaybackError::None, "deck should enter play state");
 }
 
 int testFourDeckCore() {
-    using namespace djapp::audio;
-    using namespace djapp::decks;
+    using namespace deckflaxia::audio;
+    using namespace deckflaxia::decks;
 
     FourDeckPlaybackCore core;
-    for (std::size_t index = 0; index < djapp::audio::routing::kDeckCount; ++index) {
+    for (std::size_t index = 0; index < deckflaxia::audio::routing::kDeckCount; ++index) {
         const auto media = PreparedAudioMedia::deterministicTestWav(2048, 48000);
-        const auto deckId = djapp::core::DeckId::fromIndex(index).value;
+        const auto deckId = deckflaxia::core::DeckId::fromIndex(index).value;
         if (expect(core.loadDeck(deckId, AudioDeckMediaReference::deterministicTestWav(media)).ok(), "deterministic deck load should succeed") != 0) {
             return 1;
         }
@@ -70,7 +70,7 @@ int testFourDeckCore() {
         return 1;
     }
 
-    const auto deckId = djapp::core::DeckId::fromIndex(0).value;
+    const auto deckId = deckflaxia::core::DeckId::fromIndex(0).value;
     if (expect(core.pause(deckId) == FourDeckPlaybackError::None, "pause should be typed") != 0) {
         return 1;
     }
@@ -100,8 +100,8 @@ int testFourDeckCore() {
 }
 
 int testFixtureRender(const std::filesystem::path& fixtures) {
-    using namespace djapp::audio;
-    using namespace djapp::decks;
+    using namespace deckflaxia::audio;
+    using namespace deckflaxia::decks;
 
     FourDeckPlaybackCore core;
     if (loadFixtureDeck(core, 0, fixtures / "track_120bpm.wav") != 0 ||
@@ -132,7 +132,7 @@ int testFixtureRender(const std::filesystem::path& fixtures) {
 }
 
 int testTypedErrors(const std::filesystem::path& fixtures) {
-    using namespace djapp::decks;
+    using namespace deckflaxia::decks;
 
     PreparedAudioMedia media;
     const auto missing = loadPcm16WavFileToPreparedMedia(fixtures / "missing.wav", media);
@@ -156,7 +156,7 @@ int testTypedErrors(const std::filesystem::path& fixtures) {
 
 int testSmokeSurface(const std::filesystem::path& fixtures) {
     std::ostringstream output;
-    const auto result = djapp::audio::runAudioDeckSmokeTest(output, djapp::audio::AudioDeckSmokeOptions{fixtures});
+    const auto result = deckflaxia::audio::runAudioDeckSmokeTest(output, deckflaxia::audio::AudioDeckSmokeOptions{fixtures});
     const auto text = output.str();
     if (expect(result == 0, "audio deck smoke surface should return success for prepared fixture render") != 0) {
         std::cerr << text;

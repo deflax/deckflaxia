@@ -20,28 +20,28 @@ int expect(bool condition, const std::string& message) {
 }
 
 template <typename T>
-int expectOk(const djapp::persistence::PersistenceResult<T>& result, const std::string& message) {
+int expectOk(const deckflaxia::persistence::PersistenceResult<T>& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
-int loadDeck(djapp::decks::FourDeckPlaybackCore& core, std::size_t deckIndex, const std::filesystem::path& path) {
-    djapp::decks::PreparedAudioMedia media;
-    const auto loaded = djapp::decks::loadPcm16WavFileToPreparedMedia(path, media);
+int loadDeck(deckflaxia::decks::FourDeckPlaybackCore& core, std::size_t deckIndex, const std::filesystem::path& path) {
+    deckflaxia::decks::PreparedAudioMedia media;
+    const auto loaded = deckflaxia::decks::loadPcm16WavFileToPreparedMedia(path, media);
     if (expect(loaded.ok(), path.filename().string() + " should load") != 0) {
         return 1;
     }
-    const auto deckId = djapp::core::DeckId::fromIndex(deckIndex).value;
-    if (expect(core.loadDeck(deckId, djapp::decks::AudioDeckMediaReference::preparedAudio(std::move(media))).ok(), "deck load should succeed") != 0) {
+    const auto deckId = deckflaxia::core::DeckId::fromIndex(deckIndex).value;
+    if (expect(core.loadDeck(deckId, deckflaxia::decks::AudioDeckMediaReference::preparedAudio(std::move(media))).ok(), "deck load should succeed") != 0) {
         return 1;
     }
-    return expect(core.play(deckId) == djapp::decks::FourDeckPlaybackError::None, "deck play should succeed");
+    return expect(core.play(deckId) == deckflaxia::decks::FourDeckPlaybackError::None, "deck play should succeed");
 }
 
-float rms(const djapp::decks::FourDeckPlaybackCore& core) {
+float rms(const deckflaxia::decks::FourDeckPlaybackCore& core) {
     const auto& buffer = core.lastInterleavedOutput();
     double sum = 0.0;
     for (std::uint32_t frame = 0; frame < 512U; ++frame) {
-        const auto index = static_cast<std::size_t>(frame) * djapp::decks::kFourDeckOutputChannels;
+        const auto index = static_cast<std::size_t>(frame) * deckflaxia::decks::kFourDeckOutputChannels;
         sum += static_cast<double>(buffer[index]) * static_cast<double>(buffer[index]);
         sum += static_cast<double>(buffer[index + 1U]) * static_cast<double>(buffer[index + 1U]);
     }
@@ -49,17 +49,17 @@ float rms(const djapp::decks::FourDeckPlaybackCore& core) {
 }
 
 float renderCrossfade(const std::filesystem::path& fixtures, float value) {
-    djapp::decks::FourDeckPlaybackCore core;
+    deckflaxia::decks::FourDeckPlaybackCore core;
     if (loadDeck(core, 0, fixtures / "track_120bpm.wav") != 0 || loadDeck(core, 1, fixtures / "track_128bpm.wav") != 0) {
         return 0.0F;
     }
-    if (expect(core.mixer().enqueue(djapp::audio::MixerCommand{djapp::audio::MixerCommandKind::SetCrossfader, 0, value, 0}).ok(), "crossfader command should queue") != 0) {
+    if (expect(core.mixer().enqueue(deckflaxia::audio::MixerCommand{deckflaxia::audio::MixerCommandKind::SetCrossfader, 0, value, 0}).ok(), "crossfader command should queue") != 0) {
         return 0.0F;
     }
-    if (expect(core.mixer().enqueue(djapp::audio::MixerCommand{djapp::audio::MixerCommandKind::SetDeckVolume, 1, 0.5F, 0}).ok(), "deck B volume command should queue") != 0) {
+    if (expect(core.mixer().enqueue(deckflaxia::audio::MixerCommand{deckflaxia::audio::MixerCommandKind::SetDeckVolume, 1, 0.5F, 0}).ok(), "deck B volume command should queue") != 0) {
         return 0.0F;
     }
-    const auto render = core.renderOffline(djapp::audio::AudioRenderConfiguration{48000, 512}, 1);
+    const auto render = core.renderOffline(deckflaxia::audio::AudioRenderConfiguration{48000, 512}, 1);
     return render.ok() ? rms(core) : 0.0F;
 }
 
@@ -85,8 +85,8 @@ int testCrossfader(const std::filesystem::path& fixtures) {
 }
 
 int testMidiPersistenceDispatch() {
-    using namespace djapp::midi;
-    using namespace djapp::persistence;
+    using namespace deckflaxia::midi;
+    using namespace deckflaxia::persistence;
 
     PersistenceService service;
     MidiLearnController controller;
@@ -128,8 +128,8 @@ int testMidiPersistenceDispatch() {
         return 1;
     }
 
-    djapp::audio::MixerController mixer;
-    djapp::audio::routing::AudioRoutingGraphController routing(djapp::audio::routing::RoutingDeviceLayout::forChannelCount(8));
+    deckflaxia::audio::MixerController mixer;
+    deckflaxia::audio::routing::AudioRoutingGraphController routing(deckflaxia::audio::routing::RoutingDeviceLayout::forChannelCount(8));
     if (expect(mixer.enqueueFromMidi(playDispatch.command).ok(), "play MIDI intent should enqueue") != 0 ||
         expect(mixer.enqueueFromMidi(cueDispatch.command).ok(), "cue MIDI intent should enqueue") != 0 ||
         expect(mixer.enqueueFromMidi(crossfaderDispatch.command).ok(), "crossfader MIDI intent should enqueue") != 0 ||
@@ -145,7 +145,7 @@ int testMidiPersistenceDispatch() {
 
 int testSmokeSurface(const std::filesystem::path& fixtures) {
     std::ostringstream output;
-    const auto result = djapp::audio::runMixerSmokeTest(output, djapp::audio::AudioDeckSmokeOptions{fixtures});
+    const auto result = deckflaxia::audio::runMixerSmokeTest(output, deckflaxia::audio::AudioDeckSmokeOptions{fixtures});
     const auto text = output.str();
     if (expect(result == 0, "mixer smoke should pass") != 0) {
         std::cerr << text;

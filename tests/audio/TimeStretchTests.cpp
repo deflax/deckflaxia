@@ -31,39 +31,39 @@ std::filesystem::path fixtureDirectory(int argc, char* argv[]) {
     return std::filesystem::path("tests/fixtures/dj-workflow");
 }
 
-int loadFixtureDeck(djapp::decks::FourDeckPlaybackCore& core,
+int loadFixtureDeck(deckflaxia::decks::FourDeckPlaybackCore& core,
                     std::size_t deckIndex,
                     const std::filesystem::path& path,
                     double sourceBpm,
                     double targetBpm,
                     bool pitchLock) {
-    djapp::decks::PreparedAudioMedia media;
-    const auto fileLoad = djapp::decks::loadPcm16WavFileToPreparedMedia(path, media);
+    deckflaxia::decks::PreparedAudioMedia media;
+    const auto fileLoad = deckflaxia::decks::loadPcm16WavFileToPreparedMedia(path, media);
     if (expectOk(fileLoad, path.filename().string() + " should decode") != 0) {
         return 1;
     }
-    const auto deckId = djapp::core::DeckId::fromIndex(deckIndex).value;
-    if (expectOk(core.loadDeck(deckId, djapp::decks::AudioDeckMediaReference::preparedAudio(std::move(media))), "deck load") != 0) {
+    const auto deckId = deckflaxia::core::DeckId::fromIndex(deckIndex).value;
+    if (expectOk(core.loadDeck(deckId, deckflaxia::decks::AudioDeckMediaReference::preparedAudio(std::move(media))), "deck load") != 0) {
         return 1;
     }
-    if (expect(core.syncTempo(deckId, sourceBpm, targetBpm, pitchLock) == djapp::decks::FourDeckPlaybackError::None, "tempo sync should configure") != 0) {
+    if (expect(core.syncTempo(deckId, sourceBpm, targetBpm, pitchLock) == deckflaxia::decks::FourDeckPlaybackError::None, "tempo sync should configure") != 0) {
         return 1;
     }
-    return expect(core.play(deckId) == djapp::decks::FourDeckPlaybackError::None, "deck should play");
+    return expect(core.play(deckId) == deckflaxia::decks::FourDeckPlaybackError::None, "deck should play");
 }
 
 int testTempoSyncFixtures(const std::filesystem::path& fixtures) {
-    djapp::decks::FourDeckPlaybackCore core;
+    deckflaxia::decks::FourDeckPlaybackCore core;
     if (loadFixtureDeck(core, 0, fixtures / "track_120bpm.wav", 120.0, 128.0, true) != 0 ||
         loadFixtureDeck(core, 1, fixtures / "track_128bpm.wav", 128.0, 128.0, true) != 0) {
         return 1;
     }
-    const auto render = core.renderOffline(djapp::audio::AudioRenderConfiguration{48000, 512}, 8);
+    const auto render = core.renderOffline(deckflaxia::audio::AudioRenderConfiguration{48000, 512}, 8);
     if (expectOk(render, "tempo sync render") != 0) {
         return 1;
     }
-    const auto& deck0 = core.deck(djapp::core::DeckId::fromIndex(0).value);
-    const auto& deck1 = core.deck(djapp::core::DeckId::fromIndex(1).value);
+    const auto& deck0 = core.deck(deckflaxia::core::DeckId::fromIndex(0).value);
+    const auto& deck1 = core.deck(deckflaxia::core::DeckId::fromIndex(1).value);
     const auto tempoDiff = std::abs(deck0.timeStretchStatus().effectiveTempoBpm - deck1.timeStretchStatus().effectiveTempoBpm);
     if (expect(tempoDiff <= 0.5, "synced effective tempo diff should be <=0.5 BPM") != 0) {
         return 1;
@@ -77,17 +77,17 @@ int testTempoSyncFixtures(const std::filesystem::path& fixtures) {
     std::cout << "TimeStretch.TempoSync diff-bpm=" << tempoDiff
               << " deck0-tempo=" << deck0.timeStretchStatus().effectiveTempoBpm
               << " deck1-tempo=" << deck1.timeStretchStatus().effectiveTempoBpm
-              << " engine=" << djapp::audio::toString(deck0.timeStretchStatus().engine) << '\n';
+              << " engine=" << deckflaxia::audio::toString(deck0.timeStretchStatus().engine) << '\n';
     return 0;
 }
 
 int testPitchLockDrift(const std::filesystem::path& fixtures) {
-    djapp::decks::FourDeckPlaybackCore core;
+    deckflaxia::decks::FourDeckPlaybackCore core;
     if (loadFixtureDeck(core, 0, fixtures / "track_120bpm.wav", 120.0, 128.0, true) != 0) {
         return 1;
     }
-    const auto render = core.renderOffline(djapp::audio::AudioRenderConfiguration{48000, 512}, 4);
-    const auto& status = core.deck(djapp::core::DeckId::fromIndex(0).value).timeStretchStatus();
+    const auto render = core.renderOffline(deckflaxia::audio::AudioRenderConfiguration{48000, 512}, 4);
+    const auto& status = core.deck(deckflaxia::core::DeckId::fromIndex(0).value).timeStretchStatus();
     const auto drift = std::abs(status.pitchDriftCents);
     if (expectOk(render, "pitch lock render") != 0 || expect(drift <= 10.0, "pitch-lock drift budget should be <=10 cents") != 0) {
         return 1;
@@ -97,15 +97,15 @@ int testPitchLockDrift(const std::filesystem::path& fixtures) {
 }
 
 int testOverloadFallback(const std::filesystem::path& fixtures) {
-    djapp::decks::FourDeckPlaybackCore core;
+    deckflaxia::decks::FourDeckPlaybackCore core;
     if (loadFixtureDeck(core, 0, fixtures / "track_120bpm.wav", 120.0, 128.0, true) != 0) {
         return 1;
     }
-    const auto deckId = djapp::core::DeckId::fromIndex(0).value;
-    if (expect(core.setTimeStretchBypass(deckId, true) == djapp::decks::FourDeckPlaybackError::None, "bypass should configure") != 0) {
+    const auto deckId = deckflaxia::core::DeckId::fromIndex(0).value;
+    if (expect(core.setTimeStretchBypass(deckId, true) == deckflaxia::decks::FourDeckPlaybackError::None, "bypass should configure") != 0) {
         return 1;
     }
-    const auto render = core.renderOffline(djapp::audio::AudioRenderConfiguration{48000, 512}, 2);
+    const auto render = core.renderOffline(deckflaxia::audio::AudioRenderConfiguration{48000, 512}, 2);
     const auto& status = core.deck(deckId).timeStretchStatus();
     if (expectOk(render, "overload fallback render") != 0 ||
         expect(status.bypassed, "overload should report bypass") != 0 ||
@@ -119,8 +119,8 @@ int testOverloadFallback(const std::filesystem::path& fixtures) {
 }
 
 int testPersistenceRoundTrip() {
-    using namespace djapp::core;
-    using namespace djapp::persistence;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::persistence;
 
     PersistenceService service;
     const auto tempoPitch = TempoPitchSettings::fromValues(120.0, 128.0, true, true, -3.5, false).value;

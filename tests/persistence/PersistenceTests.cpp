@@ -7,7 +7,7 @@
 #include <iostream>
 #include <string>
 
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
 #include <sqlite3.h>
 #endif
 
@@ -21,21 +21,21 @@ int expect(bool condition, const std::string& message) {
     return 0;
 }
 
-int expectOk(const djapp::persistence::PersistenceUnitResult& result, const std::string& message) {
+int expectOk(const deckflaxia::persistence::PersistenceUnitResult& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
-int expectOk(const djapp::core::UnitResult& result, const std::string& message) {
+int expectOk(const deckflaxia::core::UnitResult& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
 template <typename T>
-int expectOk(const djapp::persistence::PersistenceResult<T>& result, const std::string& message) {
+int expectOk(const deckflaxia::persistence::PersistenceResult<T>& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
-int expectError(const djapp::persistence::PersistenceUnitResult& result,
-                djapp::persistence::PersistenceError error,
+int expectError(const deckflaxia::persistence::PersistenceUnitResult& result,
+                deckflaxia::persistence::PersistenceError error,
                 const std::string& message) {
     if (expect(!result.ok(), message + " should fail") != 0) {
         return 1;
@@ -44,8 +44,8 @@ int expectError(const djapp::persistence::PersistenceUnitResult& result,
 }
 
 int testMigration() {
-    using namespace djapp::core;
-    using namespace djapp::persistence;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::persistence;
 
     PersistenceService service;
     const auto decision = service.sqliteDecision();
@@ -77,8 +77,8 @@ int testMigration() {
 }
 
 int testLockedDatabase() {
-    using namespace djapp::core;
-    using namespace djapp::persistence;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::persistence;
 
     PersistenceService service;
     service.store().setLockedForTest(true);
@@ -94,7 +94,7 @@ int testLockedDatabase() {
 }
 
 int testFailedMigration() {
-    using namespace djapp::persistence;
+    using namespace deckflaxia::persistence;
 
     InMemoryPersistenceStore store;
     MigrationRunner migrations;
@@ -109,8 +109,8 @@ int testFailedMigration() {
 }
 
 int testRepositories() {
-    using namespace djapp::core;
-    using namespace djapp::persistence;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::persistence;
 
     PersistenceService service;
     const BackgroundJobTicket ticket{10, BackgroundJobKind::PersistLibraryChange, BackgroundWorkerRole::DatabaseWorker};
@@ -162,7 +162,7 @@ int testRepositories() {
 
     const auto beatgrid = BeatgridMetadata::fromBpm(128.0, 0.25).value;
     const LibraryTrack track{"track-1", "Track", "Artist", beatgrid, MusicalKey::Camelot8A};
-    djapp::library::LibraryTracksRepository libraryTracks = service.libraryTracks();
+    deckflaxia::library::LibraryTracksRepository libraryTracks = service.libraryTracks();
     if (expectOk(libraryTracks.upsert(track), "library track save") != 0) {
         return 1;
     }
@@ -205,13 +205,13 @@ int testRepositories() {
                                                                  "analysis jobs should round trip");
 }
 
-djapp::core::BackgroundJobTicket databaseTicket() {
-    return djapp::core::BackgroundJobTicket{500, djapp::core::BackgroundJobKind::PersistLibraryChange, djapp::core::BackgroundWorkerRole::DatabaseWorker};
+deckflaxia::core::BackgroundJobTicket databaseTicket() {
+    return deckflaxia::core::BackgroundJobTicket{500, deckflaxia::core::BackgroundJobKind::PersistLibraryChange, deckflaxia::core::BackgroundWorkerRole::DatabaseWorker};
 }
 
-int importFixtureState(djapp::persistence::PersistenceService& service) {
-    using namespace djapp::core;
-    using namespace djapp::persistence;
+int importFixtureState(deckflaxia::persistence::PersistenceService& service) {
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::persistence;
 
     const auto beatgrid = BeatgridMetadata::fromBpm(126.5, 0.125).value;
     const LibraryTrack track{"fixture-track", "Restart Fixture", "Persistence Artist", beatgrid, MusicalKey::Camelot8A};
@@ -256,8 +256,8 @@ int importFixtureState(djapp::persistence::PersistenceService& service) {
     return expectOk(service.analysisJobs().upsert(job), "sqlite analysis job save");
 }
 
-int assertFixtureState(djapp::persistence::PersistenceService& service) {
-    using namespace djapp::core;
+int assertFixtureState(deckflaxia::persistence::PersistenceService& service) {
+    using namespace deckflaxia::core;
 
     const auto track = service.libraryTracks().findById("fixture-track");
     if (expectOk(track, "sqlite track reload") != 0 || expect(track.value.title == "Restart Fixture" && std::abs(track.value.beatgrid.bpm - 126.5) < 0.000001, "sqlite track deterministic reload") != 0) {
@@ -300,11 +300,11 @@ int assertFixtureState(djapp::persistence::PersistenceService& service) {
 }
 
 int testSQLiteRestartSmoke(const std::string& dbPath) {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     std::remove(dbPath.c_str());
     {
-        djapp::persistence::PersistenceService firstRun(dbPath);
-        if (expect(firstRun.sqliteDecision().selectedBackend == djapp::persistence::PersistenceBackendKind::SystemSQLiteCApi, "sqlite backend should be selected") != 0) {
+        deckflaxia::persistence::PersistenceService firstRun(dbPath);
+        if (expect(firstRun.sqliteDecision().selectedBackend == deckflaxia::persistence::PersistenceBackendKind::SystemSQLiteCApi, "sqlite backend should be selected") != 0) {
             return 1;
         }
         if (expectOk(firstRun.migrateOnDatabaseWorker(databaseTicket()), "sqlite first migration") != 0) {
@@ -315,7 +315,7 @@ int testSQLiteRestartSmoke(const std::string& dbPath) {
         }
     }
     {
-        djapp::persistence::PersistenceService secondRun(dbPath);
+        deckflaxia::persistence::PersistenceService secondRun(dbPath);
         if (expectOk(secondRun.migrateOnDatabaseWorker(databaseTicket()), "sqlite second migration") != 0) {
             return 1;
         }
@@ -326,22 +326,22 @@ int testSQLiteRestartSmoke(const std::string& dbPath) {
     std::cout << "SQLite restart smoke passed db=" << dbPath << "\n";
     return 0;
 #else
-    std::cout << "SQLite unavailable; JUCE-required command shape: cmake -S . -B build -DDJAPP_REQUIRE_JUCE=ON -DCMAKE_PREFIX_PATH=/path/to/JUCE && cmake --build build && ctest --test-dir build -R SQLitePersistence --output-on-failure\n";
+    std::cout << "SQLite unavailable; JUCE-required command shape: cmake -S . -B build -DDECKFLAXIA_REQUIRE_JUCE=ON -DCMAKE_PREFIX_PATH=/path/to/JUCE && cmake --build build && ctest --test-dir build -R SQLitePersistence --output-on-failure\n";
     (void)dbPath;
     return 0;
 #endif
 }
 
 int testSQLiteMigrationFailure(const std::string& dbPath) {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     std::remove(dbPath.c_str());
     {
         std::ofstream invalid(dbPath, std::ios::binary);
         invalid << "not a sqlite database";
     }
-    djapp::persistence::PersistenceService service(dbPath);
+    deckflaxia::persistence::PersistenceService service(dbPath);
     const auto result = service.migrateOnDatabaseWorker(databaseTicket());
-    return expectError(result, djapp::persistence::PersistenceError::MigrationFailed, "invalid sqlite migration") != 0 ? 1 : expect(result.error != djapp::persistence::PersistenceError::None, "invalid sqlite should preserve typed failure");
+    return expectError(result, deckflaxia::persistence::PersistenceError::MigrationFailed, "invalid sqlite migration") != 0 ? 1 : expect(result.error != deckflaxia::persistence::PersistenceError::None, "invalid sqlite should preserve typed failure");
 #else
     (void)dbPath;
     std::cout << "SQLite unavailable; migration failure path covered by in-memory typed failure\n";
@@ -350,10 +350,10 @@ int testSQLiteMigrationFailure(const std::string& dbPath) {
 }
 
 int testSQLiteLockedDatabase(const std::string& dbPath) {
-#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#if DECKFLAXIA_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
     std::remove(dbPath.c_str());
     {
-        djapp::persistence::PersistenceService setup(dbPath);
+        deckflaxia::persistence::PersistenceService setup(dbPath);
         if (expectOk(setup.migrateOnDatabaseWorker(databaseTicket()), "sqlite setup migration") != 0) {
             return 1;
         }
@@ -367,11 +367,11 @@ int testSQLiteLockedDatabase(const std::string& dbPath) {
         sqlite3_close(rawDatabase);
         return expect(false, "sqlite raw exclusive lock should start");
     }
-    djapp::persistence::PersistenceService locked(dbPath);
+    deckflaxia::persistence::PersistenceService locked(dbPath);
     const auto result = locked.migrateOnDatabaseWorker(databaseTicket());
     sqlite3_exec(rawDatabase, "ROLLBACK", nullptr, nullptr, nullptr);
     sqlite3_close(rawDatabase);
-    return expectError(result, djapp::persistence::PersistenceError::DatabaseLocked, "sqlite locked database") != 0 ? 1 : expect(djapp::persistence::isRecoverable(result.error), "sqlite locked database should be recoverable");
+    return expectError(result, deckflaxia::persistence::PersistenceError::DatabaseLocked, "sqlite locked database") != 0 ? 1 : expect(deckflaxia::persistence::isRecoverable(result.error), "sqlite locked database should be recoverable");
 #else
     (void)dbPath;
     std::cout << "SQLite unavailable; locked path covered by in-memory typed failure\n";

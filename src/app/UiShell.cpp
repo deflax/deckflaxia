@@ -4,7 +4,7 @@
 #include <sstream>
 #include <utility>
 
-namespace djapp::app {
+namespace deckflaxia::app {
 
 namespace {
 

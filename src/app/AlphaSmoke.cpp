@@ -16,7 +16,7 @@
 #include <ostream>
 #include <string>
 
-namespace djapp::app {
+namespace deckflaxia::app {
 
 namespace {
 

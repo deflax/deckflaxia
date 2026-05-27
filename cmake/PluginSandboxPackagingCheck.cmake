@@ -1,39 +1,39 @@
-if(NOT DEFINED DJAPP_APP_PATH OR DJAPP_APP_PATH STREQUAL "")
-    message(FATAL_ERROR "DJAPP_APP_PATH is required for plugin sandbox helper packaging checks")
+if(NOT DEFINED DECKFLAXIA_APP_PATH OR DECKFLAXIA_APP_PATH STREQUAL "")
+    message(FATAL_ERROR "DECKFLAXIA_APP_PATH is required for plugin sandbox helper packaging checks")
 endif()
 
-if(NOT DEFINED DJAPP_HELPER_PATH OR DJAPP_HELPER_PATH STREQUAL "")
-    message(FATAL_ERROR "DJAPP_HELPER_PATH is required for plugin sandbox helper packaging checks")
+if(NOT DEFINED DECKFLAXIA_HELPER_PATH OR DECKFLAXIA_HELPER_PATH STREQUAL "")
+    message(FATAL_ERROR "DECKFLAXIA_HELPER_PATH is required for plugin sandbox helper packaging checks")
 endif()
 
-if(NOT EXISTS "${DJAPP_APP_PATH}")
-    message(FATAL_ERROR "DJApp executable was not built at ${DJAPP_APP_PATH}")
+if(NOT EXISTS "${DECKFLAXIA_APP_PATH}")
+    message(FATAL_ERROR "Deckflaxia executable was not built at ${DECKFLAXIA_APP_PATH}")
 endif()
 
-if(NOT EXISTS "${DJAPP_HELPER_PATH}")
-    message(FATAL_ERROR "DJAppPluginSandboxHelper executable was not built at ${DJAPP_HELPER_PATH}")
+if(NOT EXISTS "${DECKFLAXIA_HELPER_PATH}")
+    message(FATAL_ERROR "DeckflaxiaPluginSandboxHelper executable was not built at ${DECKFLAXIA_HELPER_PATH}")
 endif()
 
-get_filename_component(djapp_app_dir "${DJAPP_APP_PATH}" DIRECTORY)
-get_filename_component(djapp_helper_dir "${DJAPP_HELPER_PATH}" DIRECTORY)
+get_filename_component(deckflaxia_app_dir "${DECKFLAXIA_APP_PATH}" DIRECTORY)
+get_filename_component(deckflaxia_helper_dir "${DECKFLAXIA_HELPER_PATH}" DIRECTORY)
 
-if(NOT djapp_app_dir STREQUAL djapp_helper_dir)
-    message(FATAL_ERROR "DJAppPluginSandboxHelper must be locatable beside DJApp for smoke tests: app dir=${djapp_app_dir}, helper dir=${djapp_helper_dir}")
+if(NOT deckflaxia_app_dir STREQUAL deckflaxia_helper_dir)
+    message(FATAL_ERROR "DeckflaxiaPluginSandboxHelper must be locatable beside Deckflaxia for smoke tests: app dir=${deckflaxia_app_dir}, helper dir=${deckflaxia_helper_dir}")
 endif()
 
 execute_process(
-    COMMAND "${DJAPP_HELPER_PATH}" --helper-smoke
-    RESULT_VARIABLE djapp_helper_result
-    OUTPUT_VARIABLE djapp_helper_output
-    ERROR_VARIABLE djapp_helper_error
+    COMMAND "${DECKFLAXIA_HELPER_PATH}" --helper-smoke
+    RESULT_VARIABLE deckflaxia_helper_result
+    OUTPUT_VARIABLE deckflaxia_helper_output
+    ERROR_VARIABLE deckflaxia_helper_error
 )
 
-if(NOT djapp_helper_result EQUAL 0)
-    message(FATAL_ERROR "DJAppPluginSandboxHelper --helper-smoke failed with exit ${djapp_helper_result}: ${djapp_helper_error}")
+if(NOT deckflaxia_helper_result EQUAL 0)
+    message(FATAL_ERROR "DeckflaxiaPluginSandboxHelper --helper-smoke failed with exit ${deckflaxia_helper_result}: ${deckflaxia_helper_error}")
 endif()
 
-if(NOT djapp_helper_output MATCHES "DJAppPluginSandboxHelper: deterministic helper executable available")
-    message(FATAL_ERROR "DJAppPluginSandboxHelper --helper-smoke did not emit the expected readiness line: ${djapp_helper_output}")
+if(NOT deckflaxia_helper_output MATCHES "DeckflaxiaPluginSandboxHelper: deterministic helper executable available")
+    message(FATAL_ERROR "DeckflaxiaPluginSandboxHelper --helper-smoke did not emit the expected readiness line: ${deckflaxia_helper_output}")
 endif()
 
-message(STATUS "DJAppPluginSandboxHelper packaging check passed: ${DJAPP_HELPER_PATH}")
+message(STATUS "DeckflaxiaPluginSandboxHelper packaging check passed: ${DECKFLAXIA_HELPER_PATH}")

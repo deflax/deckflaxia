@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace djapp::audio {
+namespace deckflaxia::audio {
 
 enum class HostAudioPlatform {
     MacOS,

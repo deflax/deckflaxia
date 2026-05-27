@@ -7,7 +7,7 @@
 #include <memory>
 #include <string>
 
-namespace djapp::plugins {
+namespace deckflaxia::plugins {
 
 enum class PluginProcessingBackendKind : std::uint8_t {
     Unavailable,

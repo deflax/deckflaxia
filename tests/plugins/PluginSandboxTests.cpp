@@ -22,15 +22,15 @@ int expectOk(const T& result, const std::string& message) {
 }
 
 int testHelperLimitAndStatusUi() {
-    djapp::persistence::PersistenceService persistence;
-    djapp::plugins::PluginSandboxCoordinator coordinator;
+    deckflaxia::persistence::PersistenceService persistence;
+    deckflaxia::plugins::PluginSandboxCoordinator coordinator;
     if (expect(coordinator.configureDefaultFiveHelpers(persistence), "default sandbox helpers should configure") != 0) {
         return 1;
     }
-    if (expect(coordinator.helperCount() == djapp::plugins::kPluginSandboxMaxHelperProcesses, "sandbox should expose exactly five helper chains") != 0) {
+    if (expect(coordinator.helperCount() == deckflaxia::plugins::kPluginSandboxMaxHelperProcesses, "sandbox should expose exactly five helper chains") != 0) {
         return 1;
     }
-    const auto ui = djapp::plugins::buildSandboxStatusUiData(coordinator.helper(0));
+    const auto ui = deckflaxia::plugins::buildSandboxStatusUiData(coordinator.helper(0));
     if (expect(ui.genericParameterSurfaceAvailable && ui.nativeEditorEmbeddingDeferred, "sandbox UI should be generic/status only") != 0) {
         return 1;
     }
@@ -43,8 +43,8 @@ int testHelperLimitAndStatusUi() {
 }
 
 int testCrashRestartBlacklist() {
-    djapp::persistence::PersistenceService persistence;
-    djapp::plugins::PluginSandboxCoordinator coordinator;
+    deckflaxia::persistence::PersistenceService persistence;
+    deckflaxia::plugins::PluginSandboxCoordinator coordinator;
     if (expect(coordinator.configureDefaultFiveHelpers(persistence), "default sandbox helpers should configure") != 0) {
         return 1;
     }
@@ -56,7 +56,7 @@ int testCrashRestartBlacklist() {
                "first crash should bypass then restart once") != 0) {
         return 1;
     }
-    if (expect(status.crashToRestartMs <= djapp::plugins::kPluginSandboxCrashRecoveryBudgetMs,
+    if (expect(status.crashToRestartMs <= deckflaxia::plugins::kPluginSandboxCrashRecoveryBudgetMs,
                "first crash restart should meet recovery budget") != 0) {
         return 1;
     }
@@ -80,25 +80,25 @@ int testCrashRestartBlacklist() {
 }
 
 int testControlIpcSurface() {
-    djapp::persistence::PersistenceService persistence;
-    djapp::plugins::SandboxedPluginChainHost host;
-    const djapp::core::PluginChainDescriptor chain{"deck-a", {djapp::plugins::makeDeterministicGainPlugin(0.5, false)}};
-    if (expectOk(host.configure(djapp::plugins::PluginSandboxChainConfig{djapp::plugins::PluginSandboxTargetKind::DeckA, chain, 48000.0, 512}, &persistence), "host configure") != 0) {
+    deckflaxia::persistence::PersistenceService persistence;
+    deckflaxia::plugins::SandboxedPluginChainHost host;
+    const deckflaxia::core::PluginChainDescriptor chain{"deck-a", {deckflaxia::plugins::makeDeterministicGainPlugin(0.5, false)}};
+    if (expectOk(host.configure(deckflaxia::plugins::PluginSandboxChainConfig{deckflaxia::plugins::PluginSandboxTargetKind::DeckA, chain, 48000.0, 512}, &persistence), "host configure") != 0) {
         return 1;
     }
     if (expect(host.start(1, 0), "host start") != 0) {
         return 1;
     }
-    if (expect(host.sendControl(djapp::plugins::PluginSandboxControlMessage{djapp::plugins::PluginSandboxControlKind::Parameter, 0, "gain", 0.25, 0}), "parameter control should send") != 0) {
+    if (expect(host.sendControl(deckflaxia::plugins::PluginSandboxControlMessage{deckflaxia::plugins::PluginSandboxControlKind::Parameter, 0, "gain", 0.25, 0}), "parameter control should send") != 0) {
         return 1;
     }
-    if (expect(host.sendControl(djapp::plugins::PluginSandboxControlMessage{djapp::plugins::PluginSandboxControlKind::Midi, 0, "cc-10", 1.0, 32}), "midi control should send") != 0) {
+    if (expect(host.sendControl(deckflaxia::plugins::PluginSandboxControlMessage{deckflaxia::plugins::PluginSandboxControlKind::Midi, 0, "cc-10", 1.0, 32}), "midi control should send") != 0) {
         return 1;
     }
-    if (expect(host.sendControl(djapp::plugins::PluginSandboxControlMessage{djapp::plugins::PluginSandboxControlKind::Transport, 0, "play", 1.0, 64}), "transport control should send") != 0) {
+    if (expect(host.sendControl(deckflaxia::plugins::PluginSandboxControlMessage{deckflaxia::plugins::PluginSandboxControlKind::Transport, 0, "play", 1.0, 64}), "transport control should send") != 0) {
         return 1;
     }
-    if (expect(host.sendControl(djapp::plugins::PluginSandboxControlMessage{djapp::plugins::PluginSandboxControlKind::State, 0, "state-bytes", 1.0, 96}), "state control should send") != 0) {
+    if (expect(host.sendControl(deckflaxia::plugins::PluginSandboxControlMessage{deckflaxia::plugins::PluginSandboxControlKind::State, 0, "state-bytes", 1.0, 96}), "state control should send") != 0) {
         return 1;
     }
     std::cout << "PluginSandbox.ControlIpc parameter-midi-transport-state=1\n";
@@ -106,8 +106,8 @@ int testControlIpcSurface() {
 }
 
 int testAudioRoundtrip() {
-    djapp::persistence::PersistenceService persistence;
-    djapp::plugins::PluginSandboxCoordinator coordinator;
+    deckflaxia::persistence::PersistenceService persistence;
+    deckflaxia::plugins::PluginSandboxCoordinator coordinator;
     if (expect(coordinator.configureDefaultFiveHelpers(persistence), "default sandbox helpers should configure") != 0) {
         return 1;
     }
@@ -125,7 +125,7 @@ int testAudioRoundtrip() {
 
 int testSmokeSurfaceNoKill(const std::filesystem::path& fixtures, const std::filesystem::path& helperPath) {
     std::ostringstream output;
-    const auto result = djapp::plugins::runPluginSandboxSmokeTest(output, djapp::plugins::PluginSandboxSmokeOptions{fixtures, helperPath, 0});
+    const auto result = deckflaxia::plugins::runPluginSandboxSmokeTest(output, deckflaxia::plugins::PluginSandboxSmokeOptions{fixtures, helperPath, 0});
     const auto text = output.str();
     if (expect(result == 0, "plugin sandbox no-kill smoke should pass") != 0) {
         std::cerr << text;
@@ -146,7 +146,7 @@ int testSmokeSurfaceNoKill(const std::filesystem::path& fixtures, const std::fil
 
 int testSmokeSurfaceCrash(const std::filesystem::path& fixtures, const std::filesystem::path& helperPath) {
     std::ostringstream output;
-    const auto result = djapp::plugins::runPluginSandboxSmokeTest(output, djapp::plugins::PluginSandboxSmokeOptions{fixtures, helperPath, 500});
+    const auto result = deckflaxia::plugins::runPluginSandboxSmokeTest(output, deckflaxia::plugins::PluginSandboxSmokeOptions{fixtures, helperPath, 500});
     const auto text = output.str();
     if (expect(result == 0, "plugin sandbox crash smoke should pass") != 0) {
         std::cerr << text;

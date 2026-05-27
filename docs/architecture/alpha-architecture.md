@@ -43,10 +43,10 @@ This document defines the alpha architecture boundary for the DJ application. It
 
 ## Message Passing
 
-- UI-to-engine commands use `djapp::app::UiToEngineCommandQueue`, which wraps `djapp::audio::AudioGraphCommandQueue` and exposes `trySendFromMessageThread`.
+- UI-to-engine commands use `deckflaxia::app::UiToEngineCommandQueue`, which wraps `deckflaxia::audio::AudioGraphCommandQueue` and exposes `trySendFromMessageThread`.
 - Audio graph commands are plain C++17 trivially copyable values: command kind, target id, numeric value, and auxiliary integer payload.
-- Audio callbacks receive `djapp::audio::AudioCallbackContract`, which exposes only `ImmutableAudioSnapshot` and `AudioGraphCommandQueue`.
-- Background workers use `djapp::core::BackgroundJobTicket` and `CancellableBackgroundWorker` contracts. They may request snapshot rebuilds through future non-real-time coordinators, not by calling audio callback objects.
+- Audio callbacks receive `deckflaxia::audio::AudioCallbackContract`, which exposes only `ImmutableAudioSnapshot` and `AudioGraphCommandQueue`.
+- Background workers use `deckflaxia::core::BackgroundJobTicket` and `CancellableBackgroundWorker` contracts. They may request snapshot rebuilds through future non-real-time coordinators, not by calling audio callback objects.
 - Cross-thread communication must be one-way at the boundary: message/background threads produce commands or snapshots; the audio thread consumes already-prepared data.
 
 ## Device Backend Defaults
@@ -57,7 +57,7 @@ This document defines the alpha architecture boundary for the DJ application. It
 
 ## Sample-Rate and Buffer Matrix
 
-The alpha verification matrix is encoded in `djapp::audio::kAlphaSampleRateBufferMatrix` and covers:
+The alpha verification matrix is encoded in `deckflaxia::audio::kAlphaSampleRateBufferMatrix` and covers:
 
 | Sample rate | Buffer frames |
 | --- | --- |
@@ -90,4 +90,4 @@ The audio callback must not perform or directly depend on:
 - Track analysis, waveform generation, beatgrid/key detection, or worker-pool scheduling.
 - Network, cloud, account, marketplace, streaming, or remote-service calls.
 
-The compile-visible whitelist is `djapp::audio::isAudioCallbackDependencyAllowed`. `AudioCallbackBoundary` statically accepts only immutable snapshots, audio graph command queues, and callback contracts.
+The compile-visible whitelist is `deckflaxia::audio::isAudioCallbackDependencyAllowed`. `AudioCallbackBoundary` statically accepts only immutable snapshots, audio graph command queues, and callback contracts.

@@ -6,7 +6,7 @@
 #include <fstream>
 #include <utility>
 
-namespace djapp::decks {
+namespace deckflaxia::decks {
 
 namespace {
 

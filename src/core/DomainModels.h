@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace djapp::core {
+namespace deckflaxia::core {
 
 enum class DomainError {
     None,

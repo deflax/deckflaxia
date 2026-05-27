@@ -7,7 +7,7 @@
 #include <vector>
 #include <iosfwd>
 
-namespace djapp::ui {
+namespace deckflaxia::ui {
 
 struct BrowserTableRowModel final {
     std::string trackId;

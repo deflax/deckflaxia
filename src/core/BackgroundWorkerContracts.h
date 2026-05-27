@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace djapp::core {
+namespace deckflaxia::core {
 
 enum class BackgroundWorkerRole : std::uint8_t {
     AnalysisPool,

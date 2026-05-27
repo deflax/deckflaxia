@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
 #include <JuceHeader.h>
 
 #include <memory>
@@ -76,10 +76,10 @@ std::uint64_t juceCommandLineUnsignedAfter(const juce::String& commandLine, cons
 }
 
 std::filesystem::path juceSandboxHelperPath() {
-    return std::filesystem::path(juce::File::getSpecialLocation(juce::File::currentExecutableFile).getSiblingFile("DJAppPluginSandboxHelper").getFullPathName().toStdString());
+    return std::filesystem::path(juce::File::getSpecialLocation(juce::File::currentExecutableFile).getSiblingFile("DeckflaxiaPluginSandboxHelper").getFullPathName().toStdString());
 }
 
-std::vector<djapp::library::FilesystemEntry> juceBrowserWaveformFixtures(const std::filesystem::path& fixtureDir) {
+std::vector<deckflaxia::library::FilesystemEntry> juceBrowserWaveformFixtures(const std::filesystem::path& fixtureDir) {
     return {{(fixtureDir / "track_120bpm.wav").string(), true},
             {(fixtureDir / "track_128bpm.wav").string(), true},
             {(fixtureDir / "track_95bpm.mp3").string(), true},
@@ -93,14 +93,14 @@ public:
         : juce::DocumentWindow(name, juce::Desktop::getInstance().getDefaultLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId), juce::DocumentWindow::allButtons) {
         setUsingNativeTitleBar(true);
         setResizable(true, true);
-        setContentOwned(new djapp::ui::MainComponent(noAudioDevice), true);
+        setContentOwned(new deckflaxia::ui::MainComponent(noAudioDevice), true);
         centreWithSize(getWidth(), getHeight());
         setVisible(showWindow);
     }
 
     void closeButtonPressed() override { juce::JUCEApplication::getInstance()->systemRequestedQuit(); }
 
-    [[nodiscard]] djapp::ui::MainComponent* mainComponent() const noexcept { return dynamic_cast<djapp::ui::MainComponent*>(getContentComponent()); }
+    [[nodiscard]] deckflaxia::ui::MainComponent* mainComponent() const noexcept { return dynamic_cast<deckflaxia::ui::MainComponent*>(getContentComponent()); }
 };
 
 void writeJuceShellSmokeReport(const MainWindow* window) {
@@ -114,9 +114,9 @@ void writeJuceShellSmokeReport(const MainWindow* window) {
 
 } // namespace
 
-class DJApplication final : public juce::JUCEApplication {
+class DeckflaxiaApplication final : public juce::JUCEApplication {
 public:
-    const juce::String getApplicationName() override { return "DJApp"; }
+    const juce::String getApplicationName() override { return "Deckflaxia"; }
     const juce::String getApplicationVersion() override { return "0.1.0"; }
     bool moreThanOneInstanceAllowed() override { return true; }
 
@@ -150,8 +150,8 @@ public:
         const auto killHelperAfterMs = juceCommandLineUnsignedAfter(commandLine, "--kill-helper-after-ms");
         const auto sampleRateHz = static_cast<std::uint32_t>(juceCommandLineUnsignedAfter(commandLine, "--sample-rate"));
         const auto bufferFrames = static_cast<std::uint32_t>(juceCommandLineUnsignedAfter(commandLine, "--buffer-size"));
-        const auto bootstrap = djapp::app::initializeBootstrapServices(djapp::app::BootstrapOptions{smokeTest || uiSmokeTest || alphaSmokeTest || juceShellSmokeTest || juceUiSmokeTest || audioDeckSmokeTest || tempoSyncSmokeTest || timeStretchOverloadSmokeTest || mixerSmokeTest || vst3ProcessingSmokeTest || vst3EditorSmokeTest || pluginSandboxSmokeTest || playableSmokeTest || performanceSmokeTest || productionDjWorkflowSmokeTest || scopeAudit || browserWaveformSmokeTest || beatgridEditSmokeTest, noAudioDevice});
-        std::cout << djapp::app::formatBootstrapResult(bootstrap);
+        const auto bootstrap = deckflaxia::app::initializeBootstrapServices(deckflaxia::app::BootstrapOptions{smokeTest || uiSmokeTest || alphaSmokeTest || juceShellSmokeTest || juceUiSmokeTest || audioDeckSmokeTest || tempoSyncSmokeTest || timeStretchOverloadSmokeTest || mixerSmokeTest || vst3ProcessingSmokeTest || vst3EditorSmokeTest || pluginSandboxSmokeTest || playableSmokeTest || performanceSmokeTest || productionDjWorkflowSmokeTest || scopeAudit || browserWaveformSmokeTest || beatgridEditSmokeTest, noAudioDevice});
+        std::cout << deckflaxia::app::formatBootstrapResult(bootstrap);
 
         if (!bootstrap.ok) {
             setApplicationReturnValue(1);
@@ -160,73 +160,73 @@ public:
         }
 
         if (uiSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::app::runUiSmokeTest(emptyLibrary));
+            setApplicationReturnValue(deckflaxia::app::runUiSmokeTest(emptyLibrary));
             quit();
             return;
         }
 
         if (alphaSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::app::runAlphaSmokeTest(std::cout));
+            setApplicationReturnValue(deckflaxia::app::runAlphaSmokeTest(std::cout));
             quit();
             return;
         }
 
         if (audioDeckSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::audio::runAudioDeckSmokeTest(std::cout, djapp::audio::AudioDeckSmokeOptions{juceFixtureDirectory(commandLine)}));
+            setApplicationReturnValue(deckflaxia::audio::runAudioDeckSmokeTest(std::cout, deckflaxia::audio::AudioDeckSmokeOptions{juceFixtureDirectory(commandLine)}));
             quit();
             return;
         }
 
         if (tempoSyncSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::audio::runTempoSyncSmokeTest(std::cout, djapp::audio::AudioDeckSmokeOptions{juceFixtureDirectory(commandLine)}));
+            setApplicationReturnValue(deckflaxia::audio::runTempoSyncSmokeTest(std::cout, deckflaxia::audio::AudioDeckSmokeOptions{juceFixtureDirectory(commandLine)}));
             quit();
             return;
         }
 
         if (timeStretchOverloadSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::audio::runTimeStretchOverloadSmokeTest(std::cout, djapp::audio::AudioDeckSmokeOptions{juceFixtureDirectory(commandLine)}));
+            setApplicationReturnValue(deckflaxia::audio::runTimeStretchOverloadSmokeTest(std::cout, deckflaxia::audio::AudioDeckSmokeOptions{juceFixtureDirectory(commandLine)}));
             quit();
             return;
         }
 
         if (mixerSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::audio::runMixerSmokeTest(std::cout, djapp::audio::AudioDeckSmokeOptions{juceFixtureDirectory(commandLine), renderPath.value_or(std::filesystem::path{})}));
+            setApplicationReturnValue(deckflaxia::audio::runMixerSmokeTest(std::cout, deckflaxia::audio::AudioDeckSmokeOptions{juceFixtureDirectory(commandLine), renderPath.value_or(std::filesystem::path{})}));
             quit();
             return;
         }
 
         if (vst3ProcessingSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::audio::runVst3ProcessingSmokeTest(std::cout, djapp::audio::AudioDeckSmokeOptions{juceFixtureDirectory(commandLine), renderPath.value_or(std::filesystem::path{}), chainName.has_value() ? chainName->string() : std::string{"deck-a"}}));
+            setApplicationReturnValue(deckflaxia::audio::runVst3ProcessingSmokeTest(std::cout, deckflaxia::audio::AudioDeckSmokeOptions{juceFixtureDirectory(commandLine), renderPath.value_or(std::filesystem::path{}), chainName.has_value() ? chainName->string() : std::string{"deck-a"}}));
             quit();
             return;
         }
 
         if (vst3EditorSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::ui::runVst3EditorSmokeTest(std::cout, djapp::ui::VST3EditorSmokeOptions{juceFixtureDirectory(commandLine), screenshotPath.value_or(std::filesystem::path{})}));
+            setApplicationReturnValue(deckflaxia::ui::runVst3EditorSmokeTest(std::cout, deckflaxia::ui::VST3EditorSmokeOptions{juceFixtureDirectory(commandLine), screenshotPath.value_or(std::filesystem::path{})}));
             quit();
             return;
         }
 
         if (pluginSandboxSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::plugins::runPluginSandboxSmokeTest(std::cout, djapp::plugins::PluginSandboxSmokeOptions{juceFixtureDirectory(commandLine), juceSandboxHelperPath(), killHelperAfterMs}));
+            setApplicationReturnValue(deckflaxia::plugins::runPluginSandboxSmokeTest(std::cout, deckflaxia::plugins::PluginSandboxSmokeOptions{juceFixtureDirectory(commandLine), juceSandboxHelperPath(), killHelperAfterMs}));
             quit();
             return;
         }
 
         if (playableSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::app::runPlayableSmokeTest(std::cout, djapp::app::PlayableSmokeOptions{juceFixtureDirectory(commandLine), screenshotPath.value_or(std::filesystem::path{}), renderPath.value_or(std::filesystem::path{}), databasePath.value_or(std::filesystem::path{}), juceSandboxHelperPath(), juceCommandLineHas(commandLine, "--expect-restored-session")}));
+            setApplicationReturnValue(deckflaxia::app::runPlayableSmokeTest(std::cout, deckflaxia::app::PlayableSmokeOptions{juceFixtureDirectory(commandLine), screenshotPath.value_or(std::filesystem::path{}), renderPath.value_or(std::filesystem::path{}), databasePath.value_or(std::filesystem::path{}), juceSandboxHelperPath(), juceCommandLineHas(commandLine, "--expect-restored-session")}));
             quit();
             return;
         }
 
         if (performanceSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::app::runPerformanceSmokeTest(std::cout, djapp::app::PerformanceSmokeOptions{juceFixtureDirectory(commandLine), std::filesystem::path{".omo/evidence/real-playable-juce/task-15-performance.json"}, sampleRateHz == 0U ? 48000U : sampleRateHz, bufferFrames == 0U ? 512U : bufferFrames}));
+            setApplicationReturnValue(deckflaxia::app::runPerformanceSmokeTest(std::cout, deckflaxia::app::PerformanceSmokeOptions{juceFixtureDirectory(commandLine), std::filesystem::path{".omo/evidence/real-playable-juce/task-15-performance.json"}, sampleRateHz == 0U ? 48000U : sampleRateHz, bufferFrames == 0U ? 512U : bufferFrames}));
             quit();
             return;
         }
 
         if (productionDjWorkflowSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::app::runProductionDjWorkflowSmokeTest(std::cout, djapp::app::ProductionDjWorkflowSmokeOptions{juceFixtureDirectory(commandLine), std::filesystem::path{".omo/evidence/real-playable-juce/task-16-production-smoke.log"}, databasePath.value_or(std::filesystem::path{".omo/evidence/real-playable-juce/task-16-restart.db"}), sampleRateHz == 0U ? 48000U : sampleRateHz, bufferFrames == 0U ? 512U : bufferFrames}));
+            setApplicationReturnValue(deckflaxia::app::runProductionDjWorkflowSmokeTest(std::cout, deckflaxia::app::ProductionDjWorkflowSmokeOptions{juceFixtureDirectory(commandLine), std::filesystem::path{".omo/evidence/real-playable-juce/task-16-production-smoke.log"}, databasePath.value_or(std::filesystem::path{".omo/evidence/real-playable-juce/task-16-restart.db"}), sampleRateHz == 0U ? 48000U : sampleRateHz, bufferFrames == 0U ? 512U : bufferFrames}));
             quit();
             return;
         }
@@ -234,19 +234,19 @@ public:
         if (scopeAudit) {
             const auto forbid = juceCommandLinePathAfter(commandLine, "--forbid");
             auto paths = juceCommandLinePathsAfter(commandLine, "--paths");
-            setApplicationReturnValue(djapp::app::runScopeAudit(std::cout, djapp::app::ScopeAuditOptions{forbid.has_value() ? djapp::app::splitScopeAuditTerms(forbid->string()) : std::vector<std::string>{}, paths.empty() ? std::vector<std::filesystem::path>{"src", "tests", "docs", "cmake"} : paths, std::filesystem::path{".omo/evidence/real-playable-juce/task-16-scope-audit.log"}}));
+            setApplicationReturnValue(deckflaxia::app::runScopeAudit(std::cout, deckflaxia::app::ScopeAuditOptions{forbid.has_value() ? deckflaxia::app::splitScopeAuditTerms(forbid->string()) : std::vector<std::string>{}, paths.empty() ? std::vector<std::filesystem::path>{"src", "tests", "docs", "cmake"} : paths, std::filesystem::path{".omo/evidence/real-playable-juce/task-16-scope-audit.log"}}));
             quit();
             return;
         }
 
         if (browserWaveformSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::ui::runBrowserWaveformSmokeTest(std::cout, juceBrowserWaveformFixtures(juceFixtureDirectory(commandLine))));
+            setApplicationReturnValue(deckflaxia::ui::runBrowserWaveformSmokeTest(std::cout, juceBrowserWaveformFixtures(juceFixtureDirectory(commandLine))));
             quit();
             return;
         }
 
         if (beatgridEditSmokeTest && exitAfterInit) {
-            setApplicationReturnValue(djapp::ui::runBeatgridEditSmokeTest(std::cout));
+            setApplicationReturnValue(deckflaxia::ui::runBeatgridEditSmokeTest(std::cout));
             quit();
             return;
         }
@@ -262,11 +262,11 @@ public:
                 return;
             }
             if (dumpComponents) {
-                djapp::ui::writeComponentTreeReport(*component, std::cout);
+                deckflaxia::ui::writeComponentTreeReport(*component, std::cout);
             }
             bool ok = true;
             if (screenshotPath.has_value()) {
-                ok = djapp::ui::writeComponentScreenshot(*component, *screenshotPath, std::cout);
+                ok = deckflaxia::ui::writeComponentScreenshot(*component, *screenshotPath, std::cout);
             }
             setApplicationReturnValue(ok ? 0 : 1);
             quit();
@@ -287,7 +287,7 @@ public:
             return;
         }
 
-        std::cout << "DJApp JUCE shell ready. Pass --smoke-test --exit-after-init, --ui-smoke-test --exit-after-init, --alpha-smoke-test --exit-after-init, --audio-deck-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --tempo-sync-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --time-stretch-overload-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --mixer-smoke-test --fixtures tests/fixtures/dj-workflow --render .omo/evidence/real-playable-juce/task-9-crossfade.wav --exit-after-init, --vst3-processing-smoke-test --chain deck-a --fixtures tests/fixtures/plugins --render .omo/evidence/real-playable-juce/task-10-deck-vst3.wav --exit-after-init, --vst3-editor-smoke-test --fixtures tests/fixtures/plugins --screenshot .omo/evidence/real-playable-juce/task-11-editor.png --exit-after-init, --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures tests/fixtures/plugins --exit-after-init, --playable-smoke-test --fixtures tests/fixtures/dj-workflow --screenshot .omo/evidence/real-playable-juce/task-13-playable.png --render .omo/evidence/real-playable-juce/task-13-mix.wav --exit-after-init, --performance-smoke-test --fixtures tests/fixtures/dj-workflow --sample-rate 48000 --buffer-size 512 --exit-after-init, --production-dj-workflow-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --scope-audit --forbid \"Windows,recording,smart playlists,samplers,streaming,DVS,timecode,Rekordbox,Serato,cloud,accounts,marketplace,per-plugin sandbox,embedded plugin editor\" --paths src tests docs cmake, --browser-waveform-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --beatgrid-edit-smoke-test --exit-after-init, --juce-ui-smoke-test --dump-components --exit-after-init, or --juce-shell-smoke-test --exit-after-init for CI smoke validation.\n";
+        std::cout << "Deckflaxia JUCE shell ready. Pass --smoke-test --exit-after-init, --ui-smoke-test --exit-after-init, --alpha-smoke-test --exit-after-init, --audio-deck-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --tempo-sync-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --time-stretch-overload-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --mixer-smoke-test --fixtures tests/fixtures/dj-workflow --render .omo/evidence/real-playable-juce/task-9-crossfade.wav --exit-after-init, --vst3-processing-smoke-test --chain deck-a --fixtures tests/fixtures/plugins --render .omo/evidence/real-playable-juce/task-10-deck-vst3.wav --exit-after-init, --vst3-editor-smoke-test --fixtures tests/fixtures/plugins --screenshot .omo/evidence/real-playable-juce/task-11-editor.png --exit-after-init, --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures tests/fixtures/plugins --exit-after-init, --playable-smoke-test --fixtures tests/fixtures/dj-workflow --screenshot .omo/evidence/real-playable-juce/task-13-playable.png --render .omo/evidence/real-playable-juce/task-13-mix.wav --exit-after-init, --performance-smoke-test --fixtures tests/fixtures/dj-workflow --sample-rate 48000 --buffer-size 512 --exit-after-init, --production-dj-workflow-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --scope-audit --forbid \"Windows,recording,smart playlists,samplers,streaming,DVS,timecode,Rekordbox,Serato,cloud,accounts,marketplace,per-plugin sandbox,embedded plugin editor\" --paths src tests docs cmake, --browser-waveform-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --beatgrid-edit-smoke-test --exit-after-init, --juce-ui-smoke-test --dump-components --exit-after-init, or --juce-shell-smoke-test --exit-after-init for CI smoke validation.\n";
     }
 
     void shutdown() override { mainWindow_.reset(); }
@@ -298,7 +298,7 @@ private:
     std::unique_ptr<MainWindow> mainWindow_;
 };
 
-START_JUCE_APPLICATION(DJApplication)
+START_JUCE_APPLICATION(DeckflaxiaApplication)
 #else
 namespace {
 
@@ -349,10 +349,10 @@ std::filesystem::path sandboxHelperPathFromExecutable(char* executablePath) {
     if (executablePath == nullptr) {
         return {};
     }
-    return std::filesystem::path(executablePath).parent_path() / "DJAppPluginSandboxHelper";
+    return std::filesystem::path(executablePath).parent_path() / "DeckflaxiaPluginSandboxHelper";
 }
 
-std::vector<djapp::library::FilesystemEntry> browserWaveformFixtures(const std::filesystem::path& fixtureDir) {
+std::vector<deckflaxia::library::FilesystemEntry> browserWaveformFixtures(const std::filesystem::path& fixtureDir) {
     return {{(fixtureDir / "track_120bpm.wav").string(), true},
             {(fixtureDir / "track_128bpm.wav").string(), true},
             {(fixtureDir / "track_95bpm.mp3").string(), true},
@@ -363,27 +363,27 @@ std::vector<djapp::library::FilesystemEntry> browserWaveformFixtures(const std::
 }
 
 int main(int argc, char* argv[]) {
-    const bool smokeTest = djapp::app::hasArgument(argc, argv, "--smoke-test");
-    const bool uiSmokeTest = djapp::app::hasArgument(argc, argv, "--ui-smoke-test");
-    const bool alphaSmokeTest = djapp::app::hasArgument(argc, argv, "--alpha-smoke-test");
-    const bool juceUiSmokeTest = djapp::app::hasArgument(argc, argv, "--juce-ui-smoke-test");
-    const bool dumpComponents = djapp::app::hasArgument(argc, argv, "--dump-components");
-    const bool audioDeckSmokeTest = djapp::app::hasArgument(argc, argv, "--audio-deck-smoke-test");
-    const bool tempoSyncSmokeTest = djapp::app::hasArgument(argc, argv, "--tempo-sync-smoke-test");
-    const bool timeStretchOverloadSmokeTest = djapp::app::hasArgument(argc, argv, "--time-stretch-overload-smoke-test");
-    const bool mixerSmokeTest = djapp::app::hasArgument(argc, argv, "--mixer-smoke-test");
-    const bool vst3ProcessingSmokeTest = djapp::app::hasArgument(argc, argv, "--vst3-processing-smoke-test");
-    const bool vst3EditorSmokeTest = djapp::app::hasArgument(argc, argv, "--vst3-editor-smoke-test");
-    const bool pluginSandboxSmokeTest = djapp::app::hasArgument(argc, argv, "--plugin-sandbox-smoke-test");
-    const bool playableSmokeTest = djapp::app::hasArgument(argc, argv, "--playable-smoke-test");
-    const bool performanceSmokeTest = djapp::app::hasArgument(argc, argv, "--performance-smoke-test");
-    const bool productionDjWorkflowSmokeTest = djapp::app::hasArgument(argc, argv, "--production-dj-workflow-smoke-test");
-    const bool scopeAudit = djapp::app::hasArgument(argc, argv, "--scope-audit");
-    const bool browserWaveformSmokeTest = djapp::app::hasArgument(argc, argv, "--browser-waveform-smoke-test");
-    const bool beatgridEditSmokeTest = djapp::app::hasArgument(argc, argv, "--beatgrid-edit-smoke-test");
-    const bool emptyLibrary = djapp::app::hasArgument(argc, argv, "--empty-library");
-    const bool exitAfterInit = djapp::app::hasArgument(argc, argv, "--exit-after-init");
-    const bool noAudioDevice = djapp::app::hasArgument(argc, argv, "--no-audio-device");
+    const bool smokeTest = deckflaxia::app::hasArgument(argc, argv, "--smoke-test");
+    const bool uiSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--ui-smoke-test");
+    const bool alphaSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--alpha-smoke-test");
+    const bool juceUiSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--juce-ui-smoke-test");
+    const bool dumpComponents = deckflaxia::app::hasArgument(argc, argv, "--dump-components");
+    const bool audioDeckSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--audio-deck-smoke-test");
+    const bool tempoSyncSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--tempo-sync-smoke-test");
+    const bool timeStretchOverloadSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--time-stretch-overload-smoke-test");
+    const bool mixerSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--mixer-smoke-test");
+    const bool vst3ProcessingSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--vst3-processing-smoke-test");
+    const bool vst3EditorSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--vst3-editor-smoke-test");
+    const bool pluginSandboxSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--plugin-sandbox-smoke-test");
+    const bool playableSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--playable-smoke-test");
+    const bool performanceSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--performance-smoke-test");
+    const bool productionDjWorkflowSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--production-dj-workflow-smoke-test");
+    const bool scopeAudit = deckflaxia::app::hasArgument(argc, argv, "--scope-audit");
+    const bool browserWaveformSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--browser-waveform-smoke-test");
+    const bool beatgridEditSmokeTest = deckflaxia::app::hasArgument(argc, argv, "--beatgrid-edit-smoke-test");
+    const bool emptyLibrary = deckflaxia::app::hasArgument(argc, argv, "--empty-library");
+    const bool exitAfterInit = deckflaxia::app::hasArgument(argc, argv, "--exit-after-init");
+    const bool noAudioDevice = deckflaxia::app::hasArgument(argc, argv, "--no-audio-device");
 
     const auto screenshotPath = pathAfterArgument(argc, argv, "--screenshot");
     const auto renderPath = pathAfterArgument(argc, argv, "--render");
@@ -392,84 +392,84 @@ int main(int argc, char* argv[]) {
     const auto killHelperAfterMs = unsignedAfterArgument(argc, argv, "--kill-helper-after-ms");
     const auto sampleRateHz = static_cast<std::uint32_t>(unsignedAfterArgument(argc, argv, "--sample-rate"));
     const auto bufferFrames = static_cast<std::uint32_t>(unsignedAfterArgument(argc, argv, "--buffer-size"));
-    const auto bootstrap = djapp::app::initializeBootstrapServices(djapp::app::BootstrapOptions{smokeTest || uiSmokeTest || alphaSmokeTest || juceUiSmokeTest || audioDeckSmokeTest || tempoSyncSmokeTest || timeStretchOverloadSmokeTest || mixerSmokeTest || vst3ProcessingSmokeTest || vst3EditorSmokeTest || pluginSandboxSmokeTest || playableSmokeTest || performanceSmokeTest || productionDjWorkflowSmokeTest || scopeAudit || browserWaveformSmokeTest || beatgridEditSmokeTest, noAudioDevice});
-    std::cout << djapp::app::formatBootstrapResult(bootstrap);
+    const auto bootstrap = deckflaxia::app::initializeBootstrapServices(deckflaxia::app::BootstrapOptions{smokeTest || uiSmokeTest || alphaSmokeTest || juceUiSmokeTest || audioDeckSmokeTest || tempoSyncSmokeTest || timeStretchOverloadSmokeTest || mixerSmokeTest || vst3ProcessingSmokeTest || vst3EditorSmokeTest || pluginSandboxSmokeTest || playableSmokeTest || performanceSmokeTest || productionDjWorkflowSmokeTest || scopeAudit || browserWaveformSmokeTest || beatgridEditSmokeTest, noAudioDevice});
+    std::cout << deckflaxia::app::formatBootstrapResult(bootstrap);
 
     if (!bootstrap.ok) {
         return 1;
     }
 
     if (uiSmokeTest && exitAfterInit) {
-        return djapp::app::runUiSmokeTest(emptyLibrary);
+        return deckflaxia::app::runUiSmokeTest(emptyLibrary);
     }
 
     if (alphaSmokeTest && exitAfterInit) {
-        return djapp::app::runAlphaSmokeTest(std::cout);
+        return deckflaxia::app::runAlphaSmokeTest(std::cout);
     }
 
     if (audioDeckSmokeTest && exitAfterInit) {
-        return djapp::audio::runAudioDeckSmokeTest(std::cout, djapp::audio::AudioDeckSmokeOptions{fixtureDirectory(argc, argv)});
+        return deckflaxia::audio::runAudioDeckSmokeTest(std::cout, deckflaxia::audio::AudioDeckSmokeOptions{fixtureDirectory(argc, argv)});
     }
 
     if (tempoSyncSmokeTest && exitAfterInit) {
-        return djapp::audio::runTempoSyncSmokeTest(std::cout, djapp::audio::AudioDeckSmokeOptions{fixtureDirectory(argc, argv)});
+        return deckflaxia::audio::runTempoSyncSmokeTest(std::cout, deckflaxia::audio::AudioDeckSmokeOptions{fixtureDirectory(argc, argv)});
     }
 
     if (timeStretchOverloadSmokeTest && exitAfterInit) {
-        return djapp::audio::runTimeStretchOverloadSmokeTest(std::cout, djapp::audio::AudioDeckSmokeOptions{fixtureDirectory(argc, argv)});
+        return deckflaxia::audio::runTimeStretchOverloadSmokeTest(std::cout, deckflaxia::audio::AudioDeckSmokeOptions{fixtureDirectory(argc, argv)});
     }
 
     if (mixerSmokeTest && exitAfterInit) {
-        return djapp::audio::runMixerSmokeTest(std::cout, djapp::audio::AudioDeckSmokeOptions{fixtureDirectory(argc, argv), renderPath.value_or(std::filesystem::path{})});
+        return deckflaxia::audio::runMixerSmokeTest(std::cout, deckflaxia::audio::AudioDeckSmokeOptions{fixtureDirectory(argc, argv), renderPath.value_or(std::filesystem::path{})});
     }
 
     if (vst3ProcessingSmokeTest && exitAfterInit) {
-        return djapp::audio::runVst3ProcessingSmokeTest(std::cout, djapp::audio::AudioDeckSmokeOptions{fixtureDirectory(argc, argv), renderPath.value_or(std::filesystem::path{}), chainName.has_value() ? chainName->string() : std::string{"deck-a"}});
+        return deckflaxia::audio::runVst3ProcessingSmokeTest(std::cout, deckflaxia::audio::AudioDeckSmokeOptions{fixtureDirectory(argc, argv), renderPath.value_or(std::filesystem::path{}), chainName.has_value() ? chainName->string() : std::string{"deck-a"}});
     }
 
     if (vst3EditorSmokeTest && exitAfterInit) {
-        return djapp::ui::runVst3EditorSmokeTest(std::cout, djapp::ui::VST3EditorSmokeOptions{fixtureDirectory(argc, argv), screenshotPath.value_or(std::filesystem::path{})});
+        return deckflaxia::ui::runVst3EditorSmokeTest(std::cout, deckflaxia::ui::VST3EditorSmokeOptions{fixtureDirectory(argc, argv), screenshotPath.value_or(std::filesystem::path{})});
     }
 
     if (pluginSandboxSmokeTest && exitAfterInit) {
-        return djapp::plugins::runPluginSandboxSmokeTest(std::cout, djapp::plugins::PluginSandboxSmokeOptions{fixtureDirectory(argc, argv), sandboxHelperPathFromExecutable(argv[0]), killHelperAfterMs});
+        return deckflaxia::plugins::runPluginSandboxSmokeTest(std::cout, deckflaxia::plugins::PluginSandboxSmokeOptions{fixtureDirectory(argc, argv), sandboxHelperPathFromExecutable(argv[0]), killHelperAfterMs});
     }
 
     if (playableSmokeTest && exitAfterInit) {
-        return djapp::app::runPlayableSmokeTest(std::cout, djapp::app::PlayableSmokeOptions{fixtureDirectory(argc, argv), screenshotPath.value_or(std::filesystem::path{}), renderPath.value_or(std::filesystem::path{}), databasePath.value_or(std::filesystem::path{}), sandboxHelperPathFromExecutable(argv[0]), djapp::app::hasArgument(argc, argv, "--expect-restored-session")});
+        return deckflaxia::app::runPlayableSmokeTest(std::cout, deckflaxia::app::PlayableSmokeOptions{fixtureDirectory(argc, argv), screenshotPath.value_or(std::filesystem::path{}), renderPath.value_or(std::filesystem::path{}), databasePath.value_or(std::filesystem::path{}), sandboxHelperPathFromExecutable(argv[0]), deckflaxia::app::hasArgument(argc, argv, "--expect-restored-session")});
     }
 
     if (performanceSmokeTest && exitAfterInit) {
-        return djapp::app::runPerformanceSmokeTest(std::cout, djapp::app::PerformanceSmokeOptions{fixtureDirectory(argc, argv), std::filesystem::path{".omo/evidence/real-playable-juce/task-15-performance.json"}, sampleRateHz == 0U ? 48000U : sampleRateHz, bufferFrames == 0U ? 512U : bufferFrames});
+        return deckflaxia::app::runPerformanceSmokeTest(std::cout, deckflaxia::app::PerformanceSmokeOptions{fixtureDirectory(argc, argv), std::filesystem::path{".omo/evidence/real-playable-juce/task-15-performance.json"}, sampleRateHz == 0U ? 48000U : sampleRateHz, bufferFrames == 0U ? 512U : bufferFrames});
     }
 
     if (productionDjWorkflowSmokeTest && exitAfterInit) {
-        return djapp::app::runProductionDjWorkflowSmokeTest(std::cout, djapp::app::ProductionDjWorkflowSmokeOptions{fixtureDirectory(argc, argv), std::filesystem::path{".omo/evidence/real-playable-juce/task-16-production-smoke.log"}, databasePath.value_or(std::filesystem::path{".omo/evidence/real-playable-juce/task-16-restart.db"}), sampleRateHz == 0U ? 48000U : sampleRateHz, bufferFrames == 0U ? 512U : bufferFrames});
+        return deckflaxia::app::runProductionDjWorkflowSmokeTest(std::cout, deckflaxia::app::ProductionDjWorkflowSmokeOptions{fixtureDirectory(argc, argv), std::filesystem::path{".omo/evidence/real-playable-juce/task-16-production-smoke.log"}, databasePath.value_or(std::filesystem::path{".omo/evidence/real-playable-juce/task-16-restart.db"}), sampleRateHz == 0U ? 48000U : sampleRateHz, bufferFrames == 0U ? 512U : bufferFrames});
     }
 
     if (scopeAudit) {
         const auto forbid = pathAfterArgument(argc, argv, "--forbid");
         auto paths = pathsAfterArgument(argc, argv, "--paths");
-        return djapp::app::runScopeAudit(std::cout, djapp::app::ScopeAuditOptions{forbid.has_value() ? djapp::app::splitScopeAuditTerms(forbid->string()) : std::vector<std::string>{}, paths.empty() ? std::vector<std::filesystem::path>{"src", "tests", "docs", "cmake"} : paths, std::filesystem::path{".omo/evidence/real-playable-juce/task-16-scope-audit.log"}});
+        return deckflaxia::app::runScopeAudit(std::cout, deckflaxia::app::ScopeAuditOptions{forbid.has_value() ? deckflaxia::app::splitScopeAuditTerms(forbid->string()) : std::vector<std::string>{}, paths.empty() ? std::vector<std::filesystem::path>{"src", "tests", "docs", "cmake"} : paths, std::filesystem::path{".omo/evidence/real-playable-juce/task-16-scope-audit.log"}});
     }
 
     if (browserWaveformSmokeTest && exitAfterInit) {
-        return djapp::ui::runBrowserWaveformSmokeTest(std::cout, browserWaveformFixtures(fixtureDirectory(argc, argv)));
+        return deckflaxia::ui::runBrowserWaveformSmokeTest(std::cout, browserWaveformFixtures(fixtureDirectory(argc, argv)));
     }
 
     if (beatgridEditSmokeTest && exitAfterInit) {
-        return djapp::ui::runBeatgridEditSmokeTest(std::cout);
+        return deckflaxia::ui::runBeatgridEditSmokeTest(std::cout);
     }
 
     if (juceUiSmokeTest && exitAfterInit) {
-        return djapp::ui::runUnavailableJuceUiSmoke(std::cout, dumpComponents, screenshotPath.value_or(std::filesystem::path{}));
+        return deckflaxia::ui::runUnavailableJuceUiSmoke(std::cout, dumpComponents, screenshotPath.value_or(std::filesystem::path{}));
     }
 
     if (smokeTest && exitAfterInit) {
         return 0;
     }
 
-    std::cout << "DJApp bootstrap executable ready. Pass --smoke-test --exit-after-init, --ui-smoke-test --exit-after-init, --alpha-smoke-test --exit-after-init, --audio-deck-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --tempo-sync-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --time-stretch-overload-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --mixer-smoke-test --fixtures tests/fixtures/dj-workflow --render .omo/evidence/real-playable-juce/task-9-crossfade.wav --exit-after-init, --vst3-processing-smoke-test --chain deck-a --fixtures tests/fixtures/plugins --render .omo/evidence/real-playable-juce/task-10-deck-vst3.wav --exit-after-init, --vst3-editor-smoke-test --fixtures tests/fixtures/plugins --screenshot .omo/evidence/real-playable-juce/task-11-editor.png --exit-after-init, --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures tests/fixtures/plugins --exit-after-init, --playable-smoke-test --fixtures tests/fixtures/dj-workflow --screenshot .omo/evidence/real-playable-juce/task-13-playable.png --render .omo/evidence/real-playable-juce/task-13-mix.wav --exit-after-init, --performance-smoke-test --fixtures tests/fixtures/dj-workflow --sample-rate 48000 --buffer-size 512 --exit-after-init, --production-dj-workflow-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --scope-audit --forbid \"Windows,recording,smart playlists,samplers,streaming,DVS,timecode,Rekordbox,Serato,cloud,accounts,marketplace,per-plugin sandbox,embedded plugin editor\" --paths src tests docs cmake, --browser-waveform-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --beatgrid-edit-smoke-test --exit-after-init, or --juce-ui-smoke-test --dump-components --exit-after-init for guarded UI smoke validation.\n";
+    std::cout << "Deckflaxia bootstrap executable ready. Pass --smoke-test --exit-after-init, --ui-smoke-test --exit-after-init, --alpha-smoke-test --exit-after-init, --audio-deck-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --tempo-sync-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --time-stretch-overload-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --mixer-smoke-test --fixtures tests/fixtures/dj-workflow --render .omo/evidence/real-playable-juce/task-9-crossfade.wav --exit-after-init, --vst3-processing-smoke-test --chain deck-a --fixtures tests/fixtures/plugins --render .omo/evidence/real-playable-juce/task-10-deck-vst3.wav --exit-after-init, --vst3-editor-smoke-test --fixtures tests/fixtures/plugins --screenshot .omo/evidence/real-playable-juce/task-11-editor.png --exit-after-init, --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures tests/fixtures/plugins --exit-after-init, --playable-smoke-test --fixtures tests/fixtures/dj-workflow --screenshot .omo/evidence/real-playable-juce/task-13-playable.png --render .omo/evidence/real-playable-juce/task-13-mix.wav --exit-after-init, --performance-smoke-test --fixtures tests/fixtures/dj-workflow --sample-rate 48000 --buffer-size 512 --exit-after-init, --production-dj-workflow-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --scope-audit --forbid \"Windows,recording,smart playlists,samplers,streaming,DVS,timecode,Rekordbox,Serato,cloud,accounts,marketplace,per-plugin sandbox,embedded plugin editor\" --paths src tests docs cmake, --browser-waveform-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init, --beatgrid-edit-smoke-test --exit-after-init, or --juce-ui-smoke-test --dump-components --exit-after-init for guarded UI smoke validation.\n";
     return 0;
 }
 #endif

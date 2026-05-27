@@ -2,7 +2,7 @@
 
 #include "audio/AudioGraphContracts.h"
 
-namespace djapp::app {
+namespace deckflaxia::app {
 
 enum class EngineCommandSource {
     MessageThread,

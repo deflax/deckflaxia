@@ -10,7 +10,7 @@
 #include <sstream>
 #include <utility>
 
-namespace djapp::ui {
+namespace deckflaxia::ui {
 
 namespace {
 

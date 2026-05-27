@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace djapp::app {
+namespace deckflaxia::app {
 
 struct BrowserTrackViewModel final {
     std::string trackId;

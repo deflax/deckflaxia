@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace djapp::decks {
+namespace deckflaxia::decks {
 
 namespace {
 

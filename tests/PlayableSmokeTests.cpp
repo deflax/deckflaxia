@@ -17,7 +17,7 @@ int expect(bool condition, const char* message) {
 
 int runWorkflow(const std::filesystem::path& fixtures) {
     std::ostringstream output;
-    const auto result = djapp::app::runPlayableSmokeTest(output, djapp::app::PlayableSmokeOptions{fixtures, {}, {}, {}, {}, false});
+    const auto result = deckflaxia::app::runPlayableSmokeTest(output, deckflaxia::app::PlayableSmokeOptions{fixtures, {}, {}, {}, {}, false});
     const auto text = output.str();
     if (expect(result == 0, "playable workflow should pass") != 0) {
         std::cerr << text;
@@ -41,14 +41,14 @@ int runRestart(const std::filesystem::path& fixtures, const std::filesystem::pat
     std::filesystem::remove(dbPath, removeError);
 
     std::ostringstream firstOutput;
-    const auto first = djapp::app::runPlayableSmokeTest(firstOutput, djapp::app::PlayableSmokeOptions{fixtures, {}, {}, dbPath, {}, false});
+    const auto first = deckflaxia::app::runPlayableSmokeTest(firstOutput, deckflaxia::app::PlayableSmokeOptions{fixtures, {}, {}, dbPath, {}, false});
     if (expect(first == 0, "first restart smoke pass should persist state") != 0) {
         std::cerr << firstOutput.str();
         return 1;
     }
 
     std::ostringstream secondOutput;
-    const auto second = djapp::app::runPlayableSmokeTest(secondOutput, djapp::app::PlayableSmokeOptions{fixtures, {}, {}, dbPath, {}, true});
+    const auto second = deckflaxia::app::runPlayableSmokeTest(secondOutput, deckflaxia::app::PlayableSmokeOptions{fixtures, {}, {}, dbPath, {}, true});
     const auto text = secondOutput.str();
     if (expect(second == 0, "second restart smoke pass should restore state") != 0) {
         std::cerr << text;
@@ -63,7 +63,7 @@ int runRestart(const std::filesystem::path& fixtures, const std::filesystem::pat
 
 int runProduction(const std::filesystem::path& fixtures, const std::filesystem::path& dbPath) {
     std::ostringstream output;
-    const auto result = djapp::app::runProductionDjWorkflowSmokeTest(output, djapp::app::ProductionDjWorkflowSmokeOptions{fixtures, ".omo/evidence/real-playable-juce/task-16-production-smoke.log", dbPath, 48000, 512});
+    const auto result = deckflaxia::app::runProductionDjWorkflowSmokeTest(output, deckflaxia::app::ProductionDjWorkflowSmokeOptions{fixtures, ".omo/evidence/real-playable-juce/task-16-production-smoke.log", dbPath, 48000, 512});
     const auto text = output.str();
     if (expect(result == 0, "production workflow smoke should pass") != 0) {
         std::cerr << text;
@@ -82,8 +82,8 @@ int runProduction(const std::filesystem::path& fixtures, const std::filesystem::
 
 int runScopeAudit() {
     std::ostringstream output;
-    const auto forbidden = djapp::app::splitScopeAuditTerms("Windows,recording,smart playlists,samplers,streaming,DVS,timecode,Rekordbox,Serato,cloud,accounts,marketplace,per-plugin sandbox,embedded plugin editor");
-    const auto result = djapp::app::runScopeAudit(output, djapp::app::ScopeAuditOptions{forbidden, {"src", "tests", "docs", "cmake"}, ".omo/evidence/real-playable-juce/task-16-scope-audit.log"});
+    const auto forbidden = deckflaxia::app::splitScopeAuditTerms("Windows,recording,smart playlists,samplers,streaming,DVS,timecode,Rekordbox,Serato,cloud,accounts,marketplace,per-plugin sandbox,embedded plugin editor");
+    const auto result = deckflaxia::app::runScopeAudit(output, deckflaxia::app::ScopeAuditOptions{forbidden, {"src", "tests", "docs", "cmake"}, ".omo/evidence/real-playable-juce/task-16-scope-audit.log"});
     const auto text = output.str();
     if (expect(result == 0, "scope audit should pass") != 0) {
         std::cerr << text;

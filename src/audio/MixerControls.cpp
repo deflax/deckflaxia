@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace djapp::audio {
+namespace deckflaxia::audio {
 
 namespace {
 

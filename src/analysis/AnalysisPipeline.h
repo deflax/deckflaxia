@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <string>
 
-namespace djapp::analysis {
+namespace deckflaxia::analysis {
 
 enum class AnalysisError : std::uint8_t {
     None,

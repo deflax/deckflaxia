@@ -2,11 +2,11 @@
 
 #include <cstdint>
 
-#ifndef DJAPP_HAS_RUBBERBAND
-#define DJAPP_HAS_RUBBERBAND 0
+#ifndef DECKFLAXIA_HAS_RUBBERBAND
+#define DECKFLAXIA_HAS_RUBBERBAND 0
 #endif
 
-namespace djapp::audio {
+namespace deckflaxia::audio {
 
 enum class TimeStretchEngineKind : std::uint8_t {
     UnavailableBypass,
@@ -76,7 +76,7 @@ private:
     TimeStretchProcessMode mode_{TimeStretchProcessMode::LiveRealTime};
 };
 
-#if DJAPP_HAS_RUBBERBAND
+#if DECKFLAXIA_HAS_RUBBERBAND
 class RubberBandTimeStretchEngine final : public TimeStretchEngine {
 public:
     RubberBandTimeStretchEngine();

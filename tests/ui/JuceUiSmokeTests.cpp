@@ -16,8 +16,8 @@ int expect(bool condition, const std::string& message) {
 }
 
 int testSnapshotContract() {
-    const djapp::app::HybridUiShellModel shell;
-    const auto snapshot = shell.buildSnapshot(djapp::app::createUiSmokeInput(false));
+    const deckflaxia::app::HybridUiShellModel shell;
+    const auto snapshot = shell.buildSnapshot(deckflaxia::app::createUiSmokeInput(false));
     if (expect(snapshot.decks.size() == 4U, "JUCE UI snapshot bridge should expose four decks") != 0) {
         return 1;
     }
@@ -40,7 +40,7 @@ int testSnapshotContract() {
 
 int testUnavailableSurface() {
     std::ostringstream output;
-    const auto result = djapp::ui::runUnavailableJuceUiSmoke(output, true, {});
+    const auto result = deckflaxia::ui::runUnavailableJuceUiSmoke(output, true, {});
     const auto text = output.str();
     if (expect(result == 0, "unavailable dump surface should document blocker without failing fallback CTest") != 0) {
         return 1;
@@ -53,7 +53,7 @@ int testUnavailableSurface() {
     }
 
     std::ostringstream screenshotOutput;
-    const auto screenshotResult = djapp::ui::runUnavailableJuceUiSmoke(screenshotOutput, false, ".omo/evidence/real-playable-juce/task-6-ui.png");
+    const auto screenshotResult = deckflaxia::ui::runUnavailableJuceUiSmoke(screenshotOutput, false, ".omo/evidence/real-playable-juce/task-6-ui.png");
     if (expect(screenshotResult != 0, "unavailable screenshot should fail rather than fake PNG success") != 0) {
         return 1;
     }

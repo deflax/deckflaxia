@@ -8,7 +8,7 @@
 #include <sstream>
 #include <utility>
 
-namespace djapp::plugins {
+namespace deckflaxia::plugins {
 
 namespace {
 
@@ -289,7 +289,7 @@ PluginSandboxPackagingStatus checkPluginSandboxHelperPackaging(const std::filesy
         status.helperExecutablePresent = std::filesystem::exists(helperPath, error) && !std::filesystem::is_directory(helperPath, error);
     }
     if (status.supportedPlatform && status.helperExecutablePresent) {
-        status.detail = "helper executable found beside DJApp; platform packaging check passed";
+        status.detail = "helper executable found beside Deckflaxia; platform packaging check passed";
     } else if (status.supportedPlatform) {
         status.detail = "helper executable not found; guarded deterministic fallback remains active";
     } else {

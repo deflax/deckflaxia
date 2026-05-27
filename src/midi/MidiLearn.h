@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace djapp::midi {
+namespace deckflaxia::midi {
 
 enum class MidiLearnTargetKind : std::uint8_t {
     DeckTransport,

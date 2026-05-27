@@ -2,7 +2,7 @@
 
 #include "persistence/Persistence.h"
 
-namespace djapp::library {
+namespace deckflaxia::library {
 
 using LibraryTracksRepository = persistence::LibraryTracksRepository;
 using CratesRepository = persistence::CratesRepository;

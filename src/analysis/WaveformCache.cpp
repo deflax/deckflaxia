@@ -1,6 +1,6 @@
 #include "analysis/WaveformCache.h"
 
-namespace djapp::analysis {
+namespace deckflaxia::analysis {
 
 WaveformPrimitiveMetadata WaveformCacheModel::buildPrimitiveMetadata(const std::string& trackId,
                                                                      const library::AudioImportClassification& classification) const noexcept {
@@ -10,7 +10,7 @@ WaveformPrimitiveMetadata WaveformCacheModel::buildPrimitiveMetadata(const std::
     if (!classification.importable()) {
         return metadata;
     }
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
     metadata.juceThumbnailAvailable = true;
 #endif
     metadata.durationSeconds = classification.format == "wav" ? 2.0 : 0.0;

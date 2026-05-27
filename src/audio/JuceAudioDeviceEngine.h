@@ -4,15 +4,15 @@
 
 #include <filesystem>
 
-#ifndef DJAPP_HAS_JUCE
-#define DJAPP_HAS_JUCE 0
+#ifndef DECKFLAXIA_HAS_JUCE
+#define DECKFLAXIA_HAS_JUCE 0
 #endif
 
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
 #include <JuceHeader.h>
 #endif
 
-namespace djapp::audio {
+namespace deckflaxia::audio {
 
 enum class JuceAudioDeckError : std::uint8_t {
     None,
@@ -35,7 +35,7 @@ struct JuceDeckLoadResult final {
     }
 };
 
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
 class JuceAudioDeviceDeckEngine final : public juce::AudioIODeviceCallback {
 public:
     JuceAudioDeviceDeckEngine();

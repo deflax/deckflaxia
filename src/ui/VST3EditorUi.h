@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace djapp::ui {
+namespace deckflaxia::ui {
 
 enum class PluginEditorSurfaceKind : unsigned char {
     NativeSeparateWindow,

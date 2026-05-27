@@ -21,24 +21,24 @@ int expect(bool condition, const std::string& message) {
     return 0;
 }
 
-int expectOk(const djapp::audio::routing::RoutingGraphResult& result, const std::string& message) {
+int expectOk(const deckflaxia::audio::routing::RoutingGraphResult& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
-djapp::core::BackgroundJobTicket databaseTicket(std::uint64_t id) {
-    return djapp::core::BackgroundJobTicket{id, djapp::core::BackgroundJobKind::PersistLibraryChange, djapp::core::BackgroundWorkerRole::DatabaseWorker};
+deckflaxia::core::BackgroundJobTicket databaseTicket(std::uint64_t id) {
+    return deckflaxia::core::BackgroundJobTicket{id, deckflaxia::core::BackgroundJobKind::PersistLibraryChange, deckflaxia::core::BackgroundWorkerRole::DatabaseWorker};
 }
 
-djapp::core::BackgroundJobTicket pluginScanTicket(std::uint64_t id) {
-    return djapp::core::BackgroundJobTicket{id, djapp::core::BackgroundJobKind::ScanPlugins, djapp::core::BackgroundWorkerRole::PluginScanWorker};
+deckflaxia::core::BackgroundJobTicket pluginScanTicket(std::uint64_t id) {
+    return deckflaxia::core::BackgroundJobTicket{id, deckflaxia::core::BackgroundJobKind::ScanPlugins, deckflaxia::core::BackgroundWorkerRole::PluginScanWorker};
 }
 
-djapp::library::ProLibraryRepository makeLibrary(djapp::persistence::PersistenceService& service) {
-    return djapp::library::ProLibraryRepository{service.libraryTracks(), service.crates(), service.playlists(), service.trackMetadata()};
+deckflaxia::library::ProLibraryRepository makeLibrary(deckflaxia::persistence::PersistenceService& service) {
+    return deckflaxia::library::ProLibraryRepository{service.libraryTracks(), service.crates(), service.playlists(), service.trackMetadata()};
 }
 
 int testDisconnectedDevicesAndSampleRateChanges() {
-    using namespace djapp::audio;
+    using namespace deckflaxia::audio;
 
     auto service = AudioDeviceService(backendPolicyForPlatform(HostAudioPlatform::Linux));
     service.applyEvent(AudioDeviceEventKind::DeviceRunning, AudioRenderConfiguration{44100, 128});
@@ -55,8 +55,8 @@ int testDisconnectedDevicesAndSampleRateChanges() {
 }
 
 int testUnavailableOutputs() {
-    using namespace djapp::audio::routing;
-    using namespace djapp::core;
+    using namespace deckflaxia::audio::routing;
+    using namespace deckflaxia::core;
 
     AudioRoutingGraphController graph(RoutingDeviceLayout::forChannelCount(4));
     const auto deck = DeckId::fromIndex(0).value;
@@ -68,14 +68,14 @@ int testUnavailableOutputs() {
 }
 
 int testMissingPlugins() {
-    using namespace djapp::audio::routing;
-    using namespace djapp::core;
-    using namespace djapp::persistence;
-    using namespace djapp::plugins;
+    using namespace deckflaxia::audio::routing;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::persistence;
+    using namespace deckflaxia::plugins;
 
     PersistenceService persistence;
     Vst3PluginManager manager(persistence.pluginScanCache());
-    const PluginChainDescriptor savedChain{"edge-chain", {djapp::core::PluginDescriptor{"vst3:/missing/edge.vst3", "Missing Edge", false}}};
+    const PluginChainDescriptor savedChain{"edge-chain", {deckflaxia::core::PluginDescriptor{"vst3:/missing/edge.vst3", "Missing Edge", false}}};
     const auto recovery = manager.recoverSavedPluginChain(savedChain);
     if (expect(recovery.slots.size() == 1 && recovery.slots[0].state == PluginSlotRecoveryState::MissingPluginPlaceholder,
                "missing saved plugin recovers as placeholder") != 0) {
@@ -96,8 +96,8 @@ int testMissingPlugins() {
 }
 
 int testDeletedTracks() {
-    using namespace djapp::library;
-    using namespace djapp::persistence;
+    using namespace deckflaxia::library;
+    using namespace deckflaxia::persistence;
 
     PersistenceService persistence;
     auto library = makeLibrary(persistence);
@@ -114,9 +114,9 @@ int testDeletedTracks() {
 }
 
 int testCancelledScans() {
-    using namespace djapp::library;
-    using namespace djapp::persistence;
-    using namespace djapp::plugins;
+    using namespace deckflaxia::library;
+    using namespace deckflaxia::persistence;
+    using namespace deckflaxia::plugins;
 
     PersistenceService persistence;
     Vst3PluginManager pluginManager(persistence.pluginScanCache());
@@ -146,10 +146,10 @@ int testCancelledScans() {
 }
 
 int testUnavailableWaveformData() {
-    using namespace djapp::app;
-    using namespace djapp::audio::routing;
-    using namespace djapp::core;
-    using namespace djapp::library;
+    using namespace deckflaxia::app;
+    using namespace deckflaxia::audio::routing;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::library;
 
     BrowserTrackEntry track;
     track.track = LibraryTrack{"track:no-waveform", "No Waveform", "Edge", BeatgridMetadata::fromBpm(120.0, 0.0).value, MusicalKey::Unknown};
@@ -167,8 +167,8 @@ int testUnavailableWaveformData() {
 }
 
 int testGraphUpdateDuringRender() {
-    using namespace djapp::audio::routing;
-    using namespace djapp::core;
+    using namespace deckflaxia::audio::routing;
+    using namespace deckflaxia::core;
 
     AudioRoutingGraphController graph(RoutingDeviceLayout::forChannelCount(4));
     const auto deck = DeckId::fromIndex(3).value;

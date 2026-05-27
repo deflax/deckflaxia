@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace djapp::rendering {
+namespace deckflaxia::rendering {
 
 WaveformRenderer::WaveformRenderer(RendererBackend backend) noexcept : backend_(backend) {}
 

@@ -15,23 +15,23 @@ int expect(bool condition, const std::string& message) {
 }
 
 template <typename T>
-int expectOk(const djapp::core::DomainResult<T>& result, const std::string& message) {
+int expectOk(const deckflaxia::core::DomainResult<T>& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
-int expectOk(const djapp::core::UnitResult& result, const std::string& message) {
+int expectOk(const deckflaxia::core::UnitResult& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
 template <typename T>
-int expectError(const djapp::core::DomainResult<T>& result, djapp::core::DomainError expected, const std::string& message) {
+int expectError(const deckflaxia::core::DomainResult<T>& result, deckflaxia::core::DomainError expected, const std::string& message) {
     if (expect(!result.ok(), message + " should fail") != 0) {
         return 1;
     }
     return expect(result.error == expected, message + " should return expected error");
 }
 
-int expectError(const djapp::core::UnitResult& result, djapp::core::DomainError expected, const std::string& message) {
+int expectError(const deckflaxia::core::UnitResult& result, deckflaxia::core::DomainError expected, const std::string& message) {
     if (expect(!result.ok(), message + " should fail") != 0) {
         return 1;
     }
@@ -39,7 +39,7 @@ int expectError(const djapp::core::UnitResult& result, djapp::core::DomainError 
 }
 
 int testDecks() {
-    using namespace djapp::core;
+    using namespace deckflaxia::core;
 
     const auto ids = allDeckIds();
     if (expect(ids.size() == 4, "domain should expose exactly four deck IDs") != 0) {
@@ -95,7 +95,7 @@ int testDecks() {
 }
 
 int testInvalidTransitions() {
-    using namespace djapp::core;
+    using namespace deckflaxia::core;
 
     if (expectError(RoutingAssignment::deckOutput(OutputBus::Cue, false), DomainError::InvalidRouting, "cue as main deck output") != 0) {
         return 1;
@@ -125,7 +125,7 @@ int testInvalidTransitions() {
 }
 
 int testClock() {
-    using namespace djapp::core;
+    using namespace deckflaxia::core;
 
     auto clock = MasterClockState::stopped(120.0);
     clock.start();
@@ -152,7 +152,7 @@ int testClock() {
 }
 
 int testDescriptors() {
-    using namespace djapp::core;
+    using namespace deckflaxia::core;
 
     auto beatgrid = BeatgridMetadata::fromBpm(128.0, 0.125);
     if (expectOk(beatgrid, "beatgrid metadata") != 0) {

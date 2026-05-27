@@ -1,6 +1,6 @@
 #include "midi/MidiBuffer.h"
 
-namespace djapp::midi {
+namespace deckflaxia::midi {
 
 bool MidiBuffer::addEvent(MidiMessage message, std::uint32_t sampleOffset, std::uint32_t blockFrames) noexcept {
     if (sampleOffset >= blockFrames || size_ >= events_.size()) {

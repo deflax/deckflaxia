@@ -14,7 +14,7 @@
 #include <sstream>
 #include <utility>
 
-namespace djapp::audio {
+namespace deckflaxia::audio {
 
 namespace {
 
@@ -153,7 +153,7 @@ bool writeTextFile(const std::filesystem::path& path, const std::string& text) {
 int runAudioDeckSmokeTest(std::ostream& output, const AudioDeckSmokeOptions& options) {
     output << "audio-deck-smoke-test: four-deck-render\n";
     output << "fixtures=" << options.fixtureDirectory.string() << '\n';
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
     output << "juce-audio-engine=available\n";
     JuceAudioDeviceDeckEngine engine;
     const auto files = fourDeckFixtureFiles(options.fixtureDirectory);
@@ -197,7 +197,7 @@ int runAudioDeckSmokeTest(std::ostream& output, const AudioDeckSmokeOptions& opt
 int runTempoSyncSmokeTest(std::ostream& output, const AudioDeckSmokeOptions& options) {
     output << "tempo-sync-smoke-test: time-stretch\n";
     output << "fixtures=" << options.fixtureDirectory.string() << '\n';
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
     output << "juce-audio-engine=available\n";
 #else
     output << "juce-audio-engine=unavailable typed-error=" << toString(JuceAudioDeckError::JuceUnavailable) << '\n';
@@ -279,7 +279,7 @@ int runTimeStretchOverloadSmokeTest(std::ostream& output, const AudioDeckSmokeOp
 int runMixerSmokeTest(std::ostream& output, const AudioDeckSmokeOptions& options) {
     output << "mixer-smoke-test: crossfader-midi\n";
     output << "fixtures=" << options.fixtureDirectory.string() << '\n';
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
     output << "juce-audio-engine=available\n";
 #else
     output << "juce-audio-engine=unavailable typed-error=" << toString(JuceAudioDeckError::JuceUnavailable) << '\n';
@@ -360,7 +360,7 @@ int runMixerSmokeTest(std::ostream& output, const AudioDeckSmokeOptions& options
 int runVst3ProcessingSmokeTest(std::ostream& output, const AudioDeckSmokeOptions& options) {
     output << "vst3-processing-smoke-test: " << options.chain << '\n';
     output << "fixtures=" << options.fixtureDirectory.string() << '\n';
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
     output << "juce-vst3-host=available real-vst3-success=requires-real-vst3-fixture\n";
 #else
     output << "juce-vst3-host=unavailable fallback=deterministic-test-processor real-vst3-success=0\n";

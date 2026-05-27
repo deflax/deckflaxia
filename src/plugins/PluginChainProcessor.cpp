@@ -5,11 +5,11 @@
 #include <utility>
 #include <vector>
 
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
 #include <JuceHeader.h>
 #endif
 
-namespace djapp::plugins {
+namespace deckflaxia::plugins {
 
 namespace {
 
@@ -74,7 +74,7 @@ std::string vst3PathFromIdentifier(const std::string& identifier) {
 
 }
 
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
 class PluginEditorWindow final : public juce::DocumentWindow {
 public:
     explicit PluginEditorWindow(const juce::String& name)
@@ -99,7 +99,7 @@ public:
         sampleRateHz_ = sampleRateHz;
         maxBlockFrames_ = maxBlockFrames;
         chain_ = std::move(chain);
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
         editorWindows_.clear();
         jucePlugins_.clear();
         jucePluginSlots_.clear();
@@ -116,7 +116,7 @@ public:
                 ensureGainParameter(plugin, 0.5);
                 ++status_.activeSlotCount;
             } else {
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
                 continue;
 #else
                 ++status_.unavailableSlotCount;
@@ -125,7 +125,7 @@ public:
             status_.latencyFrames += plugin.latencyFrames;
         }
 
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
         instantiateJucePlugins();
 #endif
         if (chain_.plugins.empty()) {
@@ -177,7 +177,7 @@ public:
             return metrics;
         }
 
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
         processJuce(interleavedStereo, frameCount);
 #endif
         for (const auto& plugin : chain_.plugins) {
@@ -207,7 +207,7 @@ public:
         if (isDeterministicTestPluginId(chain_.plugins[slotIndex].identifier)) {
             return PluginEditorWindowStatus{false, false, true, "generic-parameter-surface deterministic fixture has no native editor"};
         }
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
         const auto found = std::find(jucePluginSlots_.begin(), jucePluginSlots_.end(), slotIndex);
         if (found == jucePluginSlots_.end()) {
             return PluginEditorWindowStatus{false, false, true, "native-editor-unavailable plugin instance not loaded"};
@@ -238,7 +238,7 @@ public:
         editorWindows_[slotIndex]->toFront(true);
         return PluginEditorWindowStatus{true, editorWindows_[slotIndex]->isVisible(), false, "native-editor-open separate-window message-thread"};
 #else
-        return PluginEditorWindowStatus{false, false, true, "native-editor-unavailable DJAPP_HAS_JUCE=0"};
+        return PluginEditorWindowStatus{false, false, true, "native-editor-unavailable DECKFLAXIA_HAS_JUCE=0"};
 #endif
     }
 
@@ -246,7 +246,7 @@ public:
         if (slotIndex >= chain_.plugins.size()) {
             return PluginEditorWindowStatus{false, false, false, "invalid-slot"};
         }
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
         if (!juce::MessageManager::getInstance()->isThisTheMessageThread()) {
             juce::MessageManager::callAsync([this, slotIndex] { (void)closeSeparateEditorWindow(slotIndex); });
             return PluginEditorWindowStatus{true, true, false, "native-editor-close-pending message-thread-handoff"};
@@ -257,20 +257,20 @@ public:
         }
         return PluginEditorWindowStatus{nativeAvailable, false, !nativeAvailable, nativeAvailable ? "native-editor-closed" : "generic-parameter-surface closed-no-native-window"};
 #else
-        return PluginEditorWindowStatus{false, false, true, "native-editor-unavailable DJAPP_HAS_JUCE=0"};
+        return PluginEditorWindowStatus{false, false, true, "native-editor-unavailable DECKFLAXIA_HAS_JUCE=0"};
 #endif
     }
 
 private:
     static bool juceAvailable() noexcept {
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
         return true;
 #else
         return false;
 #endif
     }
 
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
     void instantiateJucePlugins() {
         if (!juceFormatsRegistered_) {
             formatManager_.addFormat(new juce::VST3PluginFormat());

@@ -15,7 +15,7 @@ int expect(bool condition, const std::string& message) {
 }
 
 int testBackendPolicy() {
-    using namespace djapp::audio;
+    using namespace deckflaxia::audio;
 
     const auto mac = backendPolicyForPlatform(HostAudioPlatform::MacOS);
     if (expect(mac.preferred == AudioBackendKind::CoreAudio, "macOS should prefer CoreAudio") != 0) {
@@ -44,7 +44,7 @@ int testBackendPolicy() {
 }
 
 int testDeviceEvents() {
-    using namespace djapp::audio;
+    using namespace deckflaxia::audio;
 
     auto service = AudioDeviceService(backendPolicyForPlatform(HostAudioPlatform::Linux));
     service.markMissingDevice(AudioRenderConfiguration{44100, 128});
@@ -77,7 +77,7 @@ int testDeviceEvents() {
 }
 
 int testNoDeviceState() {
-    using namespace djapp::audio;
+    using namespace deckflaxia::audio;
 
     const auto service = AudioDeviceService::noDevice(backendPolicyForPlatform(HostAudioPlatform::Linux));
     if (expect(service.state().status == AudioDeviceConnectionStatus::NoDeviceRequested, "no-device request should be typed") != 0) {
@@ -90,7 +90,7 @@ int testNoDeviceState() {
 }
 
 int testOfflineMatrix() {
-    using namespace djapp::audio;
+    using namespace deckflaxia::audio;
 
     OfflineAudioRenderer renderer;
     for (const auto& pair : kAlphaSampleRateBufferMatrix) {

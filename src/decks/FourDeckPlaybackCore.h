@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <string>
 
-namespace djapp::decks {
+namespace deckflaxia::decks {
 
 constexpr std::uint32_t kFourDeckOutputChannels = 8;
 constexpr std::uint32_t kFourDeckMaxRenderFrames = 512;

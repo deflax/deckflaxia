@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cctype>
 
-namespace djapp::library {
+namespace deckflaxia::library {
 namespace {
 
 std::string lowerCopy(std::string value) {
@@ -53,7 +53,7 @@ AudioImportClassification classifyAudioImport(const FilesystemEntry& entry) noex
         classification.error = AudioImportError::CorruptAudio;
         return classification;
     }
-#if !DJAPP_HAS_JUCE
+#if !DECKFLAXIA_HAS_JUCE
     if (classification.format == "mp3") {
         classification.error = AudioImportError::ExternalToolRequired;
     }

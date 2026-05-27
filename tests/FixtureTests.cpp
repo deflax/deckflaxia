@@ -215,7 +215,7 @@ FixtureValidationResult validateAudioFixture(const std::filesystem::path& path) 
 std::string manifestForDirectory(const std::filesystem::path& directory) {
     std::ostringstream output;
     output << "{\n";
-    output << "  \"schema\": \"djapp-fixtures-v1\",\n";
+    output << "  \"schema\": \"deckflaxia-fixtures-v1\",\n";
     output << "  \"directory\": \"tests/fixtures/dj-workflow\",\n";
     output << "  \"hash_algorithm\": \"fnv1a64\",\n";
     output << "  \"fixtures\": [\n";

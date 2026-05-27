@@ -16,39 +16,39 @@ int expect(bool condition, const std::string& message) {
     return 0;
 }
 
-int expectOk(djapp::plugins::PluginScanError error, const std::string& message) {
-    return expect(error == djapp::plugins::PluginScanError::None, message + " should succeed");
+int expectOk(deckflaxia::plugins::PluginScanError error, const std::string& message) {
+    return expect(error == deckflaxia::plugins::PluginScanError::None, message + " should succeed");
 }
 
-int expectOk(const djapp::plugins::PluginScanResult& result, const std::string& message) {
+int expectOk(const deckflaxia::plugins::PluginScanResult& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
-int expectOk(const djapp::audio::routing::RoutingGraphResult& result, const std::string& message) {
+int expectOk(const deckflaxia::audio::routing::RoutingGraphResult& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
-djapp::core::BackgroundJobTicket pluginScanTicket(std::uint64_t id) {
-    return djapp::core::BackgroundJobTicket{id, djapp::core::BackgroundJobKind::ScanPlugins, djapp::core::BackgroundWorkerRole::PluginScanWorker};
+deckflaxia::core::BackgroundJobTicket pluginScanTicket(std::uint64_t id) {
+    return deckflaxia::core::BackgroundJobTicket{id, deckflaxia::core::BackgroundJobKind::ScanPlugins, deckflaxia::core::BackgroundWorkerRole::PluginScanWorker};
 }
 
-djapp::core::MasterClockState runningClock(double bpm, double positionBeats) {
-    auto clock = djapp::core::MasterClockState::stopped(bpm);
+deckflaxia::core::MasterClockState runningClock(double bpm, double positionBeats) {
+    auto clock = deckflaxia::core::MasterClockState::stopped(bpm);
     clock.positionBeats = positionBeats;
     clock.start();
     return clock;
 }
 
-djapp::core::MidiStepPattern singleStepPattern() {
-    auto pattern = djapp::core::MidiStepPattern::sixteenStepDefault(60);
-    pattern.steps[0] = djapp::core::MidiStep{true, 60, 100, 0.25};
+deckflaxia::core::MidiStepPattern singleStepPattern() {
+    auto pattern = deckflaxia::core::MidiStepPattern::sixteenStepDefault(60);
+    pattern.steps[0] = deckflaxia::core::MidiStep{true, 60, 100, 0.25};
     return pattern;
 }
 
 int testScanCache() {
-    using namespace djapp::core;
-    using namespace djapp::persistence;
-    using namespace djapp::plugins;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::persistence;
+    using namespace deckflaxia::plugins;
 
     PersistenceService service;
     Vst3PluginManager manager(service.pluginScanCache());
@@ -84,8 +84,8 @@ int testScanCache() {
     }
 
     const PluginChainDescriptor savedChain{"deck-1-chain",
-                                           {djapp::core::PluginDescriptor{pluginIdFromPath("/plugins/alpha-synth.vst3"), "Alpha Synth", false},
-                                            djapp::core::PluginDescriptor{"vst3:/plugins/missing-synth.vst3", "Missing Synth", false}}};
+                                           {deckflaxia::core::PluginDescriptor{pluginIdFromPath("/plugins/alpha-synth.vst3"), "Alpha Synth", false},
+                                            deckflaxia::core::PluginDescriptor{"vst3:/plugins/missing-synth.vst3", "Missing Synth", false}}};
     const auto recovery = reloaded.recoverSavedPluginChain(savedChain);
     if (expect(recovery.slots.size() == 2, "saved chain recovery should preserve slot count") != 0) {
         return 1;
@@ -102,8 +102,8 @@ int testScanCache() {
 }
 
 int testBlacklist() {
-    using namespace djapp::persistence;
-    using namespace djapp::plugins;
+    using namespace deckflaxia::persistence;
+    using namespace deckflaxia::plugins;
 
     PersistenceService service;
     Vst3PluginManager manager(service.pluginScanCache());
@@ -162,12 +162,12 @@ int testBlacklist() {
 }
 
 int testSequencerMidiRouting() {
-    using namespace djapp::audio;
-    using namespace djapp::audio::routing;
-    using namespace djapp::core;
-    using namespace djapp::decks;
-    using namespace djapp::persistence;
-    using namespace djapp::plugins;
+    using namespace deckflaxia::audio;
+    using namespace deckflaxia::audio::routing;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::decks;
+    using namespace deckflaxia::persistence;
+    using namespace deckflaxia::plugins;
 
     PersistenceService service;
     Vst3PluginManager manager(service.pluginScanCache());

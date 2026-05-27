@@ -4,11 +4,11 @@
 #include <cmath>
 #include <limits>
 
-#if DJAPP_HAS_RUBBERBAND
+#if DECKFLAXIA_HAS_RUBBERBAND
 #include <rubberband/RubberBandStretcher.h>
 #endif
 
-namespace djapp::audio {
+namespace deckflaxia::audio {
 
 namespace {
 
@@ -75,7 +75,7 @@ TimeStretchStatus SignalsmithCompatibleFallbackTimeStretchEngine::status(const T
     return makeStatus(kind(), mode_, true, latencyFrames(), 0U, 0U, maxBlockFrames_ * 2U, settings);
 }
 
-#if DJAPP_HAS_RUBBERBAND
+#if DECKFLAXIA_HAS_RUBBERBAND
 struct RubberBandTimeStretchEngine::Impl final {
     RubberBand::RubberBandStretcher stretcher;
 
@@ -131,7 +131,7 @@ TimeStretchStatus RubberBandTimeStretchEngine::status(const TimeStretchSettings&
 #endif
 
 bool rubberBandTimeStretchAvailable() noexcept {
-#if DJAPP_HAS_RUBBERBAND
+#if DECKFLAXIA_HAS_RUBBERBAND
     return true;
 #else
     return false;
@@ -139,7 +139,7 @@ bool rubberBandTimeStretchAvailable() noexcept {
 }
 
 TimeStretchEngineKind primaryTimeStretchEngineKind() noexcept {
-#if DJAPP_HAS_RUBBERBAND
+#if DECKFLAXIA_HAS_RUBBERBAND
     return TimeStretchEngineKind::RubberBandRealTime;
 #else
     return TimeStretchEngineKind::SignalsmithCompatibleFallback;

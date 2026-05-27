@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace djapp::plugins {
+namespace deckflaxia::plugins {
 
 constexpr std::size_t kPluginSandboxMaxHelperProcesses = 5;
 constexpr std::uint32_t kPluginSandboxDefaultMaxBlockFrames = 512;

@@ -7,7 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace djapp::decks {
+namespace deckflaxia::decks {
 
 enum class StepResolution : std::uint8_t {
     Quarter,

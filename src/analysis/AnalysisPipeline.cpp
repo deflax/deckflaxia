@@ -2,7 +2,7 @@
 
 #include <utility>
 
-namespace djapp::analysis {
+namespace deckflaxia::analysis {
 
 namespace {
 

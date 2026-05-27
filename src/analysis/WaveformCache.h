@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace djapp::analysis {
+namespace deckflaxia::analysis {
 
 struct WaveformPrimitiveMetadata final {
     std::string trackId;

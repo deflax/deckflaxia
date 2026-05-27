@@ -13,12 +13,12 @@ int expect(bool condition, const std::string& message) {
     return 0;
 }
 
-int expectOk(const djapp::audio::routing::RoutingGraphResult& result, const std::string& message) {
+int expectOk(const deckflaxia::audio::routing::RoutingGraphResult& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
-int expectError(const djapp::audio::routing::RoutingGraphResult& result,
-                djapp::audio::routing::RoutingGraphError error,
+int expectError(const deckflaxia::audio::routing::RoutingGraphResult& result,
+                deckflaxia::audio::routing::RoutingGraphError error,
                 const std::string& message) {
     if (expect(!result.ok(), message + " should fail") != 0) {
         return 1;
@@ -27,8 +27,8 @@ int expectError(const djapp::audio::routing::RoutingGraphResult& result,
 }
 
 int testMultiOutputGraph() {
-    using namespace djapp::audio::routing;
-    using namespace djapp::core;
+    using namespace deckflaxia::audio::routing;
+    using namespace deckflaxia::core;
 
     AudioRoutingGraphController controller(RoutingDeviceLayout::forChannelCount(8));
     const auto initial = controller.captureSnapshotForAudioCallback();
@@ -122,8 +122,8 @@ int testMultiOutputGraph() {
 }
 
 int testTypedRoutingFailuresAndWarnings() {
-    using namespace djapp::audio::routing;
-    using namespace djapp::core;
+    using namespace deckflaxia::audio::routing;
+    using namespace deckflaxia::core;
 
     AudioRoutingGraphController fourChannel(RoutingDeviceLayout::forChannelCount(4));
     const auto deck0 = DeckId::fromIndex(0).value;
@@ -168,8 +168,8 @@ int testTypedRoutingFailuresAndWarnings() {
 }
 
 int testPendingUpdateDuringRender() {
-    using namespace djapp::audio::routing;
-    using namespace djapp::core;
+    using namespace deckflaxia::audio::routing;
+    using namespace deckflaxia::core;
 
     AudioRoutingGraphController controller(RoutingDeviceLayout::forChannelCount(4));
     const auto deck3 = DeckId::fromIndex(3).value;

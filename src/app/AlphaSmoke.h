@@ -2,7 +2,7 @@
 
 #include <iosfwd>
 
-namespace djapp::app {
+namespace deckflaxia::app {
 
 [[nodiscard]] int runAlphaSmokeTest(std::ostream& output);
 

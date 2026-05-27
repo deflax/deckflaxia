@@ -27,7 +27,7 @@
 #include <string>
 #include <vector>
 
-namespace djapp::app {
+namespace deckflaxia::app {
 
 namespace {
 
@@ -118,7 +118,7 @@ bool writeRenderedWavIfAvailable(const decks::FourDeckPlaybackCore& core,
         report << "render-wav=not-requested\n";
         return true;
     }
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
     if (renderPath.has_parent_path()) {
         std::filesystem::create_directories(renderPath.parent_path());
     }
@@ -157,7 +157,7 @@ bool writeScreenshotIfAvailable(const std::filesystem::path& screenshotPath, std
         report << "screenshot=not-requested\n";
         return true;
     }
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
     ui::MainComponent component(true);
     const auto wrote = ui::writeComponentScreenshot(component, screenshotPath, report);
     report << "screenshot-path=" << screenshotPath.string() << " wrote=" << (wrote ? 1 : 0) << '\n';
@@ -471,7 +471,7 @@ int runPlayableSmokeTest(std::ostream& output, const PlayableSmokeOptions& optio
 
     report << "playable-smoke-test: task-13\n";
     report << "fixtures=" << options.fixtureDirectory.string() << '\n';
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
     report << "juce=available\n";
 #else
     report << "juce=unavailable fallback=honest-deterministic-core\n";
@@ -719,7 +719,7 @@ int runPerformanceSmokeTest(std::ostream& output, const PerformanceSmokeOptions&
            << "sample-rate=" << options.sampleRateHz
            << " buffer-size=" << options.bufferFrames
            << " callback-budget-ms=" << callbackBudget << '\n';
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
     report << "juce=available\n";
 #else
     report << "juce=unavailable fallback=honest-deterministic-core\n";
@@ -931,7 +931,7 @@ int runProductionDjWorkflowSmokeTest(std::ostream& output, const ProductionDjWor
 
     report << "production-dj-workflow-smoke-test: task-16\n"
            << "fixtures=" << options.fixtureDirectory.string() << '\n';
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
     report << "juce=available boundary=native-juce-surfaces-required\n";
 #else
     report << "juce=unavailable boundary=honest-fallback-contract no-fake-png-wav-native-editor-vst3\n";
@@ -967,7 +967,7 @@ int runProductionDjWorkflowSmokeTest(std::ostream& output, const ProductionDjWor
 
     ok = ok && firstResult == 0 && restartResult == 0 && performanceResult == 0 && faultsOk;
     ok = reportSystem(report, "license/compliance-posture", true, "AGPL-3.0-or-later project posture with JUCE/VST3/RubberBand/SQLite boundaries documented in cmake/LicenseReport.cmake") && ok;
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
     ok = reportSystem(report, "JUCE-required-boundary/fallback-honesty", true, "JUCE available; native surfaces are eligible for direct validation") && ok;
 #else
     ok = reportSystem(report, "JUCE-required-boundary/fallback-honesty", containsInsensitive(firstText, "juce=unavailable") && containsInsensitive(firstText, "generic-fallback=1"), "JUCE unavailable locally; fallback contract verifies deterministic core and generic editor without fake native artifacts") && ok;

@@ -7,7 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace djapp::audio::routing {
+namespace deckflaxia::audio::routing {
 
 constexpr std::size_t kDeckCount = 4;
 constexpr std::size_t kPluginSlotsPerDeck = 4;

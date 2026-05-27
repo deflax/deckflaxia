@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace djapp::app {
+namespace deckflaxia::app {
 
 struct PlayableSmokeOptions final {
     std::filesystem::path fixtureDirectory{"tests/fixtures/dj-workflow"};

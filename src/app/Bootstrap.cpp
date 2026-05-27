@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <sstream>
 
-namespace djapp::app {
+namespace deckflaxia::app {
 
 BootstrapResult initializeBootstrapServices(const BootstrapOptions options) {
     auto audioService = options.noAudioDevice
@@ -43,4 +43,4 @@ std::string formatBootstrapResult(const BootstrapResult& result) {
     return output.str();
 }
 
-} // namespace djapp::app
+} // namespace deckflaxia::app

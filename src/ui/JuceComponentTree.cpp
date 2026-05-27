@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-namespace djapp::ui {
+namespace deckflaxia::ui {
 
 namespace {
 
@@ -23,7 +23,7 @@ constexpr std::array<const char*, 9> kRequiredComponentNames{{
     "AudioSettingsComponent",
 }};
 
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
 
 struct WorkstationTokens final {
     juce::Colour deckFace{0xff15181c};
@@ -281,7 +281,7 @@ public:
 
 }
 
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
 
 MainComponent::MainComponent(bool noAudioDevice)
     : snapshot_(shellModel_.buildSnapshot(app::createUiSmokeInput(false))) {
@@ -406,7 +406,7 @@ bool writeComponentScreenshot(MainComponent& component, const std::filesystem::p
 int runUnavailableJuceUiSmoke(std::ostream& output, bool dumpComponents, const std::filesystem::path& screenshotPath) {
     output << "juce-ui-smoke-test: blocked\n";
     output << "juce-ui-engine=unavailable\n";
-    output << "component-tree: unavailable reason=DJAPP_HAS_JUCE=0\n";
+    output << "component-tree: unavailable reason=DECKFLAXIA_HAS_JUCE=0\n";
     if (dumpComponents) {
         output << "dump-components: blocked reason=real JUCE Component tree requires JUCE\n";
     }

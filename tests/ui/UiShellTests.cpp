@@ -19,8 +19,8 @@ int main(int argc, char* argv[]) {
     const std::string filter = argc > 1 ? argv[1] : "all";
     const bool emptyOnly = filter == "empty";
 
-    const djapp::app::HybridUiShellModel shell;
-    const auto fullSnapshot = shell.buildSnapshot(djapp::app::createUiSmokeInput(false));
+    const deckflaxia::app::HybridUiShellModel shell;
+    const auto fullSnapshot = shell.buildSnapshot(deckflaxia::app::createUiSmokeInput(false));
 
     if (!emptyOnly) {
         if (expect(fullSnapshot.decks.size() == 4, "UI shell should expose exactly four deck panels") != 0) {
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    const auto emptySnapshot = shell.buildSnapshot(djapp::app::createUiSmokeInput(true));
+    const auto emptySnapshot = shell.buildSnapshot(deckflaxia::app::createUiSmokeInput(true));
     if (expect(emptySnapshot.browser.empty, "empty library should produce browser empty state") != 0) {
         return 1;
     }

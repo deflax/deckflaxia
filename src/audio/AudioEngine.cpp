@@ -1,6 +1,6 @@
 #include "audio/AudioEngine.h"
 
-namespace djapp::audio {
+namespace deckflaxia::audio {
 
 HostAudioPlatform currentHostAudioPlatform() noexcept {
 #if defined(__APPLE__)

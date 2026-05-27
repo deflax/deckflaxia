@@ -4,7 +4,7 @@
 #include <iosfwd>
 #include <string>
 
-namespace djapp::audio {
+namespace deckflaxia::audio {
 
 struct AudioDeckSmokeOptions final {
     std::filesystem::path fixtureDirectory{"tests/fixtures/dj-workflow"};

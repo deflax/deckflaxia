@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace djapp::library {
+namespace deckflaxia::library {
 
 enum class AudioImportError : std::uint8_t {
     None,

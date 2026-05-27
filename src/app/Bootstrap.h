@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace djapp::app {
+namespace deckflaxia::app {
 
 struct BootstrapOptions {
     bool smokeTestMode{};
@@ -24,4 +24,4 @@ BootstrapResult initializeBootstrapServices(bool smokeTestMode);
 bool hasArgument(int argc, char* argv[], const std::string& expected);
 std::string formatBootstrapResult(const BootstrapResult& result);
 
-} // namespace djapp::app
+} // namespace deckflaxia::app

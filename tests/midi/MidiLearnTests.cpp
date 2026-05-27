@@ -15,17 +15,17 @@ int expect(bool condition, const std::string& message) {
     return 0;
 }
 
-int expectOk(const djapp::persistence::PersistenceUnitResult& result, const std::string& message) {
+int expectOk(const deckflaxia::persistence::PersistenceUnitResult& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
 template <typename T>
-int expectOk(const djapp::persistence::PersistenceResult<T>& result, const std::string& message) {
+int expectOk(const deckflaxia::persistence::PersistenceResult<T>& result, const std::string& message) {
     return expect(result.ok(), message + " should succeed");
 }
 
 int testTargetRegistry() {
-    using namespace djapp::midi;
+    using namespace deckflaxia::midi;
 
     const auto registry = MidiLearnTargetRegistry::createAlphaDefault();
     if (expect(registry.find("deck.1.transport.play") != nullptr, "registry should include deck transport targets") != 0) {
@@ -50,9 +50,9 @@ int testTargetRegistry() {
 }
 
 int testPersistMapping() {
-    using namespace djapp::core;
-    using namespace djapp::midi;
-    using namespace djapp::persistence;
+    using namespace deckflaxia::core;
+    using namespace deckflaxia::midi;
+    using namespace deckflaxia::persistence;
 
     PersistenceService service;
     MidiLearnController controller;
@@ -99,7 +99,7 @@ int testPersistMapping() {
 }
 
 int testDuplicateConflict() {
-    using namespace djapp::midi;
+    using namespace deckflaxia::midi;
 
     MidiLearnController controller;
     const auto first = controller.bind("mixer.deck.1.gain", MidiMessage::controlChange(0, 10, 80));
@@ -123,7 +123,7 @@ int testDuplicateConflict() {
 }
 
 int testReconnectDispatch() {
-    using namespace djapp::midi;
+    using namespace deckflaxia::midi;
 
     MidiLearnController controller;
     const auto learned = controller.bind("routing.deck.1.output", MidiMessage::controlChange(2, 20, 127));

@@ -6,13 +6,13 @@
 #include <iosfwd>
 #include <memory>
 
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
 #include <JuceHeader.h>
 #endif
 
-namespace djapp::ui {
+namespace deckflaxia::ui {
 
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
 
 class MainComponent final : public juce::Component {
 public:

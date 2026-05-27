@@ -1,11 +1,11 @@
-# DJApp
+# Deckflaxia
 
-DJApp is an AGPL-3.0-or-later native JUCE DJ application workflow. The current target is a four-deck app for macOS 15 via `macos-latest` and Ubuntu 24.04 LTS via `ubuntu-24.04`, with local fallback checks for environments that don't have JUCE or system media dependencies installed.
+Deckflaxia is an AGPL-3.0-or-later native JUCE DJ application workflow. The current target is a four-deck app for macOS 15 via `macos-latest` and Ubuntu 24.04 LTS via `ubuntu-24.04`, with local fallback checks for environments that don't have JUCE or system media dependencies installed.
 
 Start with the runbook for exact setup, build, launch, smoke, sandbox, license, troubleshooting, and deferred-scope commands:
 
 ```sh
-cmake -S . -B build-juce -DDJAPP_REQUIRE_JUCE=ON
+cmake -S . -B build-juce -DDECKFLAXIA_REQUIRE_JUCE=ON
 ```
 
 Full guide: [docs/user-runbook-developer-operations.md](docs/user-runbook-developer-operations.md)
@@ -24,7 +24,7 @@ This container path is fallback-only when JUCE, Rubber Band, native VST3/editor 
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 cmake --build build
 ctest --test-dir build --output-on-failure
-./build/DJApp --production-dj-workflow-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
+./build/Deckflaxia --production-dj-workflow-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
 ```
 
 ## Deferred Scope

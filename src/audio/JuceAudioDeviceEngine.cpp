@@ -1,11 +1,11 @@
 #include "audio/JuceAudioDeviceEngine.h"
 
-#if DJAPP_HAS_JUCE
+#if DECKFLAXIA_HAS_JUCE
 
 #include <algorithm>
 #include <memory>
 
-namespace djapp::audio {
+namespace deckflaxia::audio {
 
 namespace {
 
@@ -154,7 +154,7 @@ JuceDeckLoadResult JuceAudioDeviceDeckEngine::prepareReaderMedia(core::DeckId id
 
 #endif
 
-namespace djapp::audio {
+namespace deckflaxia::audio {
 
 const char* toString(JuceAudioDeckError error) noexcept {
     switch (error) {

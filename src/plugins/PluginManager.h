@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-namespace djapp::plugins {
+namespace deckflaxia::plugins {
 
 constexpr const char* kPluginHostAlphaScope = "VST3-only in-process alpha host using deterministic placeholders when native hosting is unavailable.";
 constexpr const char* kPluginHostInProcessLimitation = "Plugin failures are not process-isolated in alpha; scan and graph changes stay off the audio callback path.";

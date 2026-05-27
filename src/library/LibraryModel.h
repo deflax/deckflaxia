@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-namespace djapp::library {
+namespace deckflaxia::library {
 
 enum class LibraryError : std::uint8_t {
     None,
