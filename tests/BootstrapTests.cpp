@@ -47,11 +47,15 @@ int main() {
     char smoke[] = "--smoke-test";
     char exitAfterInit[] = "--exit-after-init";
     char noAudio[] = "--no-audio-device";
-    char* argv[] = {program, smoke, exitAfterInit, noAudio};
-    if (expect(djapp::app::hasArgument(4, argv, "--exit-after-init"), "argument parser should detect exit flag") != 0) {
+    char juceShell[] = "--juce-shell-smoke-test";
+    char* argv[] = {program, smoke, exitAfterInit, noAudio, juceShell};
+    if (expect(djapp::app::hasArgument(5, argv, "--exit-after-init"), "argument parser should detect exit flag") != 0) {
         return 1;
     }
-    if (expect(djapp::app::hasArgument(4, argv, "--no-audio-device"), "argument parser should detect no-device flag") != 0) {
+    if (expect(djapp::app::hasArgument(5, argv, "--no-audio-device"), "argument parser should detect no-device flag") != 0) {
+        return 1;
+    }
+    if (expect(djapp::app::hasArgument(5, argv, "--juce-shell-smoke-test"), "argument parser should detect JUCE shell smoke flag") != 0) {
         return 1;
     }
 

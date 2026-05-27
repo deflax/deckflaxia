@@ -235,7 +235,7 @@ int runAlphaSmokeTest(std::ostream& output) {
     populatedUiInput.routing = pluginSnapshot;
     populatedUiInput.midiLearn = MidiLearnIndicatorSnapshot{false, reloadedMidiLearn.mappingCount(), {}};
     const auto populatedUi = uiShell.buildSnapshot(populatedUiInput);
-    if (!require(populatedUi.decks.size() == 4 && populatedUi.pluginChain.slots.size() == 16 && !populatedUi.decks[0].waveform.placeholder && populatedUi.decks[1].waveform.placeholder, "populated UI and unavailable waveform placeholders", output)) {
+    if (!require(populatedUi.decks.size() == 4 && populatedUi.pluginChain.slots.size() == 20 && !populatedUi.decks[0].waveform.placeholder && populatedUi.decks[1].waveform.placeholder, "populated UI and unavailable waveform placeholders", output)) {
         return 1;
     }
 
