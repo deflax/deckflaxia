@@ -135,6 +135,39 @@ DomainResult<BeatgridMetadata> BeatgridMetadata::fromBpm(double bpm, double firs
     return DomainResult<BeatgridMetadata>::success(BeatgridMetadata{bpm, firstBeatSeconds});
 }
 
+DomainResult<TempoPitchSettings> TempoPitchSettings::fromValues(double sourceBpm,
+                                                                double targetBpm,
+                                                                bool tempoSyncEnabled,
+                                                                bool pitchLockEnabled,
+                                                                double pitchShiftCents,
+                                                                bool bypass) {
+    if (!isPositiveFinite(sourceBpm) || !isPositiveFinite(targetBpm) || !std::isfinite(pitchShiftCents)) {
+        return DomainResult<TempoPitchSettings>::failure(DomainError::InvalidTempoPitchSettings);
+    }
+    return DomainResult<TempoPitchSettings>::success(TempoPitchSettings{sourceBpm, targetBpm, tempoSyncEnabled, pitchLockEnabled, pitchShiftCents, bypass});
+}
+
+double TempoPitchSettings::playbackRate() const noexcept {
+    if (bypass || !tempoSyncEnabled || !isPositiveFinite(sourceBpm) || !isPositiveFinite(targetBpm)) {
+        return 1.0;
+    }
+    return targetBpm / sourceBpm;
+}
+
+double TempoPitchSettings::effectiveTempoBpm() const noexcept {
+    return sourceBpm * playbackRate();
+}
+
+double TempoPitchSettings::pitchDriftCents() const noexcept {
+    if (bypass) {
+        return 0.0;
+    }
+    if (pitchLockEnabled) {
+        return pitchShiftCents;
+    }
+    return pitchShiftCents + (1200.0 * std::log2(playbackRate()));
+}
+
 MidiStepPattern MidiStepPattern::sixteenStepDefault(int note) {
     MidiStepPattern pattern;
     for (auto& step : pattern.steps) {

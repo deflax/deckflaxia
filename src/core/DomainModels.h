@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -15,6 +16,7 @@ enum class DomainError {
     InvalidSeconds,
     InvalidProgress,
     InvalidIdentifier,
+    InvalidTempoPitchSettings,
 };
 
 template <typename T>
@@ -123,6 +125,25 @@ struct BeatgridMetadata {
     static DomainResult<BeatgridMetadata> fromBpm(double bpm, double firstBeatSeconds);
 };
 
+struct TempoPitchSettings {
+    double sourceBpm{120.0};
+    double targetBpm{120.0};
+    bool tempoSyncEnabled{false};
+    bool pitchLockEnabled{true};
+    double pitchShiftCents{0.0};
+    bool bypass{false};
+
+    static DomainResult<TempoPitchSettings> fromValues(double sourceBpm,
+                                                       double targetBpm,
+                                                       bool tempoSyncEnabled,
+                                                       bool pitchLockEnabled,
+                                                       double pitchShiftCents,
+                                                       bool bypass);
+    [[nodiscard]] double playbackRate() const noexcept;
+    [[nodiscard]] double effectiveTempoBpm() const noexcept;
+    [[nodiscard]] double pitchDriftCents() const noexcept;
+};
+
 enum class MusicalKey {
     Unknown,
     Camelot8A,
@@ -133,6 +154,13 @@ struct PluginDescriptor {
     std::string identifier;
     std::string displayName;
     bool bypassed{false};
+    struct ParameterState {
+        std::string identifier;
+        std::string displayName;
+        double normalizedValue{};
+    };
+    std::vector<ParameterState> parameters;
+    std::uint32_t latencyFrames{};
 };
 
 struct PluginChainDescriptor {
