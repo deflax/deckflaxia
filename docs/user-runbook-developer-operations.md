@@ -33,6 +33,15 @@ Use one of these supported JUCE setup paths:
 
 CI uses the second path by checking out JUCE at `JUCE_REF=8.0.10` during the workflow. JUCE is not stored in this repository.
 
+On Ubuntu 24.04, install the native build and GUI/media development packages before configuring a JUCE-required build:
+
+```sh
+sudo apt-get update
+sudo apt-get install -y build-essential cmake pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev libasound2-dev libjack-jackd2-dev libcurl4-openssl-dev libfreetype6-dev libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev libglu1-mesa-dev mesa-common-dev
+```
+
+If the distro only packages WebKitGTK 4.0, use `libwebkit2gtk-4.0-dev` instead of `libwebkit2gtk-4.1-dev`. A `gtk/gtk.h` compiler error means JUCE's Linux GUI module cannot find GTK development headers, usually because `libgtk-3-dev` is missing. WebKitGTK errors from `juce_gui_extra` mean the WebKit development package or distro equivalent is missing.
+
 ## Build on macOS or Linux with JUCE
 
 Run from the repository root on macOS 15 or Ubuntu 24.04 with JUCE available:
@@ -128,7 +137,16 @@ Fallback logs should state `juce=unavailable`, deterministic or generic plugin b
 
 ## Troubleshooting
 
+If CMake reports that `CMakeCache.txt` was created from a different source directory, the build tree is stale. Remove the affected build directory or choose a fresh one before reconfiguring:
+
+```sh
+rm -rf build-juce
+cmake -S . -B build-juce -DDECKFLAXIA_REQUIRE_JUCE=ON -DDECKFLAXIA_USE_VENDORED_JUCE=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+```
+
 If `DECKFLAXIA_REQUIRE_JUCE=ON` configure fails, install or export JUCE and pass `-DCMAKE_PREFIX_PATH=/path/to/JUCE/install-or-build`, or add a licensed `third_party/JUCE` checkout and pass `-DDECKFLAXIA_USE_VENDORED_JUCE=ON`.
+
+If a JUCE-required build reaches `gtk/gtk.h` and fails, install `libgtk-3-dev`. If it reaches WebKitGTK package or header errors through `juce_gui_extra`, install `libwebkit2gtk-4.1-dev` or the distro equivalent. These are system dependency failures, not fallback-mode successes.
 
 If Rubber Band is missing, local fallback uses the Signalsmith-compatible boundary and must not be treated as Rubber Band DSP verification.
 
