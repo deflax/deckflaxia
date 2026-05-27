@@ -8,7 +8,7 @@ Start with the runbook for exact setup, build, launch, smoke, sandbox, license, 
 cmake -S . -B build-juce -DDECKFLAXIA_REQUIRE_JUCE=ON
 ```
 
-Full guide: [docs/user-runbook-developer-operations.md](docs/user-runbook-developer-operations.md)
+Full guide: [docs/user-runbook-developer-operations.md](docs/user-runbook-developer-operations.md). Use it for Linux JUCE setup, GTK/WebKit development packages, stale `CMakeCache.txt` path errors, and native-vs-fallback limitations.
 
 Related references:
 

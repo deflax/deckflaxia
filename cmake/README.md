@@ -32,6 +32,18 @@ If JUCE is missing, configure fails with instructions to provide either `-DCMAKE
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
 
+## JUCE Module Headers in Library Targets
+
+Plain `add_library` targets such as `DeckflaxiaPlugins`, `DeckflaxiaUiShell`, and `DeckflaxiaDecks` should include direct JUCE module headers when they compile JUCE-aware code:
+
+```cpp
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_gui_extra/juce_gui_extra.h>
+#include <juce_audio_utils/juce_audio_utils.h>
+```
+
+Do not include `<JuceHeader.h>` from plain library targets, and do not add `juce_generate_juce_header` to those targets just to make that umbrella header available. Reserve `<JuceHeader.h>` for the JUCE app target created by `juce_add_gui_app` when that target needs it. If direct module headers compile far enough to fail on `gtk/gtk.h`, fix the Linux GTK/WebKit development packages instead of switching back to `JuceHeader.h`.
+
 ## Static Analysis
 
 Run `cmake --build build --target static-analysis` after configure. The target checks for `clang-format` and `clang-tidy` and documents missing prerequisites without failing bootstrap-only environments. Full linting should use `.clang-format`, `CMAKE_EXPORT_COMPILE_COMMANDS=ON`, and locally installed LLVM tooling.
