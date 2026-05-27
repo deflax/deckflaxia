@@ -1,53 +1,104 @@
 name: CI
 
+env:
+  JUCE_REF: 8.0.10
+
 on:
   push:
   pull_request:
 
 jobs:
-  linux:
-    name: Linux configure/build/test/license
-    runs-on: ubuntu-latest
+  linux-juce-required:
+    name: Ubuntu 24.04 JUCE-required configure/build/test/smoke/license
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      - name: Check out JUCE for AGPL/commercial CI build
+        uses: actions/checkout@v4
+        with:
+          repository: juce-framework/JUCE
+          ref: ${{ env.JUCE_REF }}
+          path: third_party/JUCE
 
-      - name: Build
-        run: cmake --build build
+      - name: Configure JUCE-required build
+        run: cmake -S . -B build-juce -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDJAPP_REQUIRE_JUCE=ON -DDJAPP_USE_VENDORED_JUCE=ON
+
+      - name: Build JUCE-required app and helper
+        run: cmake --build build-juce
 
       - name: Static analysis prerequisites
-        run: cmake --build build --target static-analysis
+        run: cmake --build build-juce --target static-analysis
 
-      - name: Test
-        run: ctest --test-dir build --output-on-failure
+      - name: Packaging helper location check
+        run: cmake --build build-juce --target plugin-sandbox-helper-packaging-check
 
-      - name: License report
-        run: cmake --build build --target license-report
+      - name: CTest JUCE-required suite
+        run: ctest --test-dir build-juce --output-on-failure
+
+      - name: Playable smoke test
+        run: ./build-juce/DJApp --playable-smoke-test --fixtures tests/fixtures/dj-workflow --screenshot .omo/evidence/real-playable-juce/task-14-linux-playable.png --render .omo/evidence/real-playable-juce/task-14-linux-mix.wav --exit-after-init
+
+      - name: Plugin sandbox smoke test
+        run: ./build-juce/DJApp --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures tests/fixtures/plugins --exit-after-init
+
+      - name: Performance current equivalent smoke gate
+        run: |
+          ./build-juce/DJApp --tempo-sync-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
+          ./build-juce/DJApp --time-stretch-overload-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
+
+      - name: License report gate
+        run: cmake --build build-juce --target license-report
 
       - name: Upload license report artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-license-report
-          path: build/license-report.spdx.txt
+          name: ubuntu-24.04-juce-license-report
+          path: build-juce/license-report.spdx.txt
 
-  macos:
-    name: macOS configure/build/test evidence
+  macos-juce-required:
+    name: macOS JUCE-required configure/build/test/smoke/license
     runs-on: macos-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      - name: Check out JUCE for AGPL/commercial CI build
+        uses: actions/checkout@v4
+        with:
+          repository: juce-framework/JUCE
+          ref: ${{ env.JUCE_REF }}
+          path: third_party/JUCE
 
-      - name: Build
-        run: cmake --build build
+      - name: Configure JUCE-required build
+        run: cmake -S . -B build-juce -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDJAPP_REQUIRE_JUCE=ON -DDJAPP_USE_VENDORED_JUCE=ON
 
-      - name: Smoke test
-        run: ./build/DJApp --smoke-test --exit-after-init
+      - name: Build JUCE-required app and helper
+        run: cmake --build build-juce
 
-      - name: Test
-        run: ctest --test-dir build --output-on-failure
+      - name: Packaging helper location check
+        run: cmake --build build-juce --target plugin-sandbox-helper-packaging-check
+
+      - name: CTest JUCE-required suite
+        run: ctest --test-dir build-juce --output-on-failure
+
+      - name: Playable smoke test
+        run: ./build-juce/DJApp --playable-smoke-test --fixtures tests/fixtures/dj-workflow --screenshot .omo/evidence/real-playable-juce/task-14-macos-playable.png --render .omo/evidence/real-playable-juce/task-14-macos-mix.wav --exit-after-init
+
+      - name: Plugin sandbox smoke test
+        run: ./build-juce/DJApp --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures tests/fixtures/plugins --exit-after-init
+
+      - name: Performance current equivalent smoke gate
+        run: |
+          ./build-juce/DJApp --tempo-sync-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
+          ./build-juce/DJApp --time-stretch-overload-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
+
+      - name: License report gate
+        run: cmake --build build-juce --target license-report
+
+      - name: Upload license report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-juce-license-report
+          path: build-juce/license-report.spdx.txt
