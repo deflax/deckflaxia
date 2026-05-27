@@ -29,6 +29,8 @@ enum class PersistenceError : std::uint8_t {
     None,
     DatabaseLocked,
     MigrationFailed,
+    InvalidSchema,
+    OpenFailed,
     NotFound,
     InvalidRequest,
     WorkerUnavailable,
@@ -77,11 +79,44 @@ struct TrackMetadataRecord final {
     core::MusicalKey key{core::MusicalKey::Unknown};
 };
 
+struct CueMarkerRecord final {
+    std::string id;
+    double seconds{};
+    std::string label;
+};
+
+struct DeckStateRecord final {
+    std::size_t deckIndex{};
+    core::DeckType type{core::DeckType::AudioFile};
+    core::RoutingAssignment routing{};
+    core::TransportState transport{};
+    std::string loadedTrackId;
+    core::TempoPitchSettings tempoPitch{};
+};
+
+struct AudioDevicePreferenceRecord final {
+    std::string deviceId;
+    std::string displayName;
+    std::uint32_t sampleRateHz{};
+    std::uint32_t bufferFrames{};
+    bool degraded{};
+};
+
+struct SandboxHealthRecord final {
+    std::string component;
+    bool healthy{true};
+    std::string detail;
+};
+
+struct SQLiteConnection;
+
 class InMemoryPersistenceStore final {
 public:
     [[nodiscard]] int schemaVersion() const noexcept;
     void setLockedForTest(bool locked) noexcept;
     [[nodiscard]] bool locked() const noexcept;
+    [[nodiscard]] bool sqliteOpen() const noexcept;
+    [[nodiscard]] PersistenceError sqliteOpenError() const noexcept;
 
 private:
     friend class MigrationRunner;
@@ -94,9 +129,15 @@ private:
     friend class PlaylistsRepository;
     friend class TrackMetadataRepository;
     friend class AnalysisJobsRepository;
+    friend class DeckStateRepository;
+    friend class PluginChainsRepository;
+    friend class AudioDevicePreferencesRepository;
+    friend class SandboxHealthRepository;
+    friend class PersistenceService;
 
     int schemaVersion_{};
     bool locked_{};
+    std::shared_ptr<SQLiteConnection> sqlite_{};
     std::map<std::string, std::string> preferences_;
     std::map<std::size_t, core::RoutingAssignment> routing_;
     std::map<std::string, PluginScanCacheRecord> plugins_;
@@ -105,7 +146,12 @@ private:
     std::map<std::string, core::Crate> crates_;
     std::map<std::string, core::Playlist> playlists_;
     std::map<std::string, TrackMetadataRecord> metadata_;
+    std::map<std::string, std::vector<CueMarkerRecord>> cueMarkers_;
     std::map<std::string, core::AnalysisJob> analysisJobs_;
+    std::map<std::size_t, DeckStateRecord> deckStates_;
+    std::map<std::string, core::PluginChainDescriptor> pluginChains_;
+    std::map<std::string, AudioDevicePreferenceRecord> audioDevicePreferences_;
+    std::map<std::string, SandboxHealthRecord> sandboxHealth_;
 };
 
 class MigrationRunner final {
@@ -198,6 +244,8 @@ public:
     explicit TrackMetadataRepository(std::shared_ptr<InMemoryPersistenceStore> store);
     [[nodiscard]] PersistenceUnitResult save(TrackMetadataRecord record);
     [[nodiscard]] PersistenceResult<TrackMetadataRecord> load(const std::string& trackId) const;
+    [[nodiscard]] PersistenceUnitResult saveCueMarkers(const std::string& trackId, std::vector<CueMarkerRecord> markers);
+    [[nodiscard]] PersistenceResult<std::vector<CueMarkerRecord>> loadCueMarkers(const std::string& trackId) const;
 
 private:
     std::shared_ptr<InMemoryPersistenceStore> store_;
@@ -214,9 +262,51 @@ private:
     std::shared_ptr<InMemoryPersistenceStore> store_;
 };
 
+class DeckStateRepository final {
+public:
+    explicit DeckStateRepository(std::shared_ptr<InMemoryPersistenceStore> store);
+    [[nodiscard]] PersistenceUnitResult save(DeckStateRecord record);
+    [[nodiscard]] PersistenceResult<DeckStateRecord> load(std::size_t deckIndex) const;
+    [[nodiscard]] PersistenceResult<std::vector<DeckStateRecord>> list() const;
+
+private:
+    std::shared_ptr<InMemoryPersistenceStore> store_;
+};
+
+class PluginChainsRepository final {
+public:
+    explicit PluginChainsRepository(std::shared_ptr<InMemoryPersistenceStore> store);
+    [[nodiscard]] PersistenceUnitResult save(core::PluginChainDescriptor chain);
+    [[nodiscard]] PersistenceResult<core::PluginChainDescriptor> load(const std::string& chainId) const;
+
+private:
+    std::shared_ptr<InMemoryPersistenceStore> store_;
+};
+
+class AudioDevicePreferencesRepository final {
+public:
+    explicit AudioDevicePreferencesRepository(std::shared_ptr<InMemoryPersistenceStore> store);
+    [[nodiscard]] PersistenceUnitResult save(AudioDevicePreferenceRecord record);
+    [[nodiscard]] PersistenceResult<AudioDevicePreferenceRecord> load(const std::string& deviceId) const;
+
+private:
+    std::shared_ptr<InMemoryPersistenceStore> store_;
+};
+
+class SandboxHealthRepository final {
+public:
+    explicit SandboxHealthRepository(std::shared_ptr<InMemoryPersistenceStore> store);
+    [[nodiscard]] PersistenceUnitResult save(SandboxHealthRecord record);
+    [[nodiscard]] PersistenceResult<SandboxHealthRecord> load(const std::string& component) const;
+
+private:
+    std::shared_ptr<InMemoryPersistenceStore> store_;
+};
+
 class PersistenceService final {
 public:
     PersistenceService();
+    explicit PersistenceService(std::string sqlitePath);
 
     [[nodiscard]] SQLiteIntegrationDecision sqliteDecision() const noexcept;
     [[nodiscard]] InMemoryPersistenceStore& store() noexcept;
@@ -232,6 +322,10 @@ public:
     [[nodiscard]] PlaylistsRepository playlists() const;
     [[nodiscard]] TrackMetadataRepository trackMetadata() const;
     [[nodiscard]] AnalysisJobsRepository analysisJobs() const;
+    [[nodiscard]] DeckStateRepository deckStates() const;
+    [[nodiscard]] PluginChainsRepository pluginChains() const;
+    [[nodiscard]] AudioDevicePreferencesRepository audioDevicePreferences() const;
+    [[nodiscard]] SandboxHealthRepository sandboxHealth() const;
 
 private:
     std::shared_ptr<InMemoryPersistenceStore> store_;

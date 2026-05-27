@@ -2,8 +2,14 @@
 #include "persistence/Persistence.h"
 
 #include <cmath>
+#include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <string>
+
+#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+#include <sqlite3.h>
+#endif
 
 namespace {
 
@@ -199,6 +205,180 @@ int testRepositories() {
                                                                  "analysis jobs should round trip");
 }
 
+djapp::core::BackgroundJobTicket databaseTicket() {
+    return djapp::core::BackgroundJobTicket{500, djapp::core::BackgroundJobKind::PersistLibraryChange, djapp::core::BackgroundWorkerRole::DatabaseWorker};
+}
+
+int importFixtureState(djapp::persistence::PersistenceService& service) {
+    using namespace djapp::core;
+    using namespace djapp::persistence;
+
+    const auto beatgrid = BeatgridMetadata::fromBpm(126.5, 0.125).value;
+    const LibraryTrack track{"fixture-track", "Restart Fixture", "Persistence Artist", beatgrid, MusicalKey::Camelot8A};
+    if (expectOk(service.libraryTracks().upsert(track), "sqlite track save") != 0) {
+        return 1;
+    }
+    if (expectOk(service.crates().save(Crate{"crate-fixture", "Fixture Crate", {"fixture-track"}}), "sqlite crate save") != 0) {
+        return 1;
+    }
+    if (expectOk(service.playlists().save(Playlist{"playlist-fixture", "Fixture Playlist", {"fixture-track"}}), "sqlite playlist save") != 0) {
+        return 1;
+    }
+    if (expectOk(service.trackMetadata().save(TrackMetadataRecord{"fixture-track", beatgrid, MusicalKey::Camelot8B}), "sqlite beatgrid save") != 0) {
+        return 1;
+    }
+    if (expectOk(service.deckStates().save(DeckStateRecord{2, DeckType::AudioFile, RoutingAssignment::deckOutput(OutputBus::Output3, true).value, TransportState{true, 64.5}, "fixture-track"}), "sqlite deck state save") != 0) {
+        return 1;
+    }
+    if (expectOk(service.pluginScanCache().upsert(PluginScanCacheRecord{"vst3.fixture", "Fixture FX", "/plugins/fixture.vst3", false}), "sqlite plugin scan cache save") != 0) {
+        return 1;
+    }
+    if (expectOk(service.pluginScanCache().upsert(PluginScanCacheRecord{"failed.bad", "failed plugin candidate", "/plugins/bad.txt", true}), "sqlite plugin blacklist save") != 0) {
+        return 1;
+    }
+    if (expectOk(service.pluginChains().save(PluginChainDescriptor{"deck-3-chain", {PluginDescriptor{"vst3.fixture", "Fixture FX", false}}}), "sqlite plugin chain save") != 0) {
+        return 1;
+    }
+    const auto midi = MidiLearnMapping::bind(MidiLearnTarget{"deck.3.transport.play", "Deck 3 Play"}, MidiMessageDescriptor{3, 45}).value;
+    if (expectOk(service.midiMappings().save(midi), "sqlite MIDI mapping save") != 0) {
+        return 1;
+    }
+    if (expectOk(service.audioDevicePreferences().save(AudioDevicePreferenceRecord{"default-output", "Default Output", 48000, 512, false}), "sqlite audio device preference save") != 0) {
+        return 1;
+    }
+    if (expectOk(service.sandboxHealth().save(SandboxHealthRecord{"plugin-host", true, "scan completed"}), "sqlite sandbox health save") != 0) {
+        return 1;
+    }
+    auto job = AnalysisJob::queued("analysis-fixture", "fixture-track");
+    if (expectOk(job.updateProgress(1.0), "sqlite analysis progress") != 0) {
+        return 1;
+    }
+    return expectOk(service.analysisJobs().upsert(job), "sqlite analysis job save");
+}
+
+int assertFixtureState(djapp::persistence::PersistenceService& service) {
+    using namespace djapp::core;
+
+    const auto track = service.libraryTracks().findById("fixture-track");
+    if (expectOk(track, "sqlite track reload") != 0 || expect(track.value.title == "Restart Fixture" && std::abs(track.value.beatgrid.bpm - 126.5) < 0.000001, "sqlite track deterministic reload") != 0) {
+        return 1;
+    }
+    const auto crate = service.crates().findById("crate-fixture");
+    if (expectOk(crate, "sqlite crate reload") != 0 || expect(crate.value.trackIds.size() == 1 && crate.value.trackIds[0] == "fixture-track", "sqlite crate tracks reload") != 0) {
+        return 1;
+    }
+    const auto playlist = service.playlists().findById("playlist-fixture");
+    if (expectOk(playlist, "sqlite playlist reload") != 0 || expect(playlist.value.trackIds.size() == 1, "sqlite playlist tracks reload") != 0) {
+        return 1;
+    }
+    const auto deck = service.deckStates().load(2);
+    if (expectOk(deck, "sqlite deck reload") != 0 || expect(deck.value.transport.playing && deck.value.loadedTrackId == "fixture-track" && deck.value.routing.mainOutput == OutputBus::Output3, "sqlite deck state deterministic reload") != 0) {
+        return 1;
+    }
+    const auto plugins = service.pluginScanCache().list();
+    if (expectOk(plugins, "sqlite plugin cache reload") != 0 || expect(plugins.value.size() == 2 && plugins.value[1].blacklisted, "sqlite plugin cache deterministic reload") != 0) {
+        return 1;
+    }
+    const auto chain = service.pluginChains().load("deck-3-chain");
+    if (expectOk(chain, "sqlite plugin chain reload") != 0 || expect(chain.value.plugins.size() == 1 && chain.value.plugins[0].identifier == "vst3.fixture", "sqlite plugin chain deterministic reload") != 0) {
+        return 1;
+    }
+    const auto midi = service.midiMappings().list();
+    if (expectOk(midi, "sqlite MIDI reload") != 0 || expect(midi.value.size() == 1 && midi.value[0].message.controller == 45, "sqlite MIDI deterministic reload") != 0) {
+        return 1;
+    }
+    const auto device = service.audioDevicePreferences().load("default-output");
+    if (expectOk(device, "sqlite audio device reload") != 0 || expect(device.value.sampleRateHz == 48000 && device.value.bufferFrames == 512, "sqlite audio device deterministic reload") != 0) {
+        return 1;
+    }
+    const auto sandbox = service.sandboxHealth().load("plugin-host");
+    if (expectOk(sandbox, "sqlite sandbox reload") != 0 || expect(sandbox.value.healthy && sandbox.value.detail == "scan completed", "sqlite sandbox deterministic reload") != 0) {
+        return 1;
+    }
+    const auto metadata = service.trackMetadata().load("fixture-track");
+    return expectOk(metadata, "sqlite beatgrid reload") != 0 ? 1 : expect(metadata.value.key == MusicalKey::Camelot8B, "sqlite beatgrid/key deterministic reload");
+}
+
+int testSQLiteRestartSmoke(const std::string& dbPath) {
+#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+    std::remove(dbPath.c_str());
+    {
+        djapp::persistence::PersistenceService firstRun(dbPath);
+        if (expect(firstRun.sqliteDecision().selectedBackend == djapp::persistence::PersistenceBackendKind::SystemSQLiteCApi, "sqlite backend should be selected") != 0) {
+            return 1;
+        }
+        if (expectOk(firstRun.migrateOnDatabaseWorker(databaseTicket()), "sqlite first migration") != 0) {
+            return 1;
+        }
+        if (importFixtureState(firstRun) != 0) {
+            return 1;
+        }
+    }
+    {
+        djapp::persistence::PersistenceService secondRun(dbPath);
+        if (expectOk(secondRun.migrateOnDatabaseWorker(databaseTicket()), "sqlite second migration") != 0) {
+            return 1;
+        }
+        if (assertFixtureState(secondRun) != 0) {
+            return 1;
+        }
+    }
+    std::cout << "SQLite restart smoke passed db=" << dbPath << "\n";
+    return 0;
+#else
+    std::cout << "SQLite unavailable; JUCE-required command shape: cmake -S . -B build -DDJAPP_REQUIRE_JUCE=ON -DCMAKE_PREFIX_PATH=/path/to/JUCE && cmake --build build && ctest --test-dir build -R SQLitePersistence --output-on-failure\n";
+    (void)dbPath;
+    return 0;
+#endif
+}
+
+int testSQLiteMigrationFailure(const std::string& dbPath) {
+#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+    std::remove(dbPath.c_str());
+    {
+        std::ofstream invalid(dbPath, std::ios::binary);
+        invalid << "not a sqlite database";
+    }
+    djapp::persistence::PersistenceService service(dbPath);
+    const auto result = service.migrateOnDatabaseWorker(databaseTicket());
+    return expectError(result, djapp::persistence::PersistenceError::MigrationFailed, "invalid sqlite migration") != 0 ? 1 : expect(result.error != djapp::persistence::PersistenceError::None, "invalid sqlite should preserve typed failure");
+#else
+    (void)dbPath;
+    std::cout << "SQLite unavailable; migration failure path covered by in-memory typed failure\n";
+    return 0;
+#endif
+}
+
+int testSQLiteLockedDatabase(const std::string& dbPath) {
+#if DJAPP_PERSISTENCE_SYSTEM_SQLITE_AVAILABLE
+    std::remove(dbPath.c_str());
+    {
+        djapp::persistence::PersistenceService setup(dbPath);
+        if (expectOk(setup.migrateOnDatabaseWorker(databaseTicket()), "sqlite setup migration") != 0) {
+            return 1;
+        }
+    }
+    sqlite3* rawDatabase{};
+    if (sqlite3_open_v2(dbPath.c_str(), &rawDatabase, SQLITE_OPEN_READWRITE, nullptr) != SQLITE_OK) {
+        sqlite3_close(rawDatabase);
+        return expect(false, "sqlite raw lock connection should open");
+    }
+    if (sqlite3_exec(rawDatabase, "BEGIN EXCLUSIVE", nullptr, nullptr, nullptr) != SQLITE_OK) {
+        sqlite3_close(rawDatabase);
+        return expect(false, "sqlite raw exclusive lock should start");
+    }
+    djapp::persistence::PersistenceService locked(dbPath);
+    const auto result = locked.migrateOnDatabaseWorker(databaseTicket());
+    sqlite3_exec(rawDatabase, "ROLLBACK", nullptr, nullptr, nullptr);
+    sqlite3_close(rawDatabase);
+    return expectError(result, djapp::persistence::PersistenceError::DatabaseLocked, "sqlite locked database") != 0 ? 1 : expect(djapp::persistence::isRecoverable(result.error), "sqlite locked database should be recoverable");
+#else
+    (void)dbPath;
+    std::cout << "SQLite unavailable; locked path covered by in-memory typed failure\n";
+    return 0;
+#endif
+}
+
 }
 
 int main(int argc, char* argv[]) {
@@ -216,8 +396,19 @@ int main(int argc, char* argv[]) {
     if (filter == "repositories") {
         return testRepositories();
     }
+    if (filter == "sqlite-restart") {
+        return testSQLiteRestartSmoke(argc > 2 ? argv[2] : "sqlite-persistence-smoke.db");
+    }
+    if (filter == "sqlite-failure") {
+        return testSQLiteMigrationFailure(argc > 2 ? argv[2] : "sqlite-persistence-invalid.db");
+    }
+    if (filter == "sqlite-locked") {
+        return testSQLiteLockedDatabase(argc > 2 ? argv[2] : "sqlite-persistence-locked.db");
+    }
 
-    if (testMigration() != 0 || testLockedDatabase() != 0 || testFailedMigration() != 0 || testRepositories() != 0) {
+    if (testMigration() != 0 || testLockedDatabase() != 0 || testFailedMigration() != 0 || testRepositories() != 0 ||
+        testSQLiteRestartSmoke("sqlite-persistence-smoke.db") != 0 || testSQLiteMigrationFailure("sqlite-persistence-invalid.db") != 0 ||
+        testSQLiteLockedDatabase("sqlite-persistence-locked.db") != 0) {
         return 1;
     }
 
