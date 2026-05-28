@@ -162,8 +162,7 @@ bool writeScreenshotIfAvailable(const std::filesystem::path& screenshotPath, std
         return true;
     }
 #if DECKFLAXIA_HAS_JUCE
-    ui::MainComponent component(true);
-    const auto wrote = ui::writeComponentScreenshot(component, screenshotPath, report);
+    const auto wrote = ui::writeHeadlessComponentScreenshot(screenshotPath, report);
     report << "screenshot-path=" << screenshotPath.string() << " wrote=" << (wrote ? 1 : 0) << '\n';
     return wrote;
 #else
