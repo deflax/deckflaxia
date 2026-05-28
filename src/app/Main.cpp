@@ -253,12 +253,14 @@ public:
         }
 
         const bool exitSmokeLaunch = exitAfterInit && (smokeTest || juceShellSmokeTest || juceUiSmokeTest);
-        mainWindow_ = std::make_unique<MainWindow>(getApplicationName(), noAudioDevice, !exitSmokeLaunch);
+        const bool noAudioForComponentTreeSmoke = noAudioDevice || (exitAfterInit && juceUiSmokeTest);
+        mainWindow_ = std::make_unique<MainWindow>(getApplicationName(), noAudioForComponentTreeSmoke, !exitSmokeLaunch);
 
         if (juceUiSmokeTest && exitAfterInit) {
             auto* component = mainWindow_->mainComponent();
             if (component == nullptr) {
                 setApplicationReturnValue(1);
+                mainWindow_.reset();
                 quit();
                 return;
             }
@@ -270,6 +272,7 @@ public:
                 ok = deckflaxia::ui::writeComponentScreenshot(*component, *screenshotPath, std::cout);
             }
             setApplicationReturnValue(ok ? 0 : 1);
+            mainWindow_.reset();
             quit();
             return;
         }
@@ -278,12 +281,14 @@ public:
             writeJuceShellSmokeReport(mainWindow_.get());
             const auto* component = mainWindow_->mainComponent();
             setApplicationReturnValue(component != nullptr && component->audioDeviceManagerInitialized() ? 0 : 1);
+            mainWindow_.reset();
             quit();
             return;
         }
 
         if (smokeTest && exitAfterInit) {
             setApplicationReturnValue(0);
+            mainWindow_.reset();
             quit();
             return;
         }

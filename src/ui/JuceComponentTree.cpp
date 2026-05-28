@@ -227,7 +227,7 @@ public:
 class MainComponent::PluginChainComponent final : public IndustrialPanel {
 public:
     explicit PluginChainComponent(const app::PluginChainPanelViewModel& model)
-        : IndustrialPanel("PluginChainComponent", "Plugin Chain: Deck + Master Windows", tokens().red) {
+        : IndustrialPanel("PluginChainComponent", "Plugin Chain: Deck + Master Editor Panels", tokens().red) {
         for (const auto& slot : model.slots) {
             auto button = std::make_unique<juce::TextButton>(slot.displayName);
             button->setName(juce::String(slot.componentName) + "BypassRemoveReorderEditorButton");
@@ -284,14 +284,12 @@ MainComponent::~MainComponent() = default;
 
 MainComponent::MainComponent(bool noAudioDevice)
     : snapshot_(shellModel_.buildSnapshot(app::createUiSmokeInput(false))) {
-    const auto audioError = audioDeviceManager_.initialise(0, 0, nullptr, true);
-    audioDeviceManagerInitialized_ = audioError.isEmpty();
-    if (!audioDeviceManagerInitialized_) {
-        audioInitializationMessage_ = audioError;
-    } else if (noAudioDevice) {
+    if (noAudioDevice) {
         audioInitializationMessage_ = "no audio device requested";
     } else {
-        audioInitializationMessage_ = "audio device manager initialized without playback";
+        const auto audioError = audioDeviceManager_.initialise(0, 0, nullptr, true);
+        audioDeviceManagerInitialized_ = audioError.isEmpty();
+        audioInitializationMessage_ = audioDeviceManagerInitialized_ ? "audio device manager initialized without playback" : audioError;
     }
 
     setName("MainComponent");
