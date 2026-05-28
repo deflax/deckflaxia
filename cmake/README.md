@@ -4,7 +4,7 @@ The real playable JUCE workflow uses `DECKFLAXIA_REQUIRE_JUCE=ON` for presubmit 
 
 This repository does not vendor JUCE, the VST3 SDK, Rubber Band, Signalsmith, SoundTouch, SQLite wrappers, or any other third-party dependency. CMake may link an already-installed system Rubber Band library as the guarded primary time-stretch boundary; otherwise it builds the honest Signalsmith-compatible fallback boundary without claiming production stretch quality. When `DECKFLAXIA_REQUIRE_JUCE=OFF` and JUCE is unavailable, CMake builds an explicit bootstrap-only fallback executable so early CI and smoke tests can validate repository infrastructure without claiming JUCE functionality.
 
-GitHub Actions checks out `juce-framework/JUCE` into `third_party/JUCE` at pinned `JUCE_REF=8.0.10` immediately before required-JUCE configure. The checkout is CI-only and relies on JUCE AGPL/commercial licensing terms; it must not be committed or treated as a vendored dependency. The active workflow runs `linux-fallback` and `linux-juce-required` on push and pull request. The `macos-juce-required` job is optional and high-cost, so it is gated to manual `workflow_dispatch` or `main` branch runs.
+GitHub Actions checks out `juce-framework/JUCE` into `third_party/JUCE` at pinned `JUCE_REF=8.0.10` immediately before required-JUCE configure. The checkout is CI-only and relies on JUCE AGPL/commercial licensing terms; it must not be committed or treated as a vendored dependency. The active workflow runs `linux-fallback` and `linux-juce-required` on push and pull request. The `macos-juce-required` job is optional and high-cost, so it is gated to manual `workflow_dispatch` or `main` branch runs. JUCE-required jobs build `DeckflaxiaRealVst3Fixture` before the JUCE-required CTest suite so the real VST3 tests and app smoke can validate the generated host path.
 
 For a matching local checkout, run from the repository root:
 
@@ -43,6 +43,14 @@ If the compiler is killed while building large JUCE module sources such as `juce
 cmake --build build-juce --parallel 1
 ```
 
+Build the source-built, test-only real VST3 fixture the same way once the target is present:
+
+```sh
+cmake --build build-juce --target DeckflaxiaRealVst3Fixture --parallel 1
+```
+
+The target must generate `${CMAKE_BINARY_DIR}/generated/real-vst3-fixture/manifest.json`; in the default tree, that is `build-juce/generated/real-vst3-fixture/manifest.json`. The manifest may name a platform-specific `.vst3` bundle under the build tree. That bundle is generated output, not source. Do not commit it, vendor it, install it as app payload, or upload it as a CI artifact.
+
 Use `--parallel 2` only after confirming the host has enough memory for multiple concurrent JUCE translation units.
 
 CTest uses `Fixtures.Generate` as the setup step for deterministic DJ workflow fixtures. Tests that load `tests/fixtures/dj-workflow/track_120bpm.wav`, `track_128bpm.wav`, `silence_10s.wav`, or `corrupt_audio.wav` require that setup when run through CTest. If you invoke test binaries directly, run the generated fixture step yourself first:
@@ -56,6 +64,20 @@ If JUCE is missing, configure fails with instructions to provide either `-DCMAKE
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
+
+After the real fixture manifest exists, run the real VST3 CTest gate or the direct app smoke command:
+
+```sh
+ctest --test-dir build-juce -R "VST3Processing\.(AppSmoke|RealFixture|RealProcessing|RealParameters|RealState)" --output-on-failure
+```
+
+Or run the direct app smoke command:
+
+```sh
+./build-juce/Deckflaxia --vst3-processing-smoke-test --chain deck-a --fixtures build-juce/generated/real-vst3-fixture --exit-after-init
+```
+
+Expected real-fixture output includes `backend=juce-vst3` and `real-vst3-instantiated=1`. Without the manifest, or in fallback/no-JUCE builds, this command path must not treat `deterministic_gain.fixture.json` as real VST3. Fallback/no-JUCE validation still does not prove native VST3, native editor windows, screenshots, or real JUCE plugin hosting.
 
 ## JUCE Module Headers in Library Targets
 

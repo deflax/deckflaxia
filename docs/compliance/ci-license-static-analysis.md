@@ -27,7 +27,18 @@ When JUCE is not available, this command must fail clearly and explain both supp
 
 Ubuntu JUCE-required validation needs Linux GUI/media development packages before configure and build. A `gtk/gtk.h` failure means `libgtk-3-dev` is missing; WebKitGTK failures from `juce_gui_extra` usually mean `libwebkit2gtk-4.1-dev` or the distro equivalent is missing. Keep fallback CI useful for infrastructure checks, but do not report fallback output as native JUCE success. See `docs/user-runbook-developer-operations.md` for the full Linux package list.
 
-The GitHub Actions workflow intentionally has no Windows job. The platform gates are `ubuntu-24.04` and `macos-latest`, and both check out `juce-framework/JUCE` at the pinned `JUCE_REF` into `third_party/JUCE` before running the JUCE-required configure/build/CTest sequence, `plugin-sandbox-helper-packaging-check`, playable smoke, plugin sandbox smoke, current performance-equivalent tempo/overload smokes, and `license-report`. This is a CI-only checkout under JUCE AGPL/commercial terms; JUCE is not vendored in this repository.
+When the real VST3 fixture target is available, local JUCE-required validation should build it before VST3 tests or app smokes:
+
+```sh
+cmake -S . -B build-juce -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDECKFLAXIA_REQUIRE_JUCE=ON -DDECKFLAXIA_USE_VENDORED_JUCE=ON
+cmake --build build-juce --target DeckflaxiaRealVst3Fixture --parallel 1
+ctest --test-dir build-juce -R "VST3Processing\.(AppSmoke|RealFixture|RealProcessing|RealParameters|RealState)" --output-on-failure
+./build-juce/Deckflaxia --vst3-processing-smoke-test --chain deck-a --fixtures build-juce/generated/real-vst3-fixture --exit-after-init
+```
+
+The fixture manifest is generated at `${CMAKE_BINARY_DIR}/generated/real-vst3-fixture/manifest.json`, with default local path `build-juce/generated/real-vst3-fixture/manifest.json`. Successful real fixture validation must include `backend=juce-vst3` and `real-vst3-instantiated=1` from the production host path. Fallback/no-JUCE output must not claim that marker from deterministic fixtures.
+
+The GitHub Actions workflow intentionally has no Windows job. The platform gates are `ubuntu-24.04` and `macos-latest`, and both check out `juce-framework/JUCE` at the pinned `JUCE_REF` into `third_party/JUCE` before running the JUCE-required configure/build/CTest sequence, `DeckflaxiaRealVst3Fixture`, `plugin-sandbox-helper-packaging-check`, playable smoke, plugin sandbox smoke, current performance-equivalent tempo/overload smokes, and `license-report`. This is a CI-only checkout under JUCE AGPL/commercial terms; JUCE is not vendored in this repository. Keep `linux-fallback` no-JUCE, and do not make `macos-juce-required` mandatory for pull requests.
 
 `plugin-sandbox-helper-packaging-check` verifies that `DeckflaxiaPluginSandboxHelper` was built beside `Deckflaxia` and that `DeckflaxiaPluginSandboxHelper --helper-smoke` emits its readiness line. It does not claim OS-level sandbox hardening, notarization, or code signing.
 
@@ -60,5 +71,7 @@ Save Task 14 macOS output to `.omo/evidence/real-playable-juce/task-14-macos-ci.
 - SoundTouch as `LGPL-2.1-only` for legacy fallback only.
 - System SQLite C API target as the persistence dependency.
 - No-vendored-third-party posture, except an optional local licensed `third_party/JUCE` checkout.
+
+The source-built real VST3 fixture is test infrastructure only. Review and record the license for any VST3 SDK or sample code copied into the repository, and add attribution or notices before use. Do not add proprietary or commercial plugin binaries. Generated `.vst3` bundles and their generated bundle directories are build artifacts and must not be committed, vendored, installed as app payload, or uploaded as CI artifacts.
 
 The repository license is AGPL-3.0-or-later. This document and the generated SPDX-style report are engineering compliance aids, not legal advice. The current repository does not add telemetry, crash upload, accounts, cloud sync, marketplace, or remote logging infrastructure; local logs are for developer diagnostics only and are not uploaded.

@@ -29,9 +29,9 @@ The report is written to `build/license-report.spdx.txt`.
 The active GitHub Actions workflow runs on `push`, `pull_request`, and `workflow_dispatch`. Routine push and pull request runs include two Ubuntu 24.04 jobs:
 
 - `linux-fallback` configures without JUCE and runs the fallback build, CTest, smoke, plugin sandbox, performance, packaging, and license gates. This is infrastructure coverage only. It doesn't prove native JUCE, native VST3, native editor windows, macOS runtime, screenshots, WAV output, Rubber Band DSP, or system SQLite persistence.
-- `linux-juce-required` installs the Ubuntu native GUI and media dependencies, checks out `juce-framework/JUCE` at pinned `JUCE_REF=8.0.10` into `third_party/JUCE`, verifies `third_party/JUCE/CMakeLists.txt`, configures with `DECKFLAXIA_REQUIRE_JUCE=ON` and `DECKFLAXIA_USE_VENDORED_JUCE=ON`, builds with `cmake --build build-juce --parallel 1`, then runs static analysis, packaging, CTest, smoke, performance, and license gates.
+- `linux-juce-required` installs the Ubuntu native GUI and media dependencies, checks out `juce-framework/JUCE` at pinned `JUCE_REF=8.0.10` into `third_party/JUCE`, verifies `third_party/JUCE/CMakeLists.txt`, configures with `DECKFLAXIA_REQUIRE_JUCE=ON` and `DECKFLAXIA_USE_VENDORED_JUCE=ON`, builds with `cmake --build build-juce --parallel 1`, builds `DeckflaxiaRealVst3Fixture` with `cmake --build build-juce --target DeckflaxiaRealVst3Fixture --parallel 1`, then runs static analysis, `plugin-sandbox-helper-packaging-check`, CTest, playable smoke, plugin sandbox smoke, performance, and license gates. The JUCE-required CTest suite includes `VST3Processing.AppSmoke`, `VST3Processing.RealFixture`, `VST3Processing.RealProcessing`, `VST3Processing.RealParameters`, and `VST3Processing.RealState` after the real fixture target has been built.
 
-The `macos-juce-required` job is optional and high-cost for routine presubmit. It runs only for manual `workflow_dispatch` executions or `main` branch runs through `if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'`. When it runs, it uses the same pinned JUCE checkout, checkout verification, required JUCE configure, low-memory build, CTest, smoke, packaging, and license contract as the Linux JUCE job.
+The `macos-juce-required` job is optional and high-cost for routine presubmit. It runs only for manual `workflow_dispatch` executions or `main` branch runs through `if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'`. When it runs, it uses the same pinned JUCE checkout, checkout verification, required JUCE configure, low-memory build, real VST3 fixture build, `plugin-sandbox-helper-packaging-check`, CTest, playable smoke, plugin sandbox smoke, performance, and license contract as the Linux JUCE job, excluding Linux-only static analysis.
 
 CTest owns fixture setup through `Fixtures.Generate` in fallback and JUCE-required jobs. Don't add a separate fixture generation step before CTest unless a direct binary command needs generated files outside CTest.
 
@@ -96,6 +96,14 @@ cmake --build build-juce --parallel 1
 ctest --test-dir build-juce --output-on-failure
 ```
 
+The source-built real VST3 gain fixture uses the same low-memory rule. Once the `DeckflaxiaRealVst3Fixture` target exists, build it in the JUCE tree with one compile job:
+
+```sh
+cmake --build build-juce --target DeckflaxiaRealVst3Fixture --parallel 1
+```
+
+That target writes the real fixture manifest to `${CMAKE_BINARY_DIR}/generated/real-vst3-fixture/manifest.json`; for the default local tree, expect `build-juce/generated/real-vst3-fixture/manifest.json`. The manifest points at the generated `.vst3` bundle in the build tree. The bundle is a build artifact only. Do not commit, vendor, install as app payload, or upload generated `.vst3` bundles as CI artifacts.
+
 If one job is unnecessarily slow and the machine has enough RAM, try `--parallel 2`. Avoid broad `-j` builds in constrained containers because JUCE module translation units are large.
 
 ## Run the App
@@ -133,6 +141,17 @@ Plugin sandbox smoke:
 cmake --build build-juce --target plugin-sandbox-helper-packaging-check
 ./build-juce/Deckflaxia --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures tests/fixtures/plugins --exit-after-init
 ```
+
+Real VST3 processing smoke, after configuring a JUCE-required build and building `DeckflaxiaRealVst3Fixture`:
+
+```sh
+cmake -S . -B build-juce -DDECKFLAXIA_REQUIRE_JUCE=ON -DDECKFLAXIA_USE_VENDORED_JUCE=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+cmake --build build-juce --target DeckflaxiaRealVst3Fixture --parallel 1
+ctest --test-dir build-juce -R "VST3Processing\.(AppSmoke|RealFixture|RealProcessing|RealParameters|RealState)" --output-on-failure
+./build-juce/Deckflaxia --vst3-processing-smoke-test --chain deck-a --fixtures build-juce/generated/real-vst3-fixture --exit-after-init
+```
+
+Once the generated manifest exists at `build-juce/generated/real-vst3-fixture/manifest.json`, the real VST3 CTest gate should report `backend=juce-vst3` and `real-vst3-instantiated=1`. The deterministic fixture alone must keep reporting fallback or unavailable status and must not satisfy the real marker. If the app binary is under a generator-specific output directory, run the same arguments against that binary, for example `./build-juce/Deckflaxia_artefacts/Debug/Deckflaxia`.
 
 Performance smoke at the plan budget surface:
 
@@ -206,7 +225,7 @@ This is the expected low-RAM failure mode for large JUCE module translation unit
 
 If Rubber Band is missing, local fallback uses the Signalsmith-compatible boundary and must not be treated as Rubber Band DSP verification.
 
-If VST3 plugins or native editors are missing, the fallback processor and generic parameter surface can still validate command paths, but they do not prove native VST3 instantiation or native editor windows.
+If VST3 plugins or native editors are missing, the fallback processor and generic parameter surface can still validate command paths, but they do not prove native VST3 instantiation or native editor windows. Fallback and no-JUCE runs also do not prove native VST3, native editor windows, screenshots, or real JUCE plugin hosting.
 
 If system SQLite is missing, restart smoke may write an honest fallback state file. That file isn't a SQLite database.
 
