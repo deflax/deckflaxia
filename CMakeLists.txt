@@ -457,7 +457,11 @@ add_test(NAME BrowserWaveformBeatgrid.BeatgridPersistence COMMAND BrowserWavefor
 
 if(DECKFLAXIA_HAS_JUCE)
     add_test(NAME JuceUi.ComponentTree COMMAND Deckflaxia --juce-ui-smoke-test --dump-components --exit-after-init)
-    add_test(NAME JuceUi.Screenshot COMMAND Deckflaxia --juce-ui-smoke-test --screenshot ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-6-ui.png --exit-after-init)
+    add_test(NAME JuceUi.Screenshot COMMAND ${CMAKE_COMMAND}
+        -DDECKFLAXIA_APP_PATH=$<TARGET_FILE:Deckflaxia>
+        -DDECKFLAXIA_SCREENSHOT_PATH=${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-6-ui.png
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/ui/VerifyJuceScreenshot.cmake
+    )
 else()
     add_test(NAME JuceUi.ComponentTreeUnavailable COMMAND Deckflaxia --juce-ui-smoke-test --dump-components --exit-after-init)
     add_test(NAME JuceUi.ScreenshotUnavailable COMMAND Deckflaxia --juce-ui-smoke-test --screenshot ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-6-ui.png --exit-after-init)
