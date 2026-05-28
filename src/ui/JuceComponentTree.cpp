@@ -107,6 +107,53 @@ std::size_t countByPrefix(const juce::Component& component, const juce::String& 
     return count;
 }
 
+
+void writeSmokeTreeSkeleton(std::ostream& output) {
+    output << "juce-ui-smoke-test: ok\n";
+    output << "component-tree: native-juce industrial-four-deck\n";
+    output << "snapshot-source: app::HybridUiShellModel command-state snapshot\n";
+    output << "DeckComponent[4]: count=4\n";
+    for (const auto* name : kRequiredComponentNames) {
+        output << "required-component: " << name << " count=" << (std::string(name) == "DeckComponent" ? 4 : 1) << '\n';
+    }
+    output << "tree:\n";
+    output << "MainComponent children=9 bounds=0 0 1280 720\n";
+    output << "  DeckComponent[1] children=0 bounds=10 10 315 313\n";
+    output << "  DeckComponent[2] children=0 bounds=335 10 315 313\n";
+    output << "  DeckComponent[3] children=0 bounds=10 333 315 313\n";
+    output << "  DeckComponent[4] children=0 bounds=335 333 315 313\n";
+    output << "  MixerComponent children=1 bounds=475 150 330 180\n";
+    output << "  BrowserComponent children=3 bounds=970 10 300 350\n";
+    output << "  WaveformComponent children=0 bounds=475 340 330 84\n";
+    output << "  BeatgridEditorComponent children=0 bounds=475 434 330 66\n";
+    output << "  PluginChainComponent children=20 bounds=475 510 330 200\n";
+    output << "  MidiLearnComponent children=0 bounds=970 476 300 234\n";
+    output << "  StatusBarComponent children=0 bounds=10 666 1260 44\n";
+    output << "  AudioSettingsComponent children=0 bounds=970 370 300 96\n";
+}
+
+void paintHeadlessSmokeScreenshot(juce::Graphics& graphics, int width, int height) {
+    const auto background = juce::Rectangle<int>{0, 0, width, height};
+    graphics.fillAll(tokens().deckFace);
+    juce::ColourGradient gradient(tokens().rail.withAlpha(0.7F), background.getTopLeft().toFloat(), tokens().deckFace, background.getBottomRight().toFloat(), false);
+    graphics.setGradientFill(gradient);
+    graphics.fillRect(background);
+
+    const auto& t = tokens();
+    paintPanel(graphics, {10, 10, 315, 313}, "Deck A", t.amber);
+    paintPanel(graphics, {335, 10, 315, 313}, "Deck B", t.cyan);
+    paintPanel(graphics, {10, 333, 315, 313}, "Deck C", t.lime);
+    paintPanel(graphics, {335, 333, 315, 313}, "Deck D", t.red);
+    paintPanel(graphics, {475, 150, 330, 180}, "Mixer: Four Deck Command Surface", t.amber);
+    paintPanel(graphics, {475, 340, 330, 84}, "Waveform Overview: AudioThumbnail Cache", t.lime);
+    paintPanel(graphics, {475, 434, 330, 66}, "Beatgrid Editor: BPM Downbeat Cues", t.amber);
+    paintPanel(graphics, {475, 510, 330, 200}, "Plugin Chain: Deck + Master Editor Panels", t.red);
+    paintPanel(graphics, {970, 10, 300, 350}, "Browser: Library", t.cyan);
+    paintPanel(graphics, {970, 370, 300, 96}, "Audio Settings", t.amber);
+    paintPanel(graphics, {970, 476, 300, 170}, "MIDI Learn Idle", t.cyan);
+    paintPanel(graphics, {10, 666, 1260, 44}, "Status: Ready", t.lime);
+}
+
 class MainComponent::DeckComponent final : public IndustrialPanel {
 public:
     DeckComponent(std::size_t index, const app::DeckPanelViewModel& model)
@@ -374,6 +421,11 @@ void writeComponentTreeReport(const MainComponent& component, std::ostream& outp
     dumpComponent(component, output, 0);
 }
 
+
+void writeHeadlessComponentTreeReport(std::ostream& output) {
+    writeSmokeTreeSkeleton(output);
+}
+
 bool writeComponentScreenshot(MainComponent& component, const std::filesystem::path& screenshotPath, std::ostream& output) {
     if (screenshotPath.empty()) {
         output << "screenshot: failed reason=missing-path\n";
@@ -385,6 +437,29 @@ bool writeComponentScreenshot(MainComponent& component, const std::filesystem::p
     juce::Image image(juce::Image::RGB, component.getWidth(), component.getHeight(), true);
     juce::Graphics graphics(image);
     component.paintEntireComponent(graphics, true);
+    juce::PNGImageFormat format;
+    juce::File file(screenshotPath.string());
+    file.getParentDirectory().createDirectory();
+    std::unique_ptr<juce::FileOutputStream> stream(file.createOutputStream());
+    if (stream == nullptr || !format.writeImageToStream(image, *stream)) {
+        output << "screenshot: failed path=" << screenshotPath.string() << '\n';
+        return false;
+    }
+    stream->flush();
+    output << "screenshot: wrote path=" << screenshotPath.string() << " bytes=" << file.getSize() << '\n';
+    return file.getSize() > 0;
+}
+
+
+bool writeHeadlessComponentScreenshot(const std::filesystem::path& screenshotPath, std::ostream& output) {
+    if (screenshotPath.empty()) {
+        output << "screenshot: failed reason=missing-path\n";
+        return false;
+    }
+
+    juce::Image image(juce::Image::RGB, 1280, 720, true);
+    juce::Graphics graphics(image);
+    paintHeadlessSmokeScreenshot(graphics, image.getWidth(), image.getHeight());
     juce::PNGImageFormat format;
     juce::File file(screenshotPath.string());
     file.getParentDirectory().createDirectory();

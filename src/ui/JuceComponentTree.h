@@ -57,7 +57,9 @@ private:
 };
 
 void writeComponentTreeReport(const MainComponent& component, std::ostream& output);
+void writeHeadlessComponentTreeReport(std::ostream& output);
 [[nodiscard]] bool writeComponentScreenshot(MainComponent& component, const std::filesystem::path& screenshotPath, std::ostream& output);
+[[nodiscard]] bool writeHeadlessComponentScreenshot(const std::filesystem::path& screenshotPath, std::ostream& output);
 
 #endif
 
