@@ -1,0 +1,37 @@
+if(NOT DEFINED DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST)
+    message(FATAL_ERROR "DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST is required")
+endif()
+
+if(NOT DEFINED DECKFLAXIA_REAL_VST3_FIXTURE_BUNDLE_PATH)
+    message(FATAL_ERROR "DECKFLAXIA_REAL_VST3_FIXTURE_BUNDLE_PATH is required")
+endif()
+
+function(deckflaxia_json_escape input output)
+    string(REPLACE "\\" "\\\\" escaped "${input}")
+    string(REPLACE "\"" "\\\"" escaped "${escaped}")
+    set(${output} "${escaped}" PARENT_SCOPE)
+endfunction()
+
+get_filename_component(manifest_dir "${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST}" DIRECTORY)
+file(MAKE_DIRECTORY "${manifest_dir}")
+
+deckflaxia_json_escape("${DECKFLAXIA_REAL_VST3_FIXTURE_BUNDLE_PATH}" escaped_bundle_path)
+
+if(DEFINED DECKFLAXIA_REAL_VST3_FIXTURE_BINARY_PATH AND NOT DECKFLAXIA_REAL_VST3_FIXTURE_BINARY_PATH STREQUAL "")
+    deckflaxia_json_escape("${DECKFLAXIA_REAL_VST3_FIXTURE_BINARY_PATH}" escaped_binary_path)
+    set(binary_json "\"${escaped_binary_path}\"")
+else()
+    set(binary_json "null")
+endif()
+
+file(WRITE "${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST}" "{\n")
+file(APPEND "${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST}" "  \"schema\": \"deckflaxia-real-vst3-fixture-v1\",\n")
+file(APPEND "${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST}" "  \"fixture_id\": \"real-vst3-fixture:deterministic_gain\",\n")
+file(APPEND "${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST}" "  \"format\": \"vst3\",\n")
+file(APPEND "${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST}" "  \"expected\": true,\n")
+file(APPEND "${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST}" "  \"bundle_path\": \"${escaped_bundle_path}\",\n")
+file(APPEND "${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST}" "  \"binary_path_if_applicable\": ${binary_json},\n")
+file(APPEND "${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST}" "  \"source\": \"build-tree\",\n")
+file(APPEND "${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST}" "  \"license_notice\": \"source-built test-only fixture; no proprietary/commercial binaries; implemented against JUCE plugin APIs without copied Steinberg sample implementation\",\n")
+file(APPEND "${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST}" "  \"generated_by\": \"DeckflaxiaRealVst3Fixture\"\n")
+file(APPEND "${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST}" "}\n")
