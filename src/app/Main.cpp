@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <iostream>
 #include <optional>
+#include <algorithm>
 #include <cstdlib>
 #include <cstdint>
 #include <string>
@@ -88,6 +89,18 @@ std::vector<deckflaxia::library::FilesystemEntry> juceBrowserWaveformFixtures(co
             {(fixtureDir / "not_audio.txt").string(), true}};
 }
 
+juce::Rectangle<int> initialMainContentBounds() {
+    const auto displays = juce::Desktop::getInstance().getDisplays();
+    const auto* display = displays.getPrimaryDisplay();
+    if (display == nullptr) {
+        return {0, 0, 1280, 720};
+    }
+
+    const auto width = std::max(1280, static_cast<int>(display->userArea.getWidth() * 0.8F));
+    const auto height = std::max(720, static_cast<int>(display->userArea.getHeight() * 0.8F));
+    return {0, 0, width, height};
+}
+
 class MainWindow final : public juce::DocumentWindow {
 public:
     explicit MainWindow(const juce::String& name, bool noAudioDevice, bool showWindow)
@@ -95,7 +108,8 @@ public:
         setUsingNativeTitleBar(true);
         setResizable(true, true);
         setContentOwned(new deckflaxia::ui::MainComponent(noAudioDevice), true);
-        centreWithSize(getWidth(), getHeight());
+        const auto initialBounds = initialMainContentBounds();
+        centreWithSize(initialBounds.getWidth(), initialBounds.getHeight());
         setVisible(showWindow);
     }
 
@@ -253,12 +267,13 @@ public:
         }
 
         if (juceUiSmokeTest && exitAfterInit) {
+            deckflaxia::ui::MainComponent component(noAudioDevice);
             if (dumpComponents) {
-                deckflaxia::ui::writeHeadlessComponentTreeReport(std::cout);
+                deckflaxia::ui::writeComponentTreeReport(component, std::cout);
             }
             bool ok = true;
             if (screenshotPath.has_value()) {
-                ok = deckflaxia::ui::writeHeadlessComponentScreenshot(*screenshotPath, std::cout);
+                ok = deckflaxia::ui::writeComponentScreenshot(component, *screenshotPath, std::cout);
             }
             setApplicationReturnValue(ok ? 0 : 1);
             quit();

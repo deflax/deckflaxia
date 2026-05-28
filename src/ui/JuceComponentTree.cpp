@@ -43,6 +43,68 @@ const WorkstationTokens& tokens() {
     return value;
 }
 
+struct SmokeLayoutRegions final {
+    juce::Rectangle<int> status;
+    juce::Rectangle<int> browser;
+    juce::Rectangle<int> audioSettings;
+    juce::Rectangle<int> midiLearn;
+    juce::Rectangle<int> mixer;
+    juce::Rectangle<int> waveform;
+    juce::Rectangle<int> beatgridEditor;
+    juce::Rectangle<int> pluginChain;
+    std::array<juce::Rectangle<int>, 4> decks{};
+};
+
+SmokeLayoutRegions calculateSmokeLayout(juce::Rectangle<int> bounds) {
+    auto area = bounds.reduced(tokens().gap);
+    const auto gap = tokens().gap;
+    constexpr int statusHeight = 44;
+    constexpr int rightSidebarWidth = 300;
+    constexpr int centerWidth = 330;
+    constexpr int audioSettingsHeight = 96;
+    constexpr int mixerHeight = 170;
+    constexpr int waveformHeight = 84;
+    constexpr int beatgridHeight = 66;
+
+    SmokeLayoutRegions regions;
+    regions.status = area.removeFromBottom(statusHeight);
+    area.removeFromBottom(gap);
+
+    auto sidebar = area.removeFromRight(rightSidebarWidth);
+    area.removeFromRight(gap);
+
+    auto utility = area.removeFromRight(centerWidth);
+    area.removeFromRight(gap);
+
+    regions.browser = sidebar.removeFromTop((sidebar.getHeight() - audioSettingsHeight - (2 * gap)) / 2);
+    sidebar.removeFromTop(gap);
+    regions.audioSettings = sidebar.removeFromTop(audioSettingsHeight);
+    sidebar.removeFromTop(gap);
+    regions.midiLearn = sidebar;
+
+    regions.mixer = utility.removeFromTop(mixerHeight);
+    utility.removeFromTop(gap);
+    regions.waveform = utility.removeFromTop(waveformHeight);
+    utility.removeFromTop(gap);
+    regions.beatgridEditor = utility.removeFromTop(beatgridHeight);
+    utility.removeFromTop(gap);
+    regions.pluginChain = utility;
+
+    const auto deckWidth = (area.getWidth() - gap) / 2;
+    const auto deckHeight = (area.getHeight() - gap) / 2;
+    auto top = area.removeFromTop(deckHeight);
+    area.removeFromTop(gap);
+    auto bottom = area;
+    regions.decks[0] = top.removeFromLeft(deckWidth);
+    top.removeFromLeft(gap);
+    regions.decks[1] = top;
+    regions.decks[2] = bottom.removeFromLeft(deckWidth);
+    bottom.removeFromLeft(gap);
+    regions.decks[3] = bottom;
+
+    return regions;
+}
+
 juce::Colour accentForDeck(std::size_t index) {
     const auto& t = tokens();
     const std::array<juce::Colour, 4> accents{{t.amber, t.cyan, t.lime, t.red}};
@@ -109,6 +171,7 @@ std::size_t countByPrefix(const juce::Component& component, const juce::String& 
 
 
 void writeSmokeTreeSkeleton(std::ostream& output) {
+    const auto layout = calculateSmokeLayout({0, 0, 1280, 720});
     output << "juce-ui-smoke-test: ok\n";
     output << "component-tree: native-juce industrial-four-deck\n";
     output << "snapshot-source: app::HybridUiShellModel command-state snapshot\n";
@@ -118,18 +181,18 @@ void writeSmokeTreeSkeleton(std::ostream& output) {
     }
     output << "tree:\n";
     output << "MainComponent children=9 bounds=0 0 1280 720\n";
-    output << "  DeckComponent[1] children=0 bounds=10 10 315 313\n";
-    output << "  DeckComponent[2] children=0 bounds=335 10 315 313\n";
-    output << "  DeckComponent[3] children=0 bounds=10 333 315 313\n";
-    output << "  DeckComponent[4] children=0 bounds=335 333 315 313\n";
-    output << "  MixerComponent children=1 bounds=475 150 330 180\n";
-    output << "  BrowserComponent children=3 bounds=970 10 300 350\n";
-    output << "  WaveformComponent children=0 bounds=475 340 330 84\n";
-    output << "  BeatgridEditorComponent children=0 bounds=475 434 330 66\n";
-    output << "  PluginChainComponent children=20 bounds=475 510 330 200\n";
-    output << "  MidiLearnComponent children=0 bounds=970 476 300 234\n";
-    output << "  StatusBarComponent children=0 bounds=10 666 1260 44\n";
-    output << "  AudioSettingsComponent children=0 bounds=970 370 300 96\n";
+    output << "  DeckComponent[1] children=0 bounds=" << layout.decks[0].toString().toStdString() << '\n';
+    output << "  DeckComponent[2] children=0 bounds=" << layout.decks[1].toString().toStdString() << '\n';
+    output << "  DeckComponent[3] children=0 bounds=" << layout.decks[2].toString().toStdString() << '\n';
+    output << "  DeckComponent[4] children=0 bounds=" << layout.decks[3].toString().toStdString() << '\n';
+    output << "  MixerComponent children=1 bounds=" << layout.mixer.toString().toStdString() << '\n';
+    output << "  BrowserComponent children=3 bounds=" << layout.browser.toString().toStdString() << '\n';
+    output << "  WaveformComponent children=0 bounds=" << layout.waveform.toString().toStdString() << '\n';
+    output << "  BeatgridEditorComponent children=0 bounds=" << layout.beatgridEditor.toString().toStdString() << '\n';
+    output << "  PluginChainComponent children=20 bounds=" << layout.pluginChain.toString().toStdString() << '\n';
+    output << "  MidiLearnComponent children=0 bounds=" << layout.midiLearn.toString().toStdString() << '\n';
+    output << "  StatusBarComponent children=0 bounds=" << layout.status.toString().toStdString() << '\n';
+    output << "  AudioSettingsComponent children=0 bounds=" << layout.audioSettings.toString().toStdString() << '\n';
 }
 
 void paintHeadlessSmokeScreenshot(juce::Graphics& graphics, int width, int height) {
@@ -140,18 +203,19 @@ void paintHeadlessSmokeScreenshot(juce::Graphics& graphics, int width, int heigh
     graphics.fillRect(background);
 
     const auto& t = tokens();
-    paintPanel(graphics, {10, 10, 315, 313}, "Deck A", t.amber);
-    paintPanel(graphics, {335, 10, 315, 313}, "Deck B", t.cyan);
-    paintPanel(graphics, {10, 333, 315, 313}, "Deck C", t.lime);
-    paintPanel(graphics, {335, 333, 315, 313}, "Deck D", t.red);
-    paintPanel(graphics, {475, 150, 330, 180}, "Mixer: Four Deck Command Surface", t.amber);
-    paintPanel(graphics, {475, 340, 330, 84}, "Waveform Overview: AudioThumbnail Cache", t.lime);
-    paintPanel(graphics, {475, 434, 330, 66}, "Beatgrid Editor: BPM Downbeat Cues", t.amber);
-    paintPanel(graphics, {475, 510, 330, 200}, "Plugin Chain: Deck + Master Editor Panels", t.red);
-    paintPanel(graphics, {970, 10, 300, 350}, "Browser: Library", t.cyan);
-    paintPanel(graphics, {970, 370, 300, 96}, "Audio Settings", t.amber);
-    paintPanel(graphics, {970, 476, 300, 170}, "MIDI Learn Idle", t.cyan);
-    paintPanel(graphics, {10, 666, 1260, 44}, "Status: Ready", t.lime);
+    const auto layout = calculateSmokeLayout(background);
+    paintPanel(graphics, layout.decks[0], "Deck A", t.amber);
+    paintPanel(graphics, layout.decks[1], "Deck B", t.cyan);
+    paintPanel(graphics, layout.decks[2], "Deck C", t.lime);
+    paintPanel(graphics, layout.decks[3], "Deck D", t.red);
+    paintPanel(graphics, layout.mixer, "Mixer: Four Deck Command Surface", t.amber);
+    paintPanel(graphics, layout.waveform, "Waveform Overview: AudioThumbnail Cache", t.lime);
+    paintPanel(graphics, layout.beatgridEditor, "Beatgrid Editor: BPM Downbeat Cues", t.amber);
+    paintPanel(graphics, layout.pluginChain, "Plugin Chain: Deck + Master Editor Panels", t.red);
+    paintPanel(graphics, layout.browser, "Browser: Library", t.cyan);
+    paintPanel(graphics, layout.audioSettings, "Audio Settings", t.amber);
+    paintPanel(graphics, layout.midiLearn, "MIDI Learn Idle", t.cyan);
+    paintPanel(graphics, layout.status, "Status: Ready", t.lime);
 }
 
 class MainComponent::DeckComponent final : public IndustrialPanel {
@@ -381,32 +445,19 @@ void MainComponent::paint(juce::Graphics& graphics) {
 }
 
 void MainComponent::resized() {
-    auto area = getLocalBounds().reduced(tokens().gap);
-    auto status = area.removeFromBottom(44);
-    statusBar_->setBounds(status);
-    area.removeFromBottom(tokens().gap);
-    auto browserArea = area.removeFromRight(300);
-    browser_->setBounds(browserArea.removeFromTop(browserArea.getHeight() / 2).reduced(0, 0));
-    browserArea.removeFromTop(tokens().gap);
-    audioSettings_->setBounds(browserArea.removeFromTop(96));
-    browserArea.removeFromTop(tokens().gap);
-    midiLearn_->setBounds(browserArea);
-
-    auto top = area.removeFromTop(area.getHeight() / 2);
-    auto bottom = area;
-    auto deckWidth = (top.getWidth() - tokens().gap) / 2;
-    decks_[0]->setBounds(top.removeFromLeft(deckWidth));
-    top.removeFromLeft(tokens().gap);
-    decks_[1]->setBounds(top);
-    decks_[2]->setBounds(bottom.removeFromLeft(deckWidth));
-    bottom.removeFromLeft(tokens().gap);
-    decks_[3]->setBounds(bottom);
-
-    auto centre = getLocalBounds().withSizeKeepingCentre(330, 420);
-    mixer_->setBounds(centre.removeFromTop(180));
-    waveform_->setBounds(centre.removeFromTop(94).reduced(0, tokens().gap));
-    beatgridEditor_->setBounds(centre.removeFromTop(76).reduced(0, tokens().gap));
-    pluginChain_->setBounds(centre.reduced(0, tokens().gap));
+    const auto layout = calculateSmokeLayout(getLocalBounds());
+    statusBar_->setBounds(layout.status);
+    browser_->setBounds(layout.browser);
+    audioSettings_->setBounds(layout.audioSettings);
+    midiLearn_->setBounds(layout.midiLearn);
+    decks_[0]->setBounds(layout.decks[0]);
+    decks_[1]->setBounds(layout.decks[1]);
+    decks_[2]->setBounds(layout.decks[2]);
+    decks_[3]->setBounds(layout.decks[3]);
+    mixer_->setBounds(layout.mixer);
+    waveform_->setBounds(layout.waveform);
+    beatgridEditor_->setBounds(layout.beatgridEditor);
+    pluginChain_->setBounds(layout.pluginChain);
 }
 
 void writeComponentTreeReport(const MainComponent& component, std::ostream& output) {
@@ -433,7 +484,7 @@ bool writeComponentScreenshot(MainComponent& component, const std::filesystem::p
         return false;
     }
 
-    component.setSize(1280, 720);
+    component.setSize(1920, 1080);
     component.resized();
     juce::Image image(juce::Image::RGB, component.getWidth(), component.getHeight(), true);
     juce::Graphics graphics(image);
@@ -447,6 +498,8 @@ bool writeComponentScreenshot(MainComponent& component, const std::filesystem::p
         return false;
     }
     stream->flush();
+    output << "screenshot-source: live-main-component\n";
+    output << "screenshot-size: " << component.getWidth() << 'x' << component.getHeight() << '\n';
     output << "screenshot: wrote path=" << screenshotPath.string() << " bytes=" << file.getSize() << '\n';
     return file.getSize() > 0;
 }
