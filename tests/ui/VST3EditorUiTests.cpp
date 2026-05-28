@@ -107,6 +107,9 @@ int testNoEditorGenericFallback(const std::filesystem::path& fixtures) {
     if (expect(text.find("generic-parameters=1") != std::string::npos, "fallback should expose generic parameters") != 0) {
         return 1;
     }
+    if (expect(text.find("real-vst3-instantiated=0") != std::string::npos, "fallback should report honest real VST3 unavailability") != 0) {
+        return 1;
+    }
     if (expect(text.find("screenshot: blocked") != std::string::npos, "fallback screenshot should be honestly blocked") != 0) {
         return 1;
     }
