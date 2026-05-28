@@ -587,3 +587,41 @@ target_compile_features(FixtureTests PRIVATE cxx_std_17)
 add_test(NAME Fixtures.All COMMAND FixtureTests all ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
 add_test(NAME Fixtures.Generate COMMAND FixtureTests generate ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
 add_test(NAME Fixtures.CorruptAudio COMMAND FixtureTests corrupt ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+
+set_tests_properties(Fixtures.Generate PROPERTIES FIXTURES_SETUP DeckflaxiaDjWorkflowFixtures)
+
+set(DECKFLAXIA_DJ_WORKFLOW_FIXTURE_TESTS
+    JuceAudioDeck.All
+    JuceAudioDeck.Errors
+    JuceAudioDeck.FixtureRender
+    TimeStretch.All
+    TimeStretch.TempoSync
+    TimeStretch.PitchLock
+    TimeStretch.OverloadFallback
+    TimeStretch.TempoSyncSmoke
+    TimeStretch.OverloadSmoke
+    MixerMidi.All
+    MixerMidi.Crossfader
+    MixerMidi.SmokeSurface
+    MixerMidi.AppSmoke
+    BrowserWaveformBeatgrid.All
+    BrowserWaveformBeatgrid.ImportClassification
+    BrowserWaveformBeatgrid.WaveformPrimitive
+    BrowserWaveformBeatgrid.BeatgridPersistence
+    PlayableSmoke.All
+    PlayableSmoke.Workflow
+    PlayableSmoke.Restart
+    ProductionWorkflowSmoke.Library
+    PlayableSmoke.AppSmoke
+    PlayableSmoke.AppRestart
+    PlayableSmoke.AppRestartRestore
+    ProductionWorkflowSmoke.AppSmoke
+    PerformanceHardening.All
+    PerformanceHardening.Budgets
+    PerformanceHardening.Faults
+    PerformanceHardening.AppSmoke
+)
+if(DECKFLAXIA_HAS_JUCE)
+    list(APPEND DECKFLAXIA_DJ_WORKFLOW_FIXTURE_TESTS JuceAudioDeck.AppSmoke)
+endif()
+set_tests_properties(${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_TESTS} PROPERTIES FIXTURES_REQUIRED DeckflaxiaDjWorkflowFixtures)
