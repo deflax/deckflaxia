@@ -33,6 +33,10 @@ namespace {
 
 constexpr const char* kFallbackStateMagic = "task-13-fallback-state=1";
 
+void reportCheck(std::ostream& report, const char* name, bool passed) {
+    report << name << '=' << (passed ? 1 : 0) << '\n';
+}
+
 core::BackgroundJobTicket databaseTicket(std::uint64_t id) noexcept {
     return core::BackgroundJobTicket{id, core::BackgroundJobKind::PersistLibraryChange, core::BackgroundWorkerRole::DatabaseWorker};
 }
@@ -420,9 +424,6 @@ bool allowedDeferredMention(const std::filesystem::path& path, const std::string
     if (loweredTerm == "windows" && pathText.find("audioengine") != std::string::npos) {
         return lower.find("portabledeferred") != std::string::npos || lower.find("alpha verification") != std::string::npos || lower.find("windows") != std::string::npos;
     }
-    if (loweredTerm == "windows" && lower.find("plugin chain") != std::string::npos) {
-        return true;
-    }
     return lower.find("defer") != std::string::npos || lower.find("out of scope") != std::string::npos || lower.find("no ") != std::string::npos ||
            lower.find("not ") != std::string::npos || lower.find("do not") != std::string::npos || lower.find("must not") != std::string::npos ||
            lower.find("without adding") != std::string::npos || lower.find("does not") != std::string::npos || lower.find("not promised") != std::string::npos ||
@@ -525,12 +526,14 @@ int runPlayableSmokeTest(std::ostream& output, const PlayableSmokeOptions& optio
     auto library = makeLibrary(service);
     library::LibraryScanWorkerModel worker;
     const auto importResult = library.importFolderOnBackgroundWorker(library::FolderImportRequest{13, "crate-task-13", "Task 13 Playable Fixtures", importableEntries}, databaseTicket(1302), worker);
-    ok = ok && importResult.ok() && importResult.importedTracks.size() == 3U;
+    const bool importOk = importResult.ok() && importResult.importedTracks.size() == 3U;
+    ok = ok && importOk;
     report << "fixture-imported=" << importResult.importedTracks.size()
            << " importable=" << importableEntries.size()
            << " external-tool-required=" << externalToolRequired
            << " corrupt=" << corrupt
            << " unsupported=" << unsupported << '\n';
+    reportCheck(report, "fixture-import-pass", importOk);
 
     ui::BrowserWaveformBeatgridModel beatgridModel;
     const auto editedBeatgrid = core::BeatgridMetadata::fromBpm(127.75, 0.3125).value;
@@ -637,8 +640,15 @@ int runPlayableSmokeTest(std::ostream& output, const PlayableSmokeOptions& optio
     const bool pluginOk = deckPluginConfigured.ok() && masterPluginConfigured.ok() && deckPluginStatus.activeSlotCount >= 1U && masterPluginStatus.activeSlotCount >= 1U;
     const bool midiOk = learned.ok() && midiDispatch.dispatched() && midiEnqueue.ok();
     const bool sandboxOk = sandboxConfigured && sandbox.helperCount() == plugins::kPluginSandboxMaxHelperProcesses && sandboxAudio.matchesReference;
-    ok = ok && loadedDecks == 4U && playingDecks == 4U && syncedDecks == 4U && pitchLockedDecks == 4U && cueOk && pluginOk && midiOk && sandboxOk && renderOk;
+    const bool deckStateOk = loadedDecks == 4U && playingDecks == 4U && syncedDecks == 4U && pitchLockedDecks == 4U;
+    ok = ok && deckStateOk && cueOk && pluginOk && midiOk && sandboxOk && renderOk;
 
+    reportCheck(report, "deck-state-pass", deckStateOk);
+    reportCheck(report, "cue-pass", cueOk);
+    reportCheck(report, "plugin-pass", pluginOk);
+    reportCheck(report, "midi-pass", midiOk);
+    reportCheck(report, "sandbox-pass", sandboxOk);
+    reportCheck(report, "render-pass", renderOk);
     report << "four-decks-loaded=" << loadedDecks << " four-decks-playing=" << playingDecks << '\n'
            << "sync-enabled=" << syncedDecks << " target-bpm=" << targetBpm << " tempo-diff-bpm=" << tempoDiff << '\n'
            << "pitch-lock-enabled=" << pitchLockedDecks << " pitch-drift-cents=" << pitchDrift << '\n'
@@ -672,7 +682,9 @@ int runPlayableSmokeTest(std::ostream& output, const PlayableSmokeOptions& optio
     const auto deckChainSaved = service.pluginChains().save(core.deckPluginChain(core::DeckId::fromIndex(0).value).chainState());
     const auto masterChainSaved = service.pluginChains().save(core.masterPluginChain().chainState());
     const auto deckStatesSaved = saveDeckStates(service, core, trackIds, sourceBpms, targetBpm);
-    ok = ok && deckChainSaved.ok() && masterChainSaved.ok() && deckStatesSaved;
+    const bool sessionPersisted = deckChainSaved.ok() && masterChainSaved.ok() && deckStatesSaved;
+    ok = ok && sessionPersisted;
+    reportCheck(report, "session-persist-pass", sessionPersisted);
     report << "session-persisted=" << (deckStatesSaved ? 1 : 0)
            << " deck-chain=" << (deckChainSaved.ok() ? 1 : 0)
            << " master-chain=" << (masterChainSaved.ok() ? 1 : 0)
@@ -689,6 +701,8 @@ int runPlayableSmokeTest(std::ostream& output, const PlayableSmokeOptions& optio
     const auto renderEvidence = writeRenderedWavIfAvailable(core, options.renderPath, report);
     const auto screenshotEvidence = writeScreenshotIfAvailable(options.screenshotPath, report);
     ok = ok && renderEvidence && screenshotEvidence;
+    reportCheck(report, "render-evidence-pass", renderEvidence);
+    reportCheck(report, "screenshot-evidence-pass", screenshotEvidence);
 
     const auto logPath = evidencePath(options, options.databasePath.empty() ? "task-13-playable.log" : "task-13-restart.log");
     report << "playable-smoke-summary: loaded=" << loadedDecks
@@ -733,8 +747,9 @@ int runPerformanceSmokeTest(std::ostream& output, const PerformanceSmokeOptions&
 
     persistence::PersistenceService service;
     const auto migrated = service.migrateOnDatabaseWorker(databaseTicket(1501));
-    ok = ok && migrated.ok();
-    report << "persistence-migrated=" << (migrated.ok() ? 1 : 0)
+    const bool persistenceMigrated = migrated.ok();
+    ok = ok && persistenceMigrated;
+    report << "persistence-migrated=" << (persistenceMigrated ? 1 : 0)
            << " backend=" << service.sqliteDecision().summary << '\n';
 
     const auto entries = workflowEntries(options.fixtureDirectory);
@@ -757,7 +772,8 @@ int runPerformanceSmokeTest(std::ostream& output, const PerformanceSmokeOptions&
     auto library = makeLibrary(service);
     library::LibraryScanWorkerModel worker;
     const auto importResult = library.importFolderOnBackgroundWorker(library::FolderImportRequest{15, "crate-task-15", "Task 15 Performance Fixtures", importableEntries}, databaseTicket(1502), worker);
-    ok = ok && importResult.ok() && importResult.importedTracks.size() == 3U;
+    const bool importOk = importResult.ok() && importResult.importedTracks.size() == 3U;
+    ok = ok && importOk;
     const auto decodeQueueDepth = importableEntries.size();
     const auto decodePreparationPressure = entries.size();
     report << "decode-queue-depth=" << decodeQueueDepth
@@ -766,17 +782,21 @@ int runPerformanceSmokeTest(std::ostream& output, const PerformanceSmokeOptions&
            << " external-tool-required=" << externalToolRequired
            << " corrupt=" << corrupt
            << " unsupported=" << unsupported << '\n';
+    reportCheck(report, "fixture-import-pass", importOk);
 
     decks::FourDeckPlaybackCore core;
     std::array<std::string, 4> trackIds{};
     const auto loadedDecks = loadPerformanceDecks(core, options.fixtureDirectory, report, trackIds);
     ok = ok && loadedDecks;
+    reportCheck(report, "performance-decks-pass", loadedDecks);
 
     core::PluginChainDescriptor deckChain{"deck-a", {plugins::makeDeterministicGainPlugin(0.35, false)}};
     core::PluginChainDescriptor masterChain{"master", {plugins::makeDeterministicGainPlugin(0.75, false)}};
     const auto deckPluginConfigured = core.setDeckPluginChain(core::DeckId::fromIndex(0).value, deckChain);
     const auto masterPluginConfigured = core.setMasterPluginChain(masterChain);
-    ok = ok && deckPluginConfigured.ok() && masterPluginConfigured.ok();
+    const bool pluginConfigured = deckPluginConfigured.ok() && masterPluginConfigured.ok();
+    ok = ok && pluginConfigured;
+    reportCheck(report, "plugin-config-pass", pluginConfigured);
 
     std::vector<double> uiCommandLatencies;
     uiCommandLatencies.reserve(8);
@@ -816,7 +836,9 @@ int runPerformanceSmokeTest(std::ostream& output, const PerformanceSmokeOptions&
         sandbox.helper(0).poll(550U);
         sandboxRecoveryMs = sandbox.helper(0).status().crashToRestartMs;
     }
-    ok = ok && sandboxConfigured && sandboxAudio.matchesReference;
+    const bool sandboxConfiguredOk = sandboxConfigured && sandboxAudio.matchesReference;
+    ok = ok && sandboxConfiguredOk;
+    reportCheck(report, "sandbox-config-pass", sandboxConfiguredOk);
 
     const auto render = core.renderOffline(configuration, 4);
     const auto renderRms = masterRms(core, options.bufferFrames);
@@ -894,6 +916,7 @@ int runPerformanceSmokeTest(std::ostream& output, const PerformanceSmokeOptions&
 
     const auto wroteEvidence = options.evidencePath.empty() || writeTextFile(options.evidencePath, json.str());
     ok = ok && wroteEvidence;
+    reportCheck(report, "performance-evidence-pass", wroteEvidence);
     report << "performance-evidence=" << (options.evidencePath.empty() ? std::string{"not-written"} : options.evidencePath.string())
             << " wrote=" << (wroteEvidence ? 1 : 0) << '\n'
             << "performance-smoke-test: " << (ok ? "ok" : "fail") << '\n';
