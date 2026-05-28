@@ -24,6 +24,17 @@ cmake --build build --target license-report
 
 The report is written to `build/license-report.spdx.txt`.
 
+## Active CI Contract
+
+The active GitHub Actions workflow runs on `push`, `pull_request`, and `workflow_dispatch`. Routine push and pull request runs include two Ubuntu 24.04 jobs:
+
+- `linux-fallback` configures without JUCE and runs the fallback build, CTest, smoke, plugin sandbox, performance, packaging, and license gates. This is infrastructure coverage only. It doesn't prove native JUCE, native VST3, native editor windows, macOS runtime, screenshots, WAV output, Rubber Band DSP, or system SQLite persistence.
+- `linux-juce-required` installs the Ubuntu native GUI and media dependencies, checks out `juce-framework/JUCE` at pinned `JUCE_REF=8.0.10` into `third_party/JUCE`, verifies `third_party/JUCE/CMakeLists.txt`, configures with `DECKFLAXIA_REQUIRE_JUCE=ON` and `DECKFLAXIA_USE_VENDORED_JUCE=ON`, builds with `cmake --build build-juce --parallel 1`, then runs static analysis, packaging, CTest, smoke, performance, and license gates.
+
+The `macos-juce-required` job is optional and high-cost for routine presubmit. It runs only for manual `workflow_dispatch` executions or `main` branch runs through `if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'`. When it runs, it uses the same pinned JUCE checkout, checkout verification, required JUCE configure, low-memory build, CTest, smoke, packaging, and license contract as the Linux JUCE job.
+
+CTest owns fixture setup through `Fixtures.Generate` in fallback and JUCE-required jobs. Don't add a separate fixture generation step before CTest unless a direct binary command needs generated files outside CTest.
+
 ## Native JUCE Setup
 
 Use one of these supported JUCE setup paths:

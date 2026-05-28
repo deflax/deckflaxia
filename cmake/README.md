@@ -4,7 +4,7 @@ The real playable JUCE workflow uses `DECKFLAXIA_REQUIRE_JUCE=ON` for presubmit 
 
 This repository does not vendor JUCE, the VST3 SDK, Rubber Band, Signalsmith, SoundTouch, SQLite wrappers, or any other third-party dependency. CMake may link an already-installed system Rubber Band library as the guarded primary time-stretch boundary; otherwise it builds the honest Signalsmith-compatible fallback boundary without claiming production stretch quality. When `DECKFLAXIA_REQUIRE_JUCE=OFF` and JUCE is unavailable, CMake builds an explicit bootstrap-only fallback executable so early CI and smoke tests can validate repository infrastructure without claiming JUCE functionality.
 
-GitHub Actions may check out `juce-framework/JUCE` into `third_party/JUCE` at the pinned workflow `JUCE_REF` immediately before configure. That checkout is CI-only and relies on JUCE AGPL/commercial licensing terms; it must not be committed or treated as a vendored dependency.
+GitHub Actions checks out `juce-framework/JUCE` into `third_party/JUCE` at pinned `JUCE_REF=8.0.10` immediately before required-JUCE configure. The checkout is CI-only and relies on JUCE AGPL/commercial licensing terms; it must not be committed or treated as a vendored dependency. The active workflow runs `linux-fallback` and `linux-juce-required` on push and pull request. The `macos-juce-required` job is optional and high-cost, so it is gated to manual `workflow_dispatch` or `main` branch runs.
 
 For a matching local checkout, run from the repository root:
 
@@ -30,7 +30,7 @@ Use this command when validating the JUCE-required phase:
 cmake -S . -B build-juce -DDECKFLAXIA_REQUIRE_JUCE=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
 
-When using a local or CI checkout at `third_party/JUCE`, keep `DECKFLAXIA_USE_VENDORED_JUCE=ON`:
+When using a local or CI checkout at `third_party/JUCE`, keep `DECKFLAXIA_USE_VENDORED_JUCE=ON`. The Linux and macOS JUCE-required CI jobs both verify `third_party/JUCE/CMakeLists.txt` before configure:
 
 ```sh
 test -f third_party/JUCE/CMakeLists.txt
@@ -51,7 +51,7 @@ CTest uses `Fixtures.Generate` as the setup step for deterministic DJ workflow f
 ./build-juce/FixtureTests generate tests/fixtures/dj-workflow
 ```
 
-If JUCE is missing, configure fails with instructions to provide either `-DCMAKE_PREFIX_PATH=/path/to/JUCE/install-or-build` or a licensed `third_party/JUCE` checkout. Use fallback mode only for early infrastructure checks that intentionally do not exercise JUCE:
+If JUCE is missing, configure fails with instructions to provide either `-DCMAKE_PREFIX_PATH=/path/to/JUCE/install-or-build` or a licensed `third_party/JUCE` checkout. Use fallback mode only for infrastructure checks that intentionally do not exercise JUCE. Fallback does not prove native JUCE, native VST3, native editor windows, macOS runtime, screenshots, WAV output, Rubber Band DSP, or system SQLite persistence:
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
