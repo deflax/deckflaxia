@@ -1,0 +1,6 @@
+# Learnings: fix-juce-screenshot
+
+- Source review: `src/app/Main.cpp` now creates a real `deckflaxia::ui::MainComponent` for `--juce-ui-smoke-test --screenshot` and routes screenshot capture through `writeComponentScreenshot(...)` instead of `writeHeadlessComponentScreenshot(...)` on the successful JUCE path.
+- Source review: `--juce-ui-smoke-test --dump-components --exit-after-init` still uses `writeComponentTreeReport(component, std::cout)`, so the `juce-ui-smoke-test: ok` tree output stays intact for the live JUCE branch.
+- Task 2 harness: `CMakeLists.txt` now runs `JuceUi.Screenshot` through `tests/ui/VerifyJuceScreenshot.cmake`, which executes the app command, requires `screenshot-source: live-main-component` and `screenshot-size: 1920x1080`, fails on missing/empty output PNG, and parses the PNG signature/IHDR width/height for exact `1920x1080` dimensions.
+- Task 2 preservation: the no-JUCE `JuceUi.ScreenshotUnavailable` CTest registration still calls the app screenshot path directly with `WILL_FAIL TRUE`, and `tests/ui/JuceUiSmokeTests.cpp` still asserts `runUnavailableJuceUiSmoke(...)` returns non-zero and reports `screenshot: blocked`, so unavailable capture remains non-successful and does not fake a PNG.
