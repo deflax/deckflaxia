@@ -7,16 +7,51 @@
 
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
 #include <utility>
+#include <vector>
 
 namespace deckflaxia::audio {
 
 namespace {
+
+std::vector<std::filesystem::path> realVst3FixtureManifestCandidates(const std::filesystem::path& fixtureDirectory) {
+    std::vector<std::filesystem::path> candidates;
+    if (fixtureDirectory.extension() == ".json") {
+        candidates.push_back(fixtureDirectory);
+    }
+    candidates.push_back(fixtureDirectory / "manifest.json");
+    candidates.push_back(fixtureDirectory / "real-vst3-fixture" / "manifest.json");
+    candidates.emplace_back("generated/real-vst3-fixture/manifest.json");
+    candidates.emplace_back("build-juce/generated/real-vst3-fixture/manifest.json");
+    return candidates;
+}
+
+plugins::RealVst3FixtureManifestResult discoverRealVst3FixtureManifest(const std::filesystem::path& fixtureDirectory,
+                                                                        std::filesystem::path& selectedManifestPath) {
+    plugins::RealVst3FixtureManifestResult missing;
+    for (const auto& candidate : realVst3FixtureManifestCandidates(fixtureDirectory)) {
+        const auto result = plugins::loadRealVst3FixtureManifest(candidate);
+        if (result.ok()) {
+            selectedManifestPath = candidate;
+            return result;
+        }
+        if (missing.reason.empty()) {
+            missing = result;
+            selectedManifestPath = candidate;
+        }
+        if (result.error != plugins::RealVst3FixtureManifestError::ManifestMissing) {
+            selectedManifestPath = candidate;
+            return result;
+        }
+    }
+    return missing;
+}
 
 std::array<std::filesystem::path, 4> fourDeckFixtureFiles(const std::filesystem::path& fixtureDirectory) {
     return {fixtureDirectory / "track_120bpm.wav",
@@ -91,14 +126,13 @@ float masterPeak(const decks::FourDeckPlaybackCore& core, std::uint32_t frames) 
     return peak;
 }
 
-float renderPluginChainRms(bool bypassed, plugins::PluginProcessingStatus& status, float& peak) {
+float renderPluginChainRms(const core::PluginDescriptor& plugin, plugins::PluginProcessingStatus& status, float& peak) {
     decks::FourDeckPlaybackCore core;
     const auto deckId = core::DeckId::fromIndex(0).value;
     auto media = decks::PreparedAudioMedia::deterministicTestWav(4096, 48000);
     if (!core.loadDeck(deckId, decks::AudioDeckMediaReference::deterministicTestWav(std::move(media))).ok()) {
         return 0.0F;
     }
-    auto plugin = plugins::makeDeterministicGainPlugin(0.35, bypassed);
     const auto configured = core.setDeckPluginChain(deckId, core::PluginChainDescriptor{"deck-a", {plugin}});
     if (!configured.ok() || core.play(deckId) != decks::FourDeckPlaybackError::None) {
         return 0.0F;
@@ -107,6 +141,78 @@ float renderPluginChainRms(bool bypassed, plugins::PluginProcessingStatus& statu
     status = core.deckPluginChain(deckId).status();
     peak = masterPeak(core, 512);
     return render.ok() ? masterRms(core, 512) : 0.0F;
+}
+
+std::vector<float> deterministicPluginSmokeBuffer() {
+    std::vector<float> buffer(512U * 2U);
+    for (std::uint32_t frame = 0; frame < 512U; ++frame) {
+        const auto left = static_cast<float>(((frame % 64U) + 1U) / 128.0);
+        const auto right = static_cast<float>(((frame % 31U) + 1U) / 96.0);
+        const auto index = static_cast<std::size_t>(frame) * 2U;
+        buffer[index] = left;
+        buffer[index + 1U] = right;
+    }
+    return buffer;
+}
+
+double renderPluginHostRms(plugins::OfflinePluginChainHost& host) {
+    auto buffer = deterministicPluginSmokeBuffer();
+    const auto metrics = host.processReplacing(buffer.data(), 512, false);
+    return metrics.outputRms;
+}
+
+struct Vst3SmokeHostEvidence final {
+    plugins::PluginProcessingStatus status;
+    plugins::PluginHostError configureError{plugins::PluginHostError::None};
+    plugins::PluginHostError parameterSetError{plugins::PluginHostError::None};
+    plugins::PluginHostError snapshotError{plugins::PluginHostError::None};
+    plugins::PluginHostError reloadConfigureError{plugins::PluginHostError::None};
+    plugins::PluginHostError restoreError{plugins::PluginHostError::None};
+    double defaultRms{};
+    double changedRms{};
+    double restoredRms{};
+    double parameterValue{};
+    double restoredParameterValue{};
+    std::size_t stateBytes{};
+    bool parameterChanged{};
+    bool stateRestored{};
+};
+
+Vst3SmokeHostEvidence collectVst3SmokeHostEvidence(const core::PluginDescriptor& plugin) {
+    Vst3SmokeHostEvidence evidence;
+    plugins::OfflinePluginChainHost host;
+    const core::PluginChainDescriptor chain{"deck-a", {plugin}};
+    const auto configured = host.configure(plugins::PluginChainTargetKind::Deck, chain, 48000.0, 512);
+    evidence.configureError = configured.error;
+    evidence.status = host.status();
+    if (!configured.ok()) {
+        return evidence;
+    }
+
+    evidence.defaultRms = renderPluginHostRms(host);
+    const auto parameterSet = host.setParameter(0, "gain", 0.25);
+    evidence.parameterSetError = parameterSet.error;
+    evidence.parameterValue = host.parameter(0, "gain");
+    evidence.changedRms = renderPluginHostRms(host);
+    evidence.parameterChanged = parameterSet.ok() && std::abs(evidence.parameterValue - 0.25) < 0.01 &&
+                                evidence.defaultRms > 0.0 && evidence.changedRms > 0.0 && std::abs(evidence.defaultRms - evidence.changedRms) > 0.0001;
+
+    plugins::PluginStateSnapshot snapshot;
+    const auto snapshotted = host.snapshotState(0, snapshot);
+    evidence.snapshotError = snapshotted.error;
+    evidence.stateBytes = snapshot.bytes.size();
+    plugins::OfflinePluginChainHost reloaded;
+    const auto reconfigured = reloaded.configure(plugins::PluginChainTargetKind::Deck, chain, 48000.0, 512);
+    evidence.reloadConfigureError = reconfigured.error;
+    if (snapshotted.ok() && reconfigured.ok()) {
+        const auto restored = reloaded.restoreState(0, snapshot);
+        evidence.restoreError = restored.error;
+        evidence.restoredParameterValue = reloaded.parameter(0, "gain");
+        evidence.restoredRms = renderPluginHostRms(reloaded);
+        evidence.stateRestored = restored.ok() && evidence.stateBytes > 0U && std::abs(evidence.restoredParameterValue - evidence.parameterValue) < 0.01 &&
+                                 std::abs(evidence.restoredRms - evidence.changedRms) < 0.0001;
+    }
+    return evidence;
 }
 
 int loadCrossfadeDeck(decks::FourDeckPlaybackCore& core, std::size_t deckIndex, const std::filesystem::path& path) {
@@ -366,13 +472,35 @@ int runVst3ProcessingSmokeTest(std::ostream& output, const AudioDeckSmokeOptions
     output << "juce-vst3-host=unavailable fallback=deterministic-test-processor real-vst3-success=0\n";
 #endif
 
+    core::PluginDescriptor processedPlugin = plugins::makeDeterministicGainPlugin(0.35, false);
+    core::PluginDescriptor bypassPlugin = plugins::makeDeterministicGainPlugin(0.35, true);
+#if DECKFLAXIA_HAS_JUCE
+    std::filesystem::path manifestPath;
+    const auto manifest = discoverRealVst3FixtureManifest(options.fixtureDirectory, manifestPath);
+    output << "real-vst3-fixture-manifest=" << manifestPath.string()
+           << " loaded=" << (manifest.ok() ? 1 : 0)
+           << " error=" << plugins::toString(manifest.error) << '\n';
+    if (!manifest.ok()) {
+        output << "real-vst3-fixture-reason=" << manifest.reason << '\n';
+        return 1;
+    }
+    processedPlugin = plugins::makeRealVst3FixturePlugin(manifest.manifest, false);
+    bypassPlugin = plugins::makeRealVst3FixturePlugin(manifest.manifest, true);
+    output << "real-vst3-fixture-id=" << manifest.manifest.fixtureId
+           << " bundle-path=" << manifest.manifest.bundlePath.string()
+           << " descriptor=" << processedPlugin.identifier << '\n';
+#endif
+
     plugins::PluginProcessingStatus processedStatus;
     plugins::PluginProcessingStatus bypassStatus;
     float processedPeak = 0.0F;
     float bypassPeak = 0.0F;
-    const auto processedRms = renderPluginChainRms(false, processedStatus, processedPeak);
-    const auto bypassRms = renderPluginChainRms(true, bypassStatus, bypassPeak);
+    const auto processedRms = renderPluginChainRms(processedPlugin, processedStatus, processedPeak);
+    const auto bypassRms = renderPluginChainRms(bypassPlugin, bypassStatus, bypassPeak);
     const auto changed = processedRms > 0.0F && bypassRms > 0.0F && std::abs(processedRms - bypassRms) > 0.0001F;
+    const auto hostEvidence = collectVst3SmokeHostEvidence(processedPlugin);
+    const auto realParameters = hostEvidence.status.realVst3Instantiated && hostEvidence.parameterChanged;
+    const auto realState = hostEvidence.status.realVst3Instantiated && hostEvidence.stateRestored;
 
     persistence::PersistenceService service;
     auto masterPlugin = plugins::makeDeterministicGainPlugin(0.42, false);
@@ -393,6 +521,21 @@ int runVst3ProcessingSmokeTest(std::ostream& output, const AudioDeckSmokeOptions
             << "processed-rms=" << processedRms << " bypass-rms=" << bypassRms
             << " processed-peak=" << processedPeak << " bypass-peak=" << bypassPeak
             << " changed-audio=" << (changed ? 1 : 0) << '\n'
+            << "real-parameters=" << (realParameters ? 1 : 0)
+            << " parameter-marker=" << (hostEvidence.parameterChanged ? 1 : 0)
+            << " parameter-configure-error=" << plugins::toString(hostEvidence.configureError)
+            << " parameter-set-error=" << plugins::toString(hostEvidence.parameterSetError)
+            << " default-rms=" << hostEvidence.defaultRms
+            << " changed-rms=" << hostEvidence.changedRms
+            << " gain=" << hostEvidence.parameterValue << '\n'
+            << "real-state=" << (realState ? 1 : 0)
+            << " state-marker=" << (hostEvidence.stateRestored ? 1 : 0)
+            << " snapshot-error=" << plugins::toString(hostEvidence.snapshotError)
+            << " reload-configure-error=" << plugins::toString(hostEvidence.reloadConfigureError)
+            << " restore-error=" << plugins::toString(hostEvidence.restoreError)
+            << " state-bytes=" << hostEvidence.stateBytes
+            << " restored-rms=" << hostEvidence.restoredRms
+            << " restored-gain=" << hostEvidence.restoredParameterValue << '\n'
             << "latency-frames=" << processedStatus.latencyFrames
             << " active-slots=" << processedStatus.activeSlotCount
             << " unavailable-slots=" << processedStatus.unavailableSlotCount << '\n'
@@ -422,7 +565,11 @@ int runVst3ProcessingSmokeTest(std::ostream& output, const AudioDeckSmokeOptions
     output << masterLog.str();
     output << "deck-log=" << deckPath.string() << " wrote=" << (wroteDeck ? 1 : 0) << '\n';
     output << "master-log=" << masterPath.string() << " wrote=" << (wroteMaster ? 1 : 0) << '\n';
+#if DECKFLAXIA_HAS_JUCE
+    return changed && identical && realParameters && realState && wroteDeck && wroteMaster ? 0 : 1;
+#else
     return changed && identical && wroteDeck && wroteMaster ? 0 : 1;
+#endif
 }
 
 }
