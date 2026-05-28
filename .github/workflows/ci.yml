@@ -83,6 +83,9 @@ jobs:
       - name: Build JUCE-required app and helper
         run: cmake --build build-juce --parallel 1
 
+      - name: Build real VST3 fixture
+        run: cmake --build build-juce --target DeckflaxiaRealVst3Fixture --parallel 1
+
       - name: Static analysis prerequisites
         run: cmake --build build-juce --target static-analysis
 
@@ -135,6 +138,9 @@ jobs:
 
       - name: Build JUCE-required app and helper
         run: cmake --build build-juce --parallel 1
+
+      - name: Build real VST3 fixture
+        run: cmake --build build-juce --target DeckflaxiaRealVst3Fixture --parallel 1
 
       - name: Packaging helper location check
         run: cmake --build build-juce --target plugin-sandbox-helper-packaging-check
