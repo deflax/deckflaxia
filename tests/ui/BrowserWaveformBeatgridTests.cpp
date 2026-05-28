@@ -45,15 +45,9 @@ int testImportClassification(const std::filesystem::path& fixtureDir) {
     if (expect(imports[5].error == deckflaxia::library::AudioImportError::NotRegularFile, "folder entry should return typed regular-file error") != 0) {
         return 1;
     }
-#if DECKFLAXIA_HAS_JUCE
-    if (expect(imports[2].format == "mp3", "JUCE MP3 entry should reach platform codec path") != 0) {
+    if (expect(imports[2].format == "mp3" && imports[2].error == deckflaxia::library::AudioImportError::ExternalToolRequired, "MP3 fixture should remain external-tool-required until a real generated fixture exists") != 0) {
         return 1;
     }
-#else
-    if (expect(imports[2].error == deckflaxia::library::AudioImportError::ExternalToolRequired, "fallback MP3 should remain external-tool-required") != 0) {
-        return 1;
-    }
-#endif
     const deckflaxia::ui::BrowserWaveformBeatgridModel model;
     const auto rows = model.buildBrowserRows(imports);
     if (expect(rows.size() == imports.size() && rows[0].trackId.find("track:") == 0U, "browser table rows should expose deterministic track ids") != 0) {

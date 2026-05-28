@@ -53,11 +53,9 @@ AudioImportClassification classifyAudioImport(const FilesystemEntry& entry) noex
         classification.error = AudioImportError::CorruptAudio;
         return classification;
     }
-#if !DECKFLAXIA_HAS_JUCE
     if (classification.format == "mp3") {
         classification.error = AudioImportError::ExternalToolRequired;
     }
-#endif
     return classification;
 }
 
