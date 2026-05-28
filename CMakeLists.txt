@@ -258,7 +258,7 @@ add_custom_command(TARGET Deckflaxia POST_BUILD
 add_custom_target(plugin-sandbox-helper-packaging-check
     COMMAND ${CMAKE_COMMAND}
         -DDECKFLAXIA_APP_PATH=$<TARGET_FILE:Deckflaxia>
-        -DDECKFLAXIA_HELPER_PATH=$<TARGET_FILE:DeckflaxiaPluginSandboxHelper>
+        -DDECKFLAXIA_HELPER_PATH=$<TARGET_FILE_DIR:Deckflaxia>/$<TARGET_FILE_NAME:DeckflaxiaPluginSandboxHelper>
         -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/PluginSandboxPackagingCheck.cmake
     DEPENDS Deckflaxia DeckflaxiaPluginSandboxHelper
     COMMENT "Checking DeckflaxiaPluginSandboxHelper build output and app-relative location"
@@ -517,7 +517,7 @@ add_test(NAME PluginSandbox.SmokeSurface COMMAND PluginSandboxTests smoke ${DECK
 add_test(NAME PluginSandbox.AppSmoke COMMAND Deckflaxia --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures ${DECKFLAXIA_PLUGIN_FIXTURE_DIR} --exit-after-init)
 add_test(NAME PluginSandbox.HelperPackaging COMMAND ${CMAKE_COMMAND}
     -DDECKFLAXIA_APP_PATH=$<TARGET_FILE:Deckflaxia>
-    -DDECKFLAXIA_HELPER_PATH=$<TARGET_FILE:DeckflaxiaPluginSandboxHelper>
+    -DDECKFLAXIA_HELPER_PATH=$<TARGET_FILE_DIR:Deckflaxia>/$<TARGET_FILE_NAME:DeckflaxiaPluginSandboxHelper>
     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/PluginSandboxPackagingCheck.cmake)
 
 add_executable(PlayableSmokeTests
