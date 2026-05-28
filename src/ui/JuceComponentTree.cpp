@@ -340,7 +340,6 @@ MainComponent::MainComponent(bool noAudioDevice)
     }
 
     setName("MainComponent");
-    setSize(1280, 720);
 
     for (std::size_t index = 0; index < decks_.size(); ++index) {
         decks_[index] = std::make_unique<DeckComponent>(index, snapshot_.decks[index]);
@@ -364,6 +363,8 @@ MainComponent::MainComponent(bool noAudioDevice)
     addAndMakeVisible(*midiLearn_);
     addAndMakeVisible(*statusBar_);
     addAndMakeVisible(*audioSettings_);
+
+    setSize(1280, 720);
 }
 
 bool MainComponent::audioDeviceManagerInitialized() const noexcept { return audioDeviceManagerInitialized_; }
