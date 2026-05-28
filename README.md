@@ -6,6 +6,8 @@ Start with the runbook for exact setup, build, launch, smoke, sandbox, license, 
 
 - [User runbook and developer operations](docs/user-runbook-developer-operations.md)
 
+For a local JUCE checkout, see the runbook's `third_party/JUCE` setup commands; JUCE is not vendored in this repository and the local checkout must not be committed.
+
 Related references:
 
 - [Architecture boundaries](docs/architecture/alpha-architecture.md)

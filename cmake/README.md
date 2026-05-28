@@ -6,6 +6,16 @@ This repository does not vendor JUCE, the VST3 SDK, Rubber Band, Signalsmith, So
 
 GitHub Actions may check out `juce-framework/JUCE` into `third_party/JUCE` at the pinned workflow `JUCE_REF` immediately before configure. That checkout is CI-only and relies on JUCE AGPL/commercial licensing terms; it must not be committed or treated as a vendored dependency.
 
+For a matching local checkout, run from the repository root:
+
+```sh
+mkdir -p third_party
+git clone --branch 8.0.10 --depth 1 https://github.com/juce-framework/JUCE.git third_party/JUCE
+test -f third_party/JUCE/CMakeLists.txt
+```
+
+Keep this tag aligned with the workflow `JUCE_REF`. This is a local licensed checkout for `add_subdirectory(third_party/JUCE)`, not source-controlled vendoring; `third_party/` is ignored and must stay out of commits.
+
 ## License Report
 
 Run `cmake --build build --target license-report` after configure. The target writes `build/license-report.spdx.txt`, an SPDX-style inventory covering project source as `AGPL-3.0-or-later`, JUCE as `AGPL-3.0-only OR LicenseRef-JUCE-Commercial`, the VST3 SDK as `MIT`, Rubber Band as optional system `GPL-2.0-or-later`, Signalsmith as non-vendored `MIT` fallback boundary, SoundTouch as `LGPL-2.1-only`, the system SQLite C API target, and the current no-vendored-dependency posture.
@@ -23,7 +33,22 @@ cmake -S . -B build-juce -DDECKFLAXIA_REQUIRE_JUCE=ON -DCMAKE_BUILD_TYPE=Debug -
 When using a local or CI checkout at `third_party/JUCE`, keep `DECKFLAXIA_USE_VENDORED_JUCE=ON`:
 
 ```sh
+test -f third_party/JUCE/CMakeLists.txt
 cmake -S . -B build-juce -DDECKFLAXIA_REQUIRE_JUCE=ON -DDECKFLAXIA_USE_VENDORED_JUCE=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+```
+
+If the compiler is killed while building large JUCE module sources such as `juce_graphics.cpp` or `juce_gui_basics.cpp`, the machine is out of RAM. Rebuild with constrained parallelism:
+
+```sh
+cmake --build build-juce --parallel 1
+```
+
+Use `--parallel 2` only after confirming the host has enough memory for multiple concurrent JUCE translation units.
+
+CTest uses `Fixtures.Generate` as the setup step for deterministic DJ workflow fixtures. Tests that load `tests/fixtures/dj-workflow/track_120bpm.wav`, `track_128bpm.wav`, `silence_10s.wav`, or `corrupt_audio.wav` require that setup when run through CTest. If you invoke test binaries directly, run the generated fixture step yourself first:
+
+```sh
+./build-juce/FixtureTests generate tests/fixtures/dj-workflow
 ```
 
 If JUCE is missing, configure fails with instructions to provide either `-DCMAKE_PREFIX_PATH=/path/to/JUCE/install-or-build` or a licensed `third_party/JUCE` checkout. Use fallback mode only for early infrastructure checks that intentionally do not exercise JUCE:

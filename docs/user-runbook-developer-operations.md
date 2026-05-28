@@ -33,6 +33,16 @@ Use one of these supported JUCE setup paths:
 
 CI uses the second path by checking out JUCE at `JUCE_REF=8.0.10` during the workflow. JUCE is not stored in this repository.
 
+To mirror the pinned CI checkout locally, run from the repository root:
+
+```sh
+mkdir -p third_party
+git clone --branch 8.0.10 --depth 1 https://github.com/juce-framework/JUCE.git third_party/JUCE
+test -f third_party/JUCE/CMakeLists.txt
+```
+
+This uses JUCE's stable tagged release source from `juce-framework/JUCE`, which the upstream CMake documentation supports through `add_subdirectory`. Treat `third_party/JUCE` as a local licensed checkout only: `.gitignore` excludes `third_party/`, and the checkout must not be committed or treated as a vendored dependency. Review the `AGPL-3.0-only OR LicenseRef-JUCE-Commercial` choice before distributing a JUCE build. If the project updates `JUCE_REF`, update this local checkout tag at the same time.
+
 On Ubuntu 24.04, install the native build and GUI/media development packages before configuring a JUCE-required build:
 
 ```sh
@@ -56,10 +66,26 @@ ctest --test-dir build-juce --output-on-failure
 If using `third_party/JUCE`, use:
 
 ```sh
+test -f third_party/JUCE/CMakeLists.txt
 cmake -S . -B build-juce -DDECKFLAXIA_REQUIRE_JUCE=ON -DDECKFLAXIA_USE_VENDORED_JUCE=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 cmake --build build-juce
 ctest --test-dir build-juce --output-on-failure
 ```
+
+CTest materializes deterministic DJ workflow audio fixtures through `Fixtures.Generate` before tests that require `tests/fixtures/dj-workflow`. If you run individual binaries directly or use an existing build tree from before that CTest fixture setup, generate them once first:
+
+```sh
+./build-juce/FixtureTests generate tests/fixtures/dj-workflow
+```
+
+On low-memory machines, compile the JUCE build with limited parallelism. `c++: fatal error: Killed signal terminated program cc1plus` while compiling files such as `third_party/JUCE/modules/juce_graphics/juce_graphics.cpp` or `juce_gui_basics.cpp` means the OS killed the compiler for memory pressure, not that the source file is invalid:
+
+```sh
+cmake --build build-juce --parallel 1
+ctest --test-dir build-juce --output-on-failure
+```
+
+If one job is unnecessarily slow and the machine has enough RAM, try `--parallel 2`. Avoid broad `-j` builds in constrained containers because JUCE module translation units are large.
 
 ## Run the App
 
@@ -135,6 +161,8 @@ cmake --build build --target license-report
 
 Fallback logs should state `juce=unavailable`, deterministic or generic plugin behavior, and SQLite fallback state if system SQLite is unavailable.
 
+`ctest` also runs `Fixtures.Generate` before fixture-dependent fallback tests. If you run binaries directly instead of CTest, use `./build/FixtureTests generate tests/fixtures/dj-workflow` first.
+
 ## Troubleshooting
 
 If CMake reports that `CMakeCache.txt` was created from a different source directory, the build tree is stale. Remove the affected build directory or choose a fresh one before reconfiguring:
@@ -146,7 +174,24 @@ cmake -S . -B build-juce -DDECKFLAXIA_REQUIRE_JUCE=ON -DDECKFLAXIA_USE_VENDORED_
 
 If `DECKFLAXIA_REQUIRE_JUCE=ON` configure fails, install or export JUCE and pass `-DCMAKE_PREFIX_PATH=/path/to/JUCE/install-or-build`, or add a licensed `third_party/JUCE` checkout and pass `-DDECKFLAXIA_USE_VENDORED_JUCE=ON`.
 
+If `third_party/JUCE/CMakeLists.txt` is missing, recreate the local checkout from the repository root:
+
+```sh
+mkdir -p third_party
+git clone --branch 8.0.10 --depth 1 https://github.com/juce-framework/JUCE.git third_party/JUCE
+```
+
+If `third_party/JUCE` already exists but is the wrong version, remove or move that local ignored directory first, then clone the pinned tag again. Do not commit `third_party/JUCE` or add it as a vendored dependency.
+
 If a JUCE-required build reaches `gtk/gtk.h` and fails, install `libgtk-3-dev`. If it reaches WebKitGTK package or header errors through `juce_gui_extra`, install `libwebkit2gtk-4.1-dev` or the distro equivalent. These are system dependency failures, not fallback-mode successes.
+
+If a JUCE-required build fails with `c++: fatal error: Killed signal terminated program cc1plus` while compiling `third_party/JUCE/modules/...`, rerun the build with fewer jobs:
+
+```sh
+cmake --build build-juce --parallel 1
+```
+
+This is the expected low-RAM failure mode for large JUCE module translation units. Increase to `--parallel 2` only if the machine has enough memory.
 
 If Rubber Band is missing, local fallback uses the Signalsmith-compatible boundary and must not be treated as Rubber Band DSP verification.
 
