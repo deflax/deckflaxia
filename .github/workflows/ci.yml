@@ -1,13 +1,60 @@
 name: CI
 
+permissions:
+  contents: read
+
 env:
   JUCE_REF: 8.0.10
 
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
+  linux-fallback:
+    name: Ubuntu 24.04 fallback configure/build/test/smoke/license
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure fallback build
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build fallback app and helper
+        run: cmake --build build
+
+      - name: Packaging helper location check
+        run: cmake --build build --target plugin-sandbox-helper-packaging-check
+
+      - name: CTest fallback suite
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Fallback smoke test
+        run: ./build/Deckflaxia --smoke-test --exit-after-init
+
+      - name: Playable smoke test
+        run: ./build/Deckflaxia --playable-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
+
+      - name: Production DJ workflow smoke test
+        run: ./build/Deckflaxia --production-dj-workflow-smoke-test --fixtures tests/fixtures/dj-workflow --exit-after-init
+
+      - name: Plugin sandbox smoke test
+        run: ./build/Deckflaxia --plugin-sandbox-smoke-test --kill-helper-after-ms 500 --fixtures tests/fixtures/plugins --exit-after-init
+
+      - name: Performance smoke test
+        run: ./build/Deckflaxia --performance-smoke-test --fixtures tests/fixtures/dj-workflow --sample-rate 48000 --buffer-size 512 --exit-after-init
+
+      - name: License report gate
+        run: cmake --build build --target license-report
+
+      - name: Upload fallback license report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu-24.04-fallback-license-report
+          path: build/license-report.spdx.txt
+
   linux-juce-required:
     name: Ubuntu 24.04 JUCE-required configure/build/test/smoke/license
     runs-on: ubuntu-24.04
@@ -22,11 +69,19 @@ jobs:
           ref: ${{ env.JUCE_REF }}
           path: third_party/JUCE
 
+      - name: Install Ubuntu native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev libasound2-dev libjack-jackd2-dev libcurl4-openssl-dev libfreetype6-dev libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev libglu1-mesa-dev mesa-common-dev
+
+      - name: Verify JUCE checkout
+        run: test -f third_party/JUCE/CMakeLists.txt
+
       - name: Configure JUCE-required build
         run: cmake -S . -B build-juce -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDECKFLAXIA_REQUIRE_JUCE=ON -DDECKFLAXIA_USE_VENDORED_JUCE=ON
 
       - name: Build JUCE-required app and helper
-        run: cmake --build build-juce
+        run: cmake --build build-juce --parallel 1
 
       - name: Static analysis prerequisites
         run: cmake --build build-juce --target static-analysis
@@ -59,6 +114,7 @@ jobs:
 
   macos-juce-required:
     name: macOS JUCE-required configure/build/test/smoke/license
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: macos-latest
     steps:
       - name: Check out repository
@@ -71,11 +127,14 @@ jobs:
           ref: ${{ env.JUCE_REF }}
           path: third_party/JUCE
 
+      - name: Verify JUCE checkout
+        run: test -f third_party/JUCE/CMakeLists.txt
+
       - name: Configure JUCE-required build
         run: cmake -S . -B build-juce -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DDECKFLAXIA_REQUIRE_JUCE=ON -DDECKFLAXIA_USE_VENDORED_JUCE=ON
 
       - name: Build JUCE-required app and helper
-        run: cmake --build build-juce
+        run: cmake --build build-juce --parallel 1
 
       - name: Packaging helper location check
         run: cmake --build build-juce --target plugin-sandbox-helper-packaging-check
