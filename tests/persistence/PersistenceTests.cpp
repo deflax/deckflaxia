@@ -1,6 +1,7 @@
 #include "library/LibraryPersistence.h"
 #include "persistence/Persistence.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <fstream>
@@ -276,7 +277,17 @@ int assertFixtureState(deckflaxia::persistence::PersistenceService& service) {
         return 1;
     }
     const auto plugins = service.pluginScanCache().list();
-    if (expectOk(plugins, "sqlite plugin cache reload") != 0 || expect(plugins.value.size() == 2 && plugins.value[1].blacklisted, "sqlite plugin cache deterministic reload") != 0) {
+    if (expectOk(plugins, "sqlite plugin cache reload") != 0 || expect(plugins.value.size() == 2, "sqlite plugin cache deterministic reload") != 0) {
+        return 1;
+    }
+    const auto fixturePlugin = std::find_if(plugins.value.begin(), plugins.value.end(), [](const auto& plugin) {
+        return plugin.pluginId == "vst3.fixture";
+    });
+    const auto failedPlugin = std::find_if(plugins.value.begin(), plugins.value.end(), [](const auto& plugin) {
+        return plugin.pluginId == "failed.bad";
+    });
+    if (expect(fixturePlugin != plugins.value.end() && !fixturePlugin->blacklisted, "sqlite plugin cache should reload fixture plugin") != 0 ||
+        expect(failedPlugin != plugins.value.end() && failedPlugin->blacklisted, "sqlite plugin cache should reload blacklisted plugin") != 0) {
         return 1;
     }
     const auto chain = service.pluginChains().load("deck-3-chain");
