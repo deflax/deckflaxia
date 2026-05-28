@@ -236,6 +236,90 @@ if(DECKFLAXIA_HAS_JUCE)
     endif()
 endif()
 
+if(DECKFLAXIA_HAS_JUCE AND TARGET juce::juce_audio_plugin_client_VST3)
+    set(DECKFLAXIA_REAL_VST3_FIXTURE_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated/real-vst3-fixture)
+    set(DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST_PATH ${CMAKE_CURRENT_BINARY_DIR}/generated/real-vst3-fixture/manifest.json)
+    set(DECKFLAXIA_REAL_VST3_FIXTURE_PRODUCT_NAME DeckflaxiaRealVst3Fixture)
+    set(DECKFLAXIA_REAL_VST3_FIXTURE_BUNDLE_PATH ${DECKFLAXIA_REAL_VST3_FIXTURE_OUTPUT_DIR}/VST3/${DECKFLAXIA_REAL_VST3_FIXTURE_PRODUCT_NAME}.vst3)
+    set(DECKFLAXIA_REAL_VST3_FIXTURE_BINARY_PATH "")
+
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        set(DECKFLAXIA_REAL_VST3_FIXTURE_BINARY_PATH ${DECKFLAXIA_REAL_VST3_FIXTURE_BUNDLE_PATH}/Contents/${JUCE_TARGET_ARCHITECTURE}-linux/${DECKFLAXIA_REAL_VST3_FIXTURE_PRODUCT_NAME}.so)
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        if(JUCE_TARGET_ARCHITECTURE STREQUAL "x86_64")
+            set(DECKFLAXIA_REAL_VST3_FIXTURE_WINDOWS_ARCH x86_64)
+        elseif(JUCE_TARGET_ARCHITECTURE STREQUAL "i386")
+            set(DECKFLAXIA_REAL_VST3_FIXTURE_WINDOWS_ARCH x86)
+        elseif(JUCE_TARGET_ARCHITECTURE STREQUAL "arm64ec")
+            set(DECKFLAXIA_REAL_VST3_FIXTURE_WINDOWS_ARCH arm64ec)
+        elseif(JUCE_TARGET_ARCHITECTURE STREQUAL "aarch64")
+            set(DECKFLAXIA_REAL_VST3_FIXTURE_WINDOWS_ARCH arm64)
+        endif()
+
+        if(DECKFLAXIA_REAL_VST3_FIXTURE_WINDOWS_ARCH)
+            set(DECKFLAXIA_REAL_VST3_FIXTURE_BINARY_PATH ${DECKFLAXIA_REAL_VST3_FIXTURE_BUNDLE_PATH}/Contents/${DECKFLAXIA_REAL_VST3_FIXTURE_WINDOWS_ARCH}-win/${DECKFLAXIA_REAL_VST3_FIXTURE_PRODUCT_NAME}.vst3)
+        endif()
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        set(DECKFLAXIA_REAL_VST3_FIXTURE_BINARY_PATH ${DECKFLAXIA_REAL_VST3_FIXTURE_BUNDLE_PATH}/Contents/MacOS/${DECKFLAXIA_REAL_VST3_FIXTURE_PRODUCT_NAME})
+    endif()
+
+    juce_add_plugin(DeckflaxiaRealVst3FixturePlugin
+        COMPANY_NAME Deckflaxia
+        BUNDLE_ID app.deckflaxia.tests.real-vst3-fixture
+        IS_SYNTH FALSE
+        NEEDS_MIDI_INPUT FALSE
+        NEEDS_MIDI_OUTPUT FALSE
+        IS_MIDI_EFFECT FALSE
+        COPY_PLUGIN_AFTER_BUILD FALSE
+        PLUGIN_MANUFACTURER_CODE Dflx
+        PLUGIN_CODE Rvg1
+        FORMATS VST3
+        PRODUCT_NAME ${DECKFLAXIA_REAL_VST3_FIXTURE_PRODUCT_NAME}
+    )
+    target_sources(DeckflaxiaRealVst3FixturePlugin
+        PRIVATE
+            tests/fixtures/plugins/real-vst3-fixture/RealVst3GainFixture.cpp
+            tests/fixtures/plugins/real-vst3-fixture/RealVst3GainFixture.h
+    )
+    target_compile_definitions(DeckflaxiaRealVst3FixturePlugin
+        PUBLIC
+            JUCE_WEB_BROWSER=0
+            JUCE_USE_CURL=0
+            JUCE_VST3_CAN_REPLACE_VST2=0
+    )
+    target_link_libraries(DeckflaxiaRealVst3FixturePlugin
+        PRIVATE
+            juce::juce_audio_processors
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_warning_flags
+    )
+    set_target_properties(DeckflaxiaRealVst3FixturePlugin PROPERTIES
+        EXCLUDE_FROM_ALL TRUE
+        LIBRARY_OUTPUT_DIRECTORY ${DECKFLAXIA_REAL_VST3_FIXTURE_OUTPUT_DIR}
+        ARCHIVE_OUTPUT_DIRECTORY ${DECKFLAXIA_REAL_VST3_FIXTURE_OUTPUT_DIR}
+        RUNTIME_OUTPUT_DIRECTORY ${DECKFLAXIA_REAL_VST3_FIXTURE_OUTPUT_DIR}
+    )
+    set_target_properties(DeckflaxiaRealVst3FixturePlugin_VST3 DeckflaxiaRealVst3FixturePlugin_All PROPERTIES
+        EXCLUDE_FROM_ALL TRUE
+    )
+
+    add_custom_command(TARGET DeckflaxiaRealVst3FixturePlugin_VST3 POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+            -DDECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST=${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST_PATH}
+            -DDECKFLAXIA_REAL_VST3_FIXTURE_BUNDLE_PATH=${DECKFLAXIA_REAL_VST3_FIXTURE_BUNDLE_PATH}
+            -DDECKFLAXIA_REAL_VST3_FIXTURE_BINARY_PATH=${DECKFLAXIA_REAL_VST3_FIXTURE_BINARY_PATH}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/plugins/real-vst3-fixture/GenerateManifest.cmake
+        BYPRODUCTS ${DECKFLAXIA_REAL_VST3_FIXTURE_MANIFEST_PATH}
+        COMMENT "Writing real VST3 fixture manifest"
+        VERBATIM
+    )
+    add_custom_target(DeckflaxiaRealVst3Fixture
+        DEPENDS DeckflaxiaRealVst3FixturePlugin_VST3
+    )
+else()
+    message(STATUS "DeckflaxiaRealVst3Fixture disabled; JUCE VST3 plugin build support is unavailable")
+endif()
+
 if(DECKFLAXIA_HAS_JUCE)
     target_sources(Deckflaxia PRIVATE src/app/Main.cpp)
     target_link_libraries(Deckflaxia PRIVATE DeckflaxiaBootstrap DeckflaxiaUiShell DeckflaxiaAlphaSmoke DeckflaxiaDecks)
@@ -490,9 +574,18 @@ target_compile_features(VST3ProcessingTests PRIVATE cxx_std_17)
 add_test(NAME VST3Processing.All COMMAND VST3ProcessingTests all ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
 add_test(NAME VST3Processing.DeckProcessingChangesAudio COMMAND VST3ProcessingTests deck ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
 add_test(NAME VST3Processing.ParameterLatency COMMAND VST3ProcessingTests parameters ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
+add_test(NAME VST3Processing.MissingRealFixtureManifest COMMAND VST3ProcessingTests missing-real-manifest ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
 add_test(NAME VST3Processing.MasterChainStateReload COMMAND VST3ProcessingTests master-state ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
 add_test(NAME VST3Processing.SmokeSurface COMMAND VST3ProcessingTests smoke ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
-add_test(NAME VST3Processing.AppSmoke COMMAND Deckflaxia --vst3-processing-smoke-test --chain deck-a --fixtures ${DECKFLAXIA_PLUGIN_FIXTURE_DIR} --render ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-10-deck-vst3.wav --exit-after-init)
+if(DECKFLAXIA_HAS_JUCE AND TARGET DeckflaxiaRealVst3Fixture)
+    add_test(NAME VST3Processing.AppSmoke COMMAND Deckflaxia --vst3-processing-smoke-test --chain deck-a --fixtures ${DECKFLAXIA_REAL_VST3_FIXTURE_OUTPUT_DIR} --render ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-vst3-fixture/task-7-real-vst3.wav --exit-after-init)
+    add_test(NAME VST3Processing.RealFixture COMMAND VST3ProcessingTests real-fixture ${DECKFLAXIA_REAL_VST3_FIXTURE_OUTPUT_DIR})
+    add_test(NAME VST3Processing.RealProcessing COMMAND VST3ProcessingTests real-processing ${DECKFLAXIA_REAL_VST3_FIXTURE_OUTPUT_DIR})
+    add_test(NAME VST3Processing.RealParameters COMMAND VST3ProcessingTests real-parameters ${DECKFLAXIA_REAL_VST3_FIXTURE_OUTPUT_DIR})
+    add_test(NAME VST3Processing.RealState COMMAND VST3ProcessingTests real-state ${DECKFLAXIA_REAL_VST3_FIXTURE_OUTPUT_DIR})
+elseif(NOT DECKFLAXIA_HAS_JUCE)
+    add_test(NAME VST3Processing.AppSmokeUnavailable COMMAND Deckflaxia --vst3-processing-smoke-test --chain deck-a --fixtures ${DECKFLAXIA_PLUGIN_FIXTURE_DIR} --render ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-10-deck-vst3.wav --exit-after-init)
+endif()
 
 add_executable(VST3EditorUiTests
     tests/ui/VST3EditorUiTests.cpp
