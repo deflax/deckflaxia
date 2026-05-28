@@ -4,8 +4,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace deckflaxia::plugins {
 
@@ -54,6 +56,39 @@ struct PluginAudioMetrics final {
     bool changedAudio{};
 };
 
+struct PluginStateSnapshot final {
+    std::vector<std::uint8_t> bytes;
+};
+
+enum class RealVst3FixtureManifestError : std::uint8_t {
+    None,
+    ManifestMissing,
+    ManifestUnreadable,
+    InvalidSchema,
+    InvalidFixtureId,
+    InvalidFormat,
+    ExpectedNotTrue,
+    MissingBundlePath,
+    InvalidBundlePath,
+    InvalidSource,
+    InvalidLicenseNotice,
+    InvalidGeneratedBy,
+};
+
+struct RealVst3FixtureManifest final {
+    std::string fixtureId;
+    std::filesystem::path bundlePath;
+    std::filesystem::path binaryPathIfApplicable;
+};
+
+struct RealVst3FixtureManifestResult final {
+    RealVst3FixtureManifest manifest;
+    RealVst3FixtureManifestError error{RealVst3FixtureManifestError::None};
+    std::string reason;
+
+    [[nodiscard]] bool ok() const noexcept { return error == RealVst3FixtureManifestError::None; }
+};
+
 struct PluginEditorWindowStatus final {
     bool nativeEditorAvailable{};
     bool open{};
@@ -80,6 +115,8 @@ public:
                                                 double normalizedValue) noexcept;
     [[nodiscard]] double parameter(std::size_t slotIndex, const std::string& parameterId) const noexcept;
     [[nodiscard]] const core::PluginChainDescriptor& chainState() const noexcept;
+    [[nodiscard]] PluginHostResult snapshotState(std::size_t slotIndex, PluginStateSnapshot& snapshot) const;
+    [[nodiscard]] PluginHostResult restoreState(std::size_t slotIndex, const PluginStateSnapshot& snapshot);
     [[nodiscard]] PluginProcessingStatus status() const noexcept;
     [[nodiscard]] PluginEditorWindowStatus openSeparateEditorWindow(std::size_t slotIndex) const;
     [[nodiscard]] PluginEditorWindowStatus closeSeparateEditorWindow(std::size_t slotIndex) const;
@@ -94,7 +131,10 @@ private:
 
 [[nodiscard]] bool isDeterministicTestPluginId(const std::string& pluginId) noexcept;
 [[nodiscard]] core::PluginDescriptor makeDeterministicGainPlugin(double normalizedGain = 0.5, bool bypassed = false);
+[[nodiscard]] core::PluginDescriptor makeRealVst3FixturePlugin(const RealVst3FixtureManifest& manifest, bool bypassed = false);
+[[nodiscard]] RealVst3FixtureManifestResult loadRealVst3FixtureManifest(const std::filesystem::path& manifestPath);
 [[nodiscard]] const char* toString(PluginProcessingBackendKind backend) noexcept;
 [[nodiscard]] const char* toString(PluginHostError error) noexcept;
+[[nodiscard]] const char* toString(RealVst3FixtureManifestError error) noexcept;
 
 }
