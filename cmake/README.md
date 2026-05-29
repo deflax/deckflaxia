@@ -2,9 +2,9 @@
 
 The real playable JUCE workflow uses `DECKFLAXIA_REQUIRE_JUCE=ON` for presubmit and release-style configuration. The integration first accepts a licensed local checkout at `third_party/JUCE` when `DECKFLAXIA_USE_VENDORED_JUCE=ON`, then falls back to `find_package(JUCE CONFIG)` so installed/exported JUCE packages can be supplied with `-DCMAKE_PREFIX_PATH=/path/to/JUCE/install-or-build`.
 
-This repository does not vendor JUCE, the VST3 SDK, Rubber Band, Signalsmith, SoundTouch, SQLite wrappers, or any other third-party dependency. CMake may link an already-installed system Rubber Band library as the guarded primary time-stretch boundary; otherwise it builds the honest Signalsmith-compatible fallback boundary without claiming production stretch quality. When `DECKFLAXIA_REQUIRE_JUCE=OFF` and JUCE is unavailable, CMake builds an explicit bootstrap-only fallback executable so early CI and smoke tests can validate repository infrastructure without claiming JUCE functionality.
+This repository does not vendor JUCE, the VST3 SDK, Rubber Band, Signalsmith, SoundTouch, SQLite wrappers, or any other third-party dependency. CMake may link an already-installed system Rubber Band library as the guarded primary time-stretch boundary; otherwise it builds the honest Signalsmith-compatible fallback boundary without claiming production stretch quality. When `DECKFLAXIA_REQUIRE_JUCE=OFF` and JUCE is unavailable, CMake builds an explicit bootstrap-only fallback executable so early local checks and smoke tests can validate repository infrastructure without claiming JUCE functionality.
 
-GitHub Actions checks out `juce-framework/JUCE` into `third_party/JUCE` at pinned `JUCE_REF=8.0.10` immediately before required-JUCE configure. The checkout is CI-only and relies on JUCE AGPL/commercial licensing terms; it must not be committed or treated as a vendored dependency. The active workflow runs `linux-fallback` and `linux-juce-required` on push and pull request. The `macos-juce-required` job is optional and high-cost, so it is gated to manual `workflow_dispatch` or `main` branch runs. JUCE-required jobs build `DeckflaxiaRealVst3Fixture` before the JUCE-required CTest suite so the real VST3 tests and app smoke can validate the generated host path.
+GitHub Actions CI is intentionally disabled. Do not add active workflow YAML under `.github/workflows` or reactivate workflow triggers in future feature plans unless the user explicitly asks for CI to be re-enabled. For local parity, check out `juce-framework/JUCE` into `third_party/JUCE` at pinned `JUCE_REF=8.0.10` before required-JUCE configure. The checkout is local-only and relies on JUCE AGPL/commercial licensing terms; it must not be committed or treated as a vendored dependency. JUCE-required local checks should build `DeckflaxiaRealVst3Fixture` before the JUCE-required CTest suite so the real VST3 tests and app smoke can validate the generated host path.
 
 For a matching local checkout, run from the repository root:
 
@@ -14,7 +14,7 @@ git clone --branch 8.0.10 --depth 1 https://github.com/juce-framework/JUCE.git t
 test -f third_party/JUCE/CMakeLists.txt
 ```
 
-Keep this tag aligned with the workflow `JUCE_REF`. This is a local licensed checkout for `add_subdirectory(third_party/JUCE)`, not source-controlled vendoring; `third_party/` is ignored and must stay out of commits.
+Keep this tag aligned with the documented `JUCE_REF`. This is a local licensed checkout for `add_subdirectory(third_party/JUCE)`, not source-controlled vendoring; `third_party/` is ignored and must stay out of commits.
 
 ## License Report
 
@@ -30,7 +30,7 @@ Use this command when validating the JUCE-required phase:
 cmake -S . -B build-juce -DDECKFLAXIA_REQUIRE_JUCE=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ```
 
-When using a local or CI checkout at `third_party/JUCE`, keep `DECKFLAXIA_USE_VENDORED_JUCE=ON`. The Linux and macOS JUCE-required CI jobs both verify `third_party/JUCE/CMakeLists.txt` before configure:
+When using a local checkout at `third_party/JUCE`, keep `DECKFLAXIA_USE_VENDORED_JUCE=ON`. Verify `third_party/JUCE/CMakeLists.txt` before configure:
 
 ```sh
 test -f third_party/JUCE/CMakeLists.txt
