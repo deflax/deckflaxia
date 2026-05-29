@@ -162,6 +162,7 @@ add_library(DeckflaxiaUiShell STATIC
     src/app/UiShell.cpp
     src/ui/BrowserWaveformBeatgrid.cpp
     src/ui/JuceComponentTree.cpp
+    src/ui/JuceUiCommandAdapter.cpp
     src/ui/VST3EditorUi.cpp
 )
 target_include_directories(DeckflaxiaUiShell
@@ -527,6 +528,21 @@ target_compile_features(JuceUiSmokeTests PRIVATE cxx_std_17)
 
 add_test(NAME JuceUi.ModelSnapshot COMMAND JuceUiSmokeTests snapshot)
 add_test(NAME JuceUi.UnavailableSurface COMMAND JuceUiSmokeTests unavailable)
+add_test(NAME JuceUi.ComponentInventory COMMAND JuceUiSmokeTests inventory)
+add_test(NAME JuceUi.DeckMixerControls COMMAND JuceUiSmokeTests deck-mixer)
+add_test(NAME JuceUi.BrowserControls COMMAND JuceUiSmokeTests browser)
+add_test(NAME JuceUi.PluginControls COMMAND JuceUiSmokeTests plugin)
+add_test(NAME JuceUi.RefreshHonesty COMMAND JuceUiSmokeTests refresh)
+set_tests_properties(JuceUi.BrowserControls PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(JuceUiCommandAdapterTests
+    tests/ui/JuceUiCommandAdapterTests.cpp
+)
+target_link_libraries(JuceUiCommandAdapterTests PRIVATE DeckflaxiaUiShell DeckflaxiaDecks DeckflaxiaPlugins)
+target_compile_features(JuceUiCommandAdapterTests PRIVATE cxx_std_17)
+
+add_test(NAME JuceUiCommandAdapter.All COMMAND JuceUiCommandAdapterTests)
+set_tests_properties(JuceUiCommandAdapter.All PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(BrowserWaveformBeatgridTests
     tests/ui/BrowserWaveformBeatgridTests.cpp
@@ -538,6 +554,7 @@ add_test(NAME BrowserWaveformBeatgrid.All COMMAND BrowserWaveformBeatgridTests a
 add_test(NAME BrowserWaveformBeatgrid.ImportClassification COMMAND BrowserWaveformBeatgridTests import ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
 add_test(NAME BrowserWaveformBeatgrid.WaveformPrimitive COMMAND BrowserWaveformBeatgridTests waveform ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
 add_test(NAME BrowserWaveformBeatgrid.BeatgridPersistence COMMAND BrowserWaveformBeatgridTests beatgrid ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
+add_test(NAME BrowserWaveformBeatgrid.InvalidImportRows COMMAND BrowserWaveformBeatgridTests invalid ${DECKFLAXIA_DJ_WORKFLOW_FIXTURE_DIR})
 
 if(DECKFLAXIA_HAS_JUCE)
     add_test(NAME JuceUi.ComponentTree COMMAND Deckflaxia --juce-ui-smoke-test --dump-components --exit-after-init)
@@ -596,6 +613,7 @@ target_compile_features(VST3EditorUiTests PRIVATE cxx_std_17)
 add_test(NAME VST3EditorUi.All COMMAND VST3EditorUiTests all ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
 add_test(NAME VST3EditorUi.ModelControls COMMAND VST3EditorUiTests model ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
 add_test(NAME VST3EditorUi.NoEditorGenericFallback COMMAND VST3EditorUiTests no-editor ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
+add_test(NAME VST3EditorUi.EmptyPluginChain COMMAND VST3EditorUiTests empty ${DECKFLAXIA_PLUGIN_FIXTURE_DIR})
 add_test(NAME VST3EditorUi.AppSmoke COMMAND Deckflaxia --vst3-editor-smoke-test --fixtures ${DECKFLAXIA_PLUGIN_FIXTURE_DIR} --screenshot ${CMAKE_CURRENT_SOURCE_DIR}/.omo/evidence/real-playable-juce/task-11-editor.png --exit-after-init)
 
 
@@ -701,6 +719,9 @@ set(DECKFLAXIA_DJ_WORKFLOW_FIXTURE_TESTS
     BrowserWaveformBeatgrid.ImportClassification
     BrowserWaveformBeatgrid.WaveformPrimitive
     BrowserWaveformBeatgrid.BeatgridPersistence
+    BrowserWaveformBeatgrid.InvalidImportRows
+    JuceUiCommandAdapter.All
+    JuceUi.BrowserControls
     PlayableSmoke.All
     PlayableSmoke.Workflow
     PlayableSmoke.Restart
