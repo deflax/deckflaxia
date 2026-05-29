@@ -21,6 +21,21 @@ bool contains(const std::string& text, const std::string& expected) {
     return text.find(expected) != std::string::npos;
 }
 
+std::string lineContaining(const std::string& text, const std::string& needle) {
+    const auto position = text.find(needle);
+    if (position == std::string::npos) {
+        return {};
+    }
+    const auto start = text.rfind('\n', position);
+    const auto end = text.find('\n', position);
+    return text.substr(start == std::string::npos ? 0U : start + 1U,
+                       end == std::string::npos ? std::string::npos : end - (start == std::string::npos ? 0U : start + 1U));
+}
+
+bool lineContains(const std::string& text, const std::string& needle, const std::string& expected) {
+    return contains(lineContaining(text, needle), expected);
+}
+
 int testSnapshotContract() {
     const deckflaxia::app::HybridUiShellModel shell;
     const auto snapshot = shell.buildSnapshot(deckflaxia::app::createUiSmokeInput(false));
@@ -91,52 +106,56 @@ int testComponentInventoryReport() {
                "mixer crossfader should be classified as wired") != 0) {
         return 1;
     }
-    if (expect(contains(text, "control-inventory: Deck1PlayCommandButton family=DeckNPlayCommandButton classification=disabled state=no-deck-loaded wiring=adapter-callback"),
-               "deck play button should be wired but disabled while unloaded") != 0) {
+    if (expect(contains(text, "control-inventory: Deck1PlayCommandButton family=DeckNPlayCommandButton classification=disabled state=no-deck-loaded clickable=false label=LoadDeckFirst wiring=adapter-callback"),
+                "deck play button should be wired but disabled while unloaded") != 0) {
         return 1;
     }
-    if (expect(contains(text, "control-inventory: Deck4EqHighCommandSlider family=DeckNEqHighCommandSlider classification=wired state=mixer-backend"),
-               "last deck EQ slider should be classified as wired") != 0) {
+    if (expect(contains(text, "control-inventory: Deck4EqHighCommandSlider family=DeckNEqHighCommandSlider classification=wired state=mixer-backend clickable=true"),
+                "last deck EQ slider should be classified as wired") != 0) {
         return 1;
     }
-    if (expect(contains(text, "control-inventory: ImportFilesButton family=ImportFilesButton classification=disabled state=native-file-chooser-unavailable"),
-                "import files control should be classified") != 0) {
+    if (expect(contains(text, "control-inventory: ImportFilesButton family=ImportFilesButton classification=wired state=native-file-chooser-supported clickable=true label=ImportFiles"),
+                 "import files control should be classified") != 0) {
         return 1;
     }
-    if (expect(contains(text, "control-inventory: BrowserTargetDeckSelector family=BrowserTargetDeckSelector classification=wired state=selected-deck-source"),
-                "browser target deck selector should be classified") != 0) {
+    if (expect(contains(text, "control-inventory: ImportFolderButton family=ImportFolderButton classification=wired state=native-folder-chooser-supported clickable=true label=ImportFolder"),
+                 "import folder control should be classified") != 0) {
         return 1;
     }
-    if (expect(contains(text, "control-inventory: BrowserTrackTableModel family=BrowserTrackTableModel classification=wired state=empty-library"),
-                "browser table should be classified as adapter-backed") != 0) {
+    if (expect(contains(text, "control-inventory: BrowserTargetDeckSelector family=BrowserTargetDeckSelector classification=wired state=selected-deck-source clickable=true"),
+                 "browser target deck selector should be classified") != 0) {
         return 1;
     }
-    if (expect(contains(text, "control-inventory: plugin-slot-deck-1-1BypassCommandButton family=PluginSlotBypassCommandButton classification=disabled state=no-plugin wiring=adapter-callback"),
-               "plugin slot bypass control should be classified independently") != 0) {
+    if (expect(contains(text, "control-inventory: BrowserTrackTableModel family=BrowserTrackTableModel classification=wired state=empty-library clickable=true"),
+                 "browser table should be classified as adapter-backed") != 0) {
         return 1;
     }
-    if (expect(contains(text, "control-inventory: plugin-slot-deck-1-1RemoveCommandButton family=PluginSlotRemoveCommandButton classification=disabled state=no-plugin wiring=adapter-callback"),
-               "plugin slot remove control should be classified independently") != 0) {
+    if (expect(contains(text, "control-inventory: plugin-slot-deck-1-1BypassCommandButton family=PluginSlotBypassCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin wiring=adapter-callback"),
+                "plugin slot bypass control should be classified independently") != 0) {
         return 1;
     }
-    if (expect(contains(text, "control-inventory: plugin-slot-deck-1-1MoveUpCommandButton family=PluginSlotMoveUpCommandButton classification=disabled state=no-plugin wiring=adapter-callback"),
-               "plugin slot move-up control should be classified independently") != 0) {
+    if (expect(contains(text, "control-inventory: plugin-slot-deck-1-1RemoveCommandButton family=PluginSlotRemoveCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin wiring=adapter-callback"),
+                "plugin slot remove control should be classified independently") != 0) {
         return 1;
     }
-    if (expect(contains(text, "control-inventory: plugin-slot-deck-1-1MoveDownCommandButton family=PluginSlotMoveDownCommandButton classification=disabled state=no-plugin wiring=adapter-callback"),
-               "plugin slot move-down control should be classified independently") != 0) {
+    if (expect(contains(text, "control-inventory: plugin-slot-deck-1-1MoveUpCommandButton family=PluginSlotMoveUpCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin wiring=adapter-callback"),
+                "plugin slot move-up control should be classified independently") != 0) {
         return 1;
     }
-    if (expect(contains(text, "control-inventory: plugin-slot-deck-1-1OpenEditorCommandButton family=PluginSlotOpenEditorCommandButton classification=disabled state=no-plugin native-editor=unavailable wiring=adapter-callback"),
-               "plugin slot open editor control should be classified independently") != 0) {
+    if (expect(contains(text, "control-inventory: plugin-slot-deck-1-1MoveDownCommandButton family=PluginSlotMoveDownCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin wiring=adapter-callback"),
+                "plugin slot move-down control should be classified independently") != 0) {
         return 1;
     }
-    if (expect(contains(text, "control-inventory: plugin-slot-master-4CloseEditorCommandButton family=PluginSlotCloseEditorCommandButton classification=disabled state=no-plugin native-editor=unavailable wiring=adapter-callback"),
-               "master plugin close editor control should be classified independently") != 0) {
+    if (expect(contains(text, "control-inventory: plugin-slot-deck-1-1OpenEditorCommandButton family=PluginSlotOpenEditorCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin native-editor=unavailable wiring=adapter-callback"),
+                "plugin slot open editor control should be classified independently") != 0) {
         return 1;
     }
-    if (expect(contains(text, "control-inventory: plugin-slot-master-4GenericGainParameterCommandSlider family=PluginSlotParameterCommandSlider classification=disabled state=no-plugin read-only=true wiring=adapter-callback"),
-               "master plugin parameter control should be classified as read-only/disabled") != 0) {
+    if (expect(contains(text, "control-inventory: plugin-slot-master-4CloseEditorCommandButton family=PluginSlotCloseEditorCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin native-editor=unavailable wiring=adapter-callback"),
+                "master plugin close editor control should be classified independently") != 0) {
+        return 1;
+    }
+    if (expect(contains(text, "control-inventory: plugin-slot-master-4GenericGainParameterCommandSlider family=PluginSlotParameterCommandSlider classification=disabled state=no-plugin clickable=false read-only=true wiring=adapter-callback"),
+                "master plugin parameter control should be classified as read-only/disabled") != 0) {
         return 1;
     }
     if (expect(!contains(text, "BypassRemoveReorderEditorButton") && !contains(text, "PluginSlotCombinedActionButton"),
@@ -175,6 +194,48 @@ juce::Component* findComponentById(juce::Component& component, const juce::Strin
     return nullptr;
 }
 
+bool hasUsableBounds(const juce::Component& component) {
+    return component.getWidth() > 0 && component.getHeight() > 0;
+}
+
+bool rootHitTestsToControl(juce::Component& root, juce::Component& control) {
+    if (!control.isEnabled() || !hasUsableBounds(control)) {
+        return false;
+    }
+    const auto rootPoint = root.getLocalPoint(&control, control.getLocalBounds().getCentre());
+    auto* hit = root.getComponentAt(rootPoint);
+    return hit == &control || (hit != nullptr && control.isParentOf(hit));
+}
+
+int expectEnabledHitTestable(juce::Component& root, juce::Component* control, const std::string& message) {
+    if (expect(control != nullptr, message + " should exist") != 0) {
+        return 1;
+    }
+    if (expect(control->isEnabled(), message + " should be enabled") != 0) {
+        return 1;
+    }
+    if (expect(hasUsableBounds(*control), message + " should have non-empty bounds") != 0) {
+        return 1;
+    }
+    if (expect(rootHitTestsToControl(root, *control), message + " should be reachable through root hit-testing") != 0) {
+        return 1;
+    }
+    return 0;
+}
+
+int expectDisabledNonActionable(juce::Component* control, const std::string& message) {
+    if (expect(control != nullptr, message + " should exist") != 0) {
+        return 1;
+    }
+    if (expect(!control->isEnabled(), message + " should be disabled") != 0) {
+        return 1;
+    }
+    if (expect(!control->getComponentID().isEmpty(), message + " should keep a stable component ID") != 0) {
+        return 1;
+    }
+    return 0;
+}
+
 int testDeckMixerControlCallbacks() {
     deckflaxia::ui::MainComponent component(true);
     component.resized();
@@ -187,11 +248,16 @@ int testDeckMixerControlCallbacks() {
                "deck and mixer controls should be reachable by stable component IDs") != 0) {
         return 1;
     }
-    if (expect(crossfader->isEnabled() && deckTwoVolume->isEnabled() && deckThreeGain->isEnabled() && deckFourEqHigh->isEnabled(),
-               "mixer controls with backend paths should be enabled") != 0) {
+    if (expectEnabledHitTestable(component, crossfader, "mixer crossfader") != 0 ||
+        expectEnabledHitTestable(component, deckTwoVolume, "deck 2 volume") != 0 ||
+        expectEnabledHitTestable(component, deckThreeGain, "deck 3 gain") != 0 ||
+        expectEnabledHitTestable(component, deckFourEqHigh, "deck 4 EQ high") != 0) {
         return 1;
     }
-    if (expect(!deckOnePlay->isEnabled(), "unloaded deck transport should stay disabled") != 0) {
+    if (expectDisabledNonActionable(deckOnePlay, "unloaded deck transport") != 0) {
+        return 1;
+    }
+    if (expect(deckOnePlay->getButtonText() == "Load Deck", "unloaded deck transport should be labelled as unavailable") != 0) {
         return 1;
     }
 
@@ -238,8 +304,28 @@ int testBrowserControlCallbacks() {
                 "browser controls should be reachable by stable component IDs") != 0) {
         return 1;
     }
-    if (expect(importFiles->isEnabled() && importFolder->isEnabled() && !loadSelected->isEnabled(),
-               "smoke browser imports should use deterministic commands while load waits for importable selection") != 0) {
+    if (expectEnabledHitTestable(component, importFiles, "smoke import files button") != 0 ||
+        expectEnabledHitTestable(component, importFolder, "smoke import folder button") != 0 ||
+        expectEnabledHitTestable(component, targetDeck, "browser target deck selector") != 0 ||
+        expectEnabledHitTestable(component, table, "browser track table") != 0 ||
+        expectDisabledNonActionable(loadSelected, "load selected without imported selection") != 0) {
+        return 1;
+    }
+    if (expect(importFiles->getButtonText() == "Smoke File" && importFolder->getButtonText() == "Smoke Folder",
+               "smoke browser import buttons should keep deterministic smoke labels") != 0) {
+        return 1;
+    }
+
+    deckflaxia::ui::MainComponent normalComponent(false);
+    normalComponent.resized();
+    auto* normalImportFiles = dynamic_cast<juce::Button*>(findComponentById(normalComponent, "ImportFilesButton"));
+    auto* normalImportFolder = dynamic_cast<juce::Button*>(findComponentById(normalComponent, "ImportFolderButton"));
+    if (expectEnabledHitTestable(normalComponent, normalImportFiles, "normal import files native chooser") != 0 ||
+        expectEnabledHitTestable(normalComponent, normalImportFolder, "normal import folder native chooser") != 0) {
+        return 1;
+    }
+    if (expect(normalImportFiles->getButtonText() == "Import Files" && normalImportFolder->getButtonText() == "Import Folder",
+               "normal browser import buttons should expose native import actions") != 0) {
         return 1;
     }
 
@@ -260,6 +346,9 @@ int testBrowserControlCallbacks() {
     if (expect(loadSelected->isEnabled(), "supported selected browser row should enable load") != 0) {
         return 1;
     }
+    if (expectEnabledHitTestable(component, loadSelected, "load selected after importable selection") != 0) {
+        return 1;
+    }
     loadSelected->onClick();
     const auto deckOne = deckflaxia::core::DeckId::fromIndex(0).value;
     const auto deckThree = deckflaxia::core::DeckId::fromIndex(2).value;
@@ -275,6 +364,12 @@ int testBrowserControlCallbacks() {
         return 1;
     }
     if (expect(deckThreePlay->isEnabled(), "loading a deck should refresh transport controls from authoritative deck state") != 0) {
+        return 1;
+    }
+    if (expectEnabledHitTestable(component, deckThreePlay, "loaded deck transport play") != 0) {
+        return 1;
+    }
+    if (expect(deckThreePlay->getButtonText() == "Play", "loaded deck transport should restore action label") != 0) {
         return 1;
     }
 
@@ -312,8 +407,17 @@ int testPluginChainControls() {
                "plugin slot controls should be split into stable reachable component IDs") != 0) {
         return 1;
     }
-    if (expect(!bypass->isEnabled() && !remove->isEnabled() && !moveUp->isEnabled() && !moveDown->isEnabled() && !openEditor->isEnabled() && !closeEditor->isEnabled() && !parameter->isEnabled(),
-               "empty plugin slot controls should stay disabled instead of exposing fake active commands") != 0) {
+    if (expectDisabledNonActionable(bypass, "empty plugin bypass placeholder") != 0 ||
+        expectDisabledNonActionable(remove, "empty plugin remove placeholder") != 0 ||
+        expectDisabledNonActionable(moveUp, "empty plugin move-up placeholder") != 0 ||
+        expectDisabledNonActionable(moveDown, "empty plugin move-down placeholder") != 0 ||
+        expectDisabledNonActionable(openEditor, "empty plugin open-editor placeholder") != 0 ||
+        expectDisabledNonActionable(closeEditor, "empty plugin close-editor placeholder") != 0 ||
+        expectDisabledNonActionable(parameter, "empty plugin parameter placeholder") != 0) {
+        return 1;
+    }
+    if (expect(bypass->getButtonText() == "No Plugin" && remove->getButtonText() == "No Plugin" && openEditor->getButtonText() == "No Plugin",
+               "empty plugin placeholder buttons should not display action labels") != 0) {
         return 1;
     }
     const auto unavailable = deckflaxia::ui::JuceUiCommandAdapter({}).dispatch(deckflaxia::ui::PluginChainIntent{deckflaxia::ui::PluginChainAction::Bypass,
@@ -385,8 +489,22 @@ int testRefreshHonestyRules() {
     std::ostringstream output;
     deckflaxia::ui::writeComponentTreeReport(component, output);
     const auto text = output.str();
-    if (expect(contains(text, "Deck1PlayCommandButton children=0 enabled=false") && contains(text, "LoadSelectedBrowserTrackButton children=0 enabled=false"),
+    if (expect(lineContains(text, "Deck1PlayCommandButton", "enabled=false") && lineContains(text, "LoadSelectedBrowserTrackButton", "enabled=false"),
                "component dump should expose disabled placeholder state after refresh") != 0) {
+        return 1;
+    }
+    if (expect(lineContains(text, "MixerCrossfaderCommandSlider", "enabled=true") &&
+                   lineContains(text, "MixerCrossfaderCommandSlider", "bounds=") &&
+                   lineContains(text, "MixerCrossfaderCommandSlider", "clickable=true") &&
+                   lineContains(text, "Deck1PlayCommandButton", "clickable=false"),
+               "component dump should expose enabled/bounds/clickable metadata") != 0) {
+        return 1;
+    }
+    if (expect(contains(text, "native-control-inventory: live-runtime component-dump-authoritative") &&
+                   !contains(text, "control-inventory: ImportFilesButton") &&
+                   lineContains(text, "ImportFilesButton", "enabled=true") &&
+                   lineContains(text, "ImportFilesButton", "clickable=true"),
+               "live component report should not contradict runtime import button clickability") != 0) {
         return 1;
     }
     std::cout << "JuceUi.RefreshHonesty hydrated=1 disabled-placeholders=1\n";
