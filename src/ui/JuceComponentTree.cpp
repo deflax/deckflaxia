@@ -26,9 +26,9 @@ constexpr std::array<const char*, 9> kRequiredComponentNames{{
 void writeDeckControlInventory(std::ostream& output) {
     for (std::size_t index = 0; index < audio::routing::kDeckCount; ++index) {
         const auto deckNumber = index + 1U;
-        output << "control-inventory: Deck" << deckNumber << "PlayCommandButton family=DeckNPlayCommandButton classification=disabled state=no-deck-loaded clickable=false label=LoadDeckFirst wiring=adapter-callback result=unavailable\n";
-        output << "control-inventory: Deck" << deckNumber << "CueCommandButton family=DeckNCueCommandButton classification=disabled state=no-deck-loaded clickable=false label=LoadDeckFirst wiring=adapter-callback result=unavailable\n";
-        output << "control-inventory: Deck" << deckNumber << "SyncCommandButton family=DeckNSyncCommandButton classification=disabled state=no-deck-loaded clickable=false label=LoadDeckFirst wiring=adapter-callback result=unavailable\n";
+        output << "control-inventory: Deck" << deckNumber << "PlayCommandButton family=DeckNPlayCommandButton classification=disabled state=no-deck-loaded clickable=false label=LoadDeck reason=load-deck-first wiring=adapter-callback result=unavailable\n";
+        output << "control-inventory: Deck" << deckNumber << "CueCommandButton family=DeckNCueCommandButton classification=disabled state=no-deck-loaded clickable=false label=LoadDeck reason=load-deck-first wiring=adapter-callback result=unavailable\n";
+        output << "control-inventory: Deck" << deckNumber << "SyncCommandButton family=DeckNSyncCommandButton classification=disabled state=no-deck-loaded clickable=false label=LoadDeck reason=load-deck-first wiring=adapter-callback result=unavailable\n";
         output << "control-inventory: Deck" << deckNumber << "VolumeCommandSlider family=DeckNVolumeCommandSlider classification=wired state=mixer-backend clickable=true wiring=adapter-callback action=volume\n";
         output << "control-inventory: Deck" << deckNumber << "GainCommandSlider family=DeckNGainCommandSlider classification=wired state=mixer-backend clickable=true wiring=adapter-callback action=gain\n";
         output << "control-inventory: Deck" << deckNumber << "EqLowCommandSlider family=DeckNEqLowCommandSlider classification=wired state=mixer-backend clickable=true wiring=adapter-callback action=eq-low\n";
@@ -38,13 +38,13 @@ void writeDeckControlInventory(std::ostream& output) {
 }
 
 void writePluginSlotInventoryFor(std::ostream& output, const std::string& slotName) {
-    output << "control-inventory: " << slotName << "BypassCommandButton family=PluginSlotBypassCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin wiring=adapter-callback result=unavailable\n";
-    output << "control-inventory: " << slotName << "RemoveCommandButton family=PluginSlotRemoveCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin wiring=adapter-callback result=unavailable\n";
-    output << "control-inventory: " << slotName << "MoveUpCommandButton family=PluginSlotMoveUpCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin wiring=adapter-callback result=unavailable\n";
-    output << "control-inventory: " << slotName << "MoveDownCommandButton family=PluginSlotMoveDownCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin wiring=adapter-callback result=unavailable\n";
-    output << "control-inventory: " << slotName << "OpenEditorCommandButton family=PluginSlotOpenEditorCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin native-editor=unavailable wiring=adapter-callback result=unavailable\n";
-    output << "control-inventory: " << slotName << "CloseEditorCommandButton family=PluginSlotCloseEditorCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin native-editor=unavailable wiring=adapter-callback result=unavailable\n";
-    output << "control-inventory: " << slotName << "GenericGainParameterCommandSlider family=PluginSlotParameterCommandSlider classification=disabled state=no-plugin clickable=false read-only=true wiring=adapter-callback result=unavailable\n";
+    output << "control-inventory: " << slotName << "BypassCommandButton family=PluginSlotBypassCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin reason=no-plugin wiring=adapter-callback result=unavailable\n";
+    output << "control-inventory: " << slotName << "RemoveCommandButton family=PluginSlotRemoveCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin reason=no-plugin wiring=adapter-callback result=unavailable\n";
+    output << "control-inventory: " << slotName << "MoveUpCommandButton family=PluginSlotMoveUpCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin reason=no-plugin wiring=adapter-callback result=unavailable\n";
+    output << "control-inventory: " << slotName << "MoveDownCommandButton family=PluginSlotMoveDownCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin reason=no-plugin wiring=adapter-callback result=unavailable\n";
+    output << "control-inventory: " << slotName << "OpenEditorCommandButton family=PluginSlotOpenEditorCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin reason=no-plugin native-editor=unavailable wiring=adapter-callback result=unavailable\n";
+    output << "control-inventory: " << slotName << "CloseEditorCommandButton family=PluginSlotCloseEditorCommandButton classification=disabled state=no-plugin clickable=false label=NoPlugin reason=no-plugin native-editor=unavailable wiring=adapter-callback result=unavailable\n";
+    output << "control-inventory: " << slotName << "GenericGainParameterCommandSlider family=PluginSlotParameterCommandSlider classification=disabled state=no-plugin clickable=false read-only=true reason=no-plugin wiring=adapter-callback result=unavailable\n";
 }
 
 void writePluginSlotControlInventory(std::ostream& output) {
@@ -71,7 +71,7 @@ void writeNativeControlInventory(std::ostream& output) {
     output << "control-inventory: ImportFilesButton family=ImportFilesButton classification=wired state=native-file-chooser-supported clickable=true label=ImportFiles smoke-mode=deterministic-fixture wiring=adapter-callback\n";
     output << "control-inventory: ImportFolderButton family=ImportFolderButton classification=wired state=native-folder-chooser-supported clickable=true label=ImportFolder smoke-mode=deterministic-folder-error wiring=adapter-callback\n";
     output << "control-inventory: BrowserTargetDeckSelector family=BrowserTargetDeckSelector classification=wired state=selected-deck-source clickable=true wiring=load-to-deck\n";
-    output << "control-inventory: LoadSelectedBrowserTrackButton family=LoadSelectedBrowserTrackButton classification=disabled state=no-imported-selection clickable=false wiring=adapter-callback result=unavailable\n";
+    output << "control-inventory: LoadSelectedBrowserTrackButton family=LoadSelectedBrowserTrackButton classification=disabled state=no-imported-selection clickable=false label=SelectTrack reason=no-imported-selection wiring=adapter-callback result=unavailable\n";
     output << "control-inventory: BrowserTrackTableModel family=BrowserTrackTableModel classification=wired state=empty-library clickable=true rows-from-adapter selection=adapter-callback\n";
     output << "control-inventory: WaveformComponent family=WaveformPanel classification=read-only state=no-deck-loaded placeholder=true\n";
     output << "control-inventory: BeatgridEditorComponent family=BeatgridEditorPanel classification=read-only state=no-deck-loaded placeholder=true\n";
@@ -242,6 +242,31 @@ juce::String formatCommandResultStatus(const JuceUiCommandResult& result) {
 
 using CommandResultStatusSink = std::function<void(const JuceUiCommandResult&)>;
 
+struct UnavailableControlSemantics final {
+    juce::String label;
+    juce::String tooltip;
+};
+
+const UnavailableControlSemantics& unloadedDeckTransportSemantics() {
+    static const UnavailableControlSemantics value{"Load Deck", "Load a browser track before transport controls become available."};
+    return value;
+}
+
+const UnavailableControlSemantics& browserLoadSelectionSemantics() {
+    static const UnavailableControlSemantics value{"Select Track", "Import and select an importable track before loading a deck."};
+    return value;
+}
+
+const UnavailableControlSemantics& noPluginSemantics() {
+    static const UnavailableControlSemantics value{"No Plugin", "No plugin loaded in this slot."};
+    return value;
+}
+
+const UnavailableControlSemantics& nativeEditorUnavailableSemantics() {
+    static const UnavailableControlSemantics value{"", "Native editor is unavailable for this plugin."};
+    return value;
+}
+
 void dispatchTransport(JuceUiCommandAdapter& adapter, const CommandResultStatusSink& statusSink, DeckTransportAction action, std::size_t deckIndex) {
     statusSink(adapter.dispatch(DeckTransportIntent{action, deckIndex}));
 }
@@ -256,10 +281,29 @@ void configureMixerSlider(juce::Slider& slider, double initialValue, double maxi
     slider.setEnabled(true);
 }
 
-void configureUnavailableButton(juce::TextButton& button, const juce::String& label, const juce::String& tooltip) {
-    button.setButtonText(label);
-    button.setTooltip(tooltip);
+void configureUnavailableButton(juce::TextButton& button, const UnavailableControlSemantics& semantics) {
+    button.setButtonText(semantics.label);
+    button.setTooltip(semantics.tooltip);
     button.setEnabled(false);
+}
+
+void configureButtonState(juce::TextButton& button,
+                          bool enabled,
+                          const juce::String& enabledLabel,
+                          const juce::String& enabledTooltip,
+                          const UnavailableControlSemantics& unavailable) {
+    if (enabled) {
+        button.setButtonText(enabledLabel);
+        button.setTooltip(enabledTooltip);
+        button.setEnabled(true);
+        return;
+    }
+    configureUnavailableButton(button, unavailable);
+}
+
+void configureUnavailableSlider(juce::Slider& slider, const juce::String& tooltip) {
+    slider.setTooltip(tooltip);
+    slider.setEnabled(false);
 }
 
 void configureDeckStateLabel(juce::Label& label, const juce::String& componentId, const juce::String& text, juce::Colour textColour) {
@@ -416,15 +460,15 @@ public:
             strip.play.setName("Deck" + juce::String(static_cast<int>(index + 1U)) + "PlayCommandButton");
             strip.play.setComponentID(strip.play.getName());
             strip.play.onClick = [&adapter, this, deckIndex] { dispatchTransport(adapter, statusSink_, DeckTransportAction::Play, deckIndex); };
-            configureUnavailableButton(strip.play, "Load Deck", "Load a browser track before transport controls become available.");
+            configureUnavailableButton(strip.play, unloadedDeckTransportSemantics());
             strip.cue.setName("Deck" + juce::String(static_cast<int>(index + 1U)) + "CueCommandButton");
             strip.cue.setComponentID(strip.cue.getName());
             strip.cue.onClick = [&adapter, this, deckIndex] { dispatchTransport(adapter, statusSink_, DeckTransportAction::Cue, deckIndex); };
-            configureUnavailableButton(strip.cue, "Load Deck", "Load a browser track before cue becomes available.");
+            configureUnavailableButton(strip.cue, unloadedDeckTransportSemantics());
             strip.sync.setName("Deck" + juce::String(static_cast<int>(index + 1U)) + "SyncCommandButton");
             strip.sync.setComponentID(strip.sync.getName());
             strip.sync.onClick = [&adapter, this, deckIndex] { dispatchTransport(adapter, statusSink_, DeckTransportAction::Sync, deckIndex); };
-            configureUnavailableButton(strip.sync, "Load Deck", "Load a browser track before sync becomes available.");
+            configureUnavailableButton(strip.sync, unloadedDeckTransportSemantics());
             strip.volume.setName("Deck" + juce::String(static_cast<int>(index + 1U)) + "VolumeCommandSlider");
             strip.volume.setComponentID(strip.volume.getName());
             configureMixerSlider(strip.volume, model.decks[index].volume, 1.0);
@@ -487,15 +531,9 @@ public:
             const auto deckLoaded = playbackCore.deck(deckId).state().loaded;
             auto& strip = strips_[index];
             const auto& deck = snapshot.mixer.decks[index];
-            strip.play.setButtonText(deckLoaded ? "Play" : "Load Deck");
-            strip.cue.setButtonText(deckLoaded ? "Cue" : "Load Deck");
-            strip.sync.setButtonText(deckLoaded ? "Sync" : "Load Deck");
-            strip.play.setTooltip(deckLoaded ? "Play loaded deck." : "Load a browser track before transport controls become available.");
-            strip.cue.setTooltip(deckLoaded ? "Cue loaded deck." : "Load a browser track before cue becomes available.");
-            strip.sync.setTooltip(deckLoaded ? "Sync loaded deck." : "Load a browser track before sync becomes available.");
-            strip.play.setEnabled(deckLoaded);
-            strip.cue.setEnabled(deckLoaded);
-            strip.sync.setEnabled(deckLoaded);
+            configureButtonState(strip.play, deckLoaded, "Play", "Play loaded deck.", unloadedDeckTransportSemantics());
+            configureButtonState(strip.cue, deckLoaded, "Cue", "Cue loaded deck.", unloadedDeckTransportSemantics());
+            configureButtonState(strip.sync, deckLoaded, "Sync", "Sync loaded deck.", unloadedDeckTransportSemantics());
             strip.volume.setValue(deck.volume, juce::dontSendNotification);
             strip.gain.setValue(deck.gain, juce::dontSendNotification);
             strip.eqLow.setValue(deck.eqLow, juce::dontSendNotification);
@@ -562,7 +600,7 @@ public:
         loadSelected_.setButtonText("Load Selected");
         loadSelected_.setName("LoadSelectedBrowserTrackButton");
         loadSelected_.setComponentID("LoadSelectedBrowserTrackButton");
-        configureUnavailableButton(loadSelected_, "Select Track", "Import and select an importable track before loading a deck.");
+        configureUnavailableButton(loadSelected_, browserLoadSelectionSemantics());
         loadSelected_.onClick = [this] { loadSelectedRow(); };
         trackTable_.setName("BrowserTrackTableModel");
         trackTable_.setComponentID("BrowserTrackTableModel");
@@ -630,9 +668,7 @@ public:
         updateImportCommandState();
         targetDeck_.setEnabled(true);
         trackTable_.updateContent();
-        loadSelected_.setEnabled(canLoadSelectedRow());
-        loadSelected_.setButtonText(canLoadSelectedRow() ? "Load Selected" : "Select Track");
-        loadSelected_.setTooltip(canLoadSelectedRow() ? "Load the selected browser row to the selected deck." : "Import and select an importable track before loading a deck.");
+        configureButtonState(loadSelected_, canLoadSelectedRow(), "Load Selected", "Load the selected browser row to the selected deck.", browserLoadSelectionSemantics());
     }
 
 private:
@@ -721,7 +757,7 @@ private:
         const auto result = adapter_.dispatch(BrowserIntent{BrowserAction::LoadToDeck, browserRows_[selectedRow_].entry, selectedDeckIndex(), selectedRow_});
         statusSink_(result);
         refreshFromAuthoritativeState();
-        loadSelected_.setEnabled(result.ok() && canLoadSelectedRow());
+        configureButtonState(loadSelected_, result.ok() && canLoadSelectedRow(), "Load Selected", "Load the selected browser row to the selected deck.", browserLoadSelectionSemantics());
         refreshControls_();
     }
 
@@ -790,8 +826,8 @@ public:
             configureButton(row->remove, slot, "RemoveCommandButton", "Remove", !slot.placeholder && slot.removable);
             configureButton(row->moveUp, slot, "MoveUpCommandButton", "Move Up", !slot.placeholder && slot.canMoveUp);
             configureButton(row->moveDown, slot, "MoveDownCommandButton", "Move Down", !slot.placeholder && slot.canMoveDown);
-            configureButton(row->openEditor, slot, "OpenEditorCommandButton", "Open Editor", !slot.placeholder && slot.nativeEditorAvailable);
-            configureButton(row->closeEditor, slot, "CloseEditorCommandButton", "Close Editor", !slot.placeholder && slot.nativeEditorAvailable);
+            configureButton(row->openEditor, slot, "OpenEditorCommandButton", "Open Editor", !slot.placeholder && slot.nativeEditorAvailable, nativeEditorUnavailableSemantics().tooltip);
+            configureButton(row->closeEditor, slot, "CloseEditorCommandButton", "Close Editor", !slot.placeholder && slot.nativeEditorAvailable, nativeEditorUnavailableSemantics().tooltip);
             configureParameter(row->parameter, slot);
             const auto bypassed = !slot.bypassed;
             row->bypass.onClick = [this, controls = row.get(), bypassed] { dispatch(*controls, PluginChainAction::Bypass, bypassed); };
@@ -850,9 +886,9 @@ public:
             updateButton(row.remove, slot, "Remove", !slot.placeholder && slot.removable);
             updateButton(row.moveUp, slot, "Move Up", !slot.placeholder && slot.canMoveUp);
             updateButton(row.moveDown, slot, "Move Down", !slot.placeholder && slot.canMoveDown);
-            updateButton(row.openEditor, slot, "Open Editor", !slot.placeholder && slot.nativeEditorAvailable);
-            updateButton(row.closeEditor, slot, "Close Editor", !slot.placeholder && slot.nativeEditorAvailable);
-            row.parameter.setTooltip(slot.placeholder ? "No plugin loaded in this slot." : "Generic gain parameter.");
+            updateButton(row.openEditor, slot, "Open Editor", !slot.placeholder && slot.nativeEditorAvailable, nativeEditorUnavailableSemantics().tooltip);
+            updateButton(row.closeEditor, slot, "Close Editor", !slot.placeholder && slot.nativeEditorAvailable, nativeEditorUnavailableSemantics().tooltip);
+            row.parameter.setTooltip(slot.placeholder ? noPluginSemantics().tooltip : "Generic gain parameter.");
             row.bypass.setEnabled(!slot.placeholder);
             row.remove.setEnabled(!slot.placeholder && slot.removable);
             row.moveUp.setEnabled(!slot.placeholder && slot.canMoveUp);
@@ -860,7 +896,11 @@ public:
             row.openEditor.setEnabled(!slot.placeholder && slot.nativeEditorAvailable);
             row.closeEditor.setEnabled(!slot.placeholder && slot.nativeEditorAvailable);
             row.parameter.setValue(slot.parameters.empty() ? 0.0 : slot.parameters.front().normalizedValue, juce::dontSendNotification);
-            row.parameter.setEnabled(!slot.placeholder && !slot.parameters.empty());
+            if (slot.placeholder || slot.parameters.empty()) {
+                configureUnavailableSlider(row.parameter, slot.placeholder ? noPluginSemantics().tooltip : "No generic gain parameter is available for this plugin.");
+            } else {
+                row.parameter.setEnabled(true);
+            }
         }
     }
 
@@ -923,17 +963,33 @@ private:
         label.setText(juce::String(slot.statusText) + " / " + juce::String(slot.boundaryStatus), juce::dontSendNotification);
     }
 
-    static void configureButton(juce::TextButton& button, const app::PluginSlotViewModel& slot, const char* suffix, const char* text, bool enabled) {
+    static void configureButton(juce::TextButton& button,
+                                const app::PluginSlotViewModel& slot,
+                                const char* suffix,
+                                const char* text,
+                                bool enabled,
+                                const juce::String& unavailableTooltip = {}) {
         const auto name = juce::String(slot.componentName) + suffix;
         button.setName(name);
         button.setComponentID(name);
-        updateButton(button, slot, text, enabled);
+        updateButton(button, slot, text, enabled, unavailableTooltip);
     }
 
     static void updateButton(juce::TextButton& button, const app::PluginSlotViewModel& slot, const char* actionText, bool enabled) {
-        button.setButtonText(slot.placeholder ? "No Plugin" : actionText);
-        button.setTooltip(slot.placeholder ? "No plugin loaded in this slot." : juce::String(actionText));
-        button.setEnabled(enabled);
+        updateButton(button, slot, actionText, enabled, {});
+    }
+
+    static void updateButton(juce::TextButton& button,
+                             const app::PluginSlotViewModel& slot,
+                             const char* actionText,
+                             bool enabled,
+                             const juce::String& unavailableTooltip) {
+        if (slot.placeholder) {
+            configureUnavailableButton(button, noPluginSemantics());
+            return;
+        }
+        const UnavailableControlSemantics unavailable{juce::String(actionText), unavailableTooltip.isEmpty() ? juce::String(actionText) : unavailableTooltip};
+        configureButtonState(button, enabled, actionText, actionText, unavailable);
     }
 
     static void configureParameter(juce::Slider& slider, const app::PluginSlotViewModel& slot) {
@@ -943,8 +999,12 @@ private:
         slider.setComponentID(name);
         slider.setRange(0.0, 1.0, 0.01);
         slider.setValue(slot.parameters.empty() ? 0.0 : slot.parameters.front().normalizedValue, juce::dontSendNotification);
-        slider.setEnabled(hasParameter);
-        slider.setTooltip(slot.placeholder ? "No plugin loaded in this slot." : "Generic gain parameter.");
+        if (hasParameter) {
+            slider.setEnabled(true);
+            slider.setTooltip("Generic gain parameter.");
+        } else {
+            configureUnavailableSlider(slider, slot.placeholder ? noPluginSemantics().tooltip : "No generic gain parameter is available for this plugin.");
+        }
     }
 
     static void layoutRowControls(SlotControls& row, juce::Rectangle<int> rowArea) {
