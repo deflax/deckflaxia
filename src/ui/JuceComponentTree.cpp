@@ -618,7 +618,7 @@ private:
                                         juce::Array<juce::File> files;
                                         folder.findChildFiles(files, juce::File::findFiles, false);
                                         for (const auto& file : files) {
-                                            browser->importEntry(library::FilesystemEntry{file.getFullPathName().toStdString(), file.isFile()});
+                                            browser->importEntry(library::FilesystemEntry{file.getFullPathName().toStdString(), file.existsAsFile()});
                                         }
                                     });
     }
