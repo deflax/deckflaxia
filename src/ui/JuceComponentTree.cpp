@@ -233,12 +233,21 @@ bool nameStartsWith(const juce::Component& component, const juce::String& prefix
     return component.getName().startsWith(prefix);
 }
 
-void dispatchTransport(JuceUiCommandAdapter& adapter, DeckTransportAction action, std::size_t deckIndex) {
-    (void)adapter.dispatch(DeckTransportIntent{action, deckIndex});
+juce::String formatCommandResultStatus(const JuceUiCommandResult& result) {
+    return juce::String(result.ok() ? "status-ok: " : "status-error: ") +
+           juce::String(toString(result.domain)) + " " +
+           juce::String(result.action) + " " +
+           juce::String(result.detail);
 }
 
-void dispatchMixer(JuceUiCommandAdapter& adapter, MixerAction action, std::size_t deckIndex, double value) {
-    (void)adapter.dispatch(MixerIntent{action, deckIndex, static_cast<float>(value)});
+using CommandResultStatusSink = std::function<void(const JuceUiCommandResult&)>;
+
+void dispatchTransport(JuceUiCommandAdapter& adapter, const CommandResultStatusSink& statusSink, DeckTransportAction action, std::size_t deckIndex) {
+    statusSink(adapter.dispatch(DeckTransportIntent{action, deckIndex}));
+}
+
+void dispatchMixer(JuceUiCommandAdapter& adapter, const CommandResultStatusSink& statusSink, MixerAction action, std::size_t deckIndex, double value) {
+    statusSink(adapter.dispatch(MixerIntent{action, deckIndex, static_cast<float>(value)}));
 }
 
 void configureMixerSlider(juce::Slider& slider, double initialValue, double maximumValue) {
@@ -312,7 +321,8 @@ void writeSmokeTreeSkeleton(std::ostream& output) {
     output << "  BeatgridEditorComponent children=0 bounds=" << layout.beatgridEditor.toString().toStdString() << '\n';
     output << "  PluginChainComponent children=140 bounds=" << layout.pluginChain.toString().toStdString() << '\n';
     output << "  MidiLearnComponent children=0 bounds=" << layout.midiLearn.toString().toStdString() << '\n';
-    output << "  StatusBarComponent children=0 bounds=" << layout.status.toString().toStdString() << '\n';
+    output << "  StatusBarComponent children=1 bounds=" << layout.status.toString().toStdString() << '\n';
+    output << "    StatusTextLabel children=0 bounds=" << juce::Rectangle<int>{0, 0, layout.status.getWidth(), layout.status.getHeight()}.reduced(12, 18).toString().toStdString() << '\n';
     output << "  AudioSettingsComponent children=0 bounds=" << layout.audioSettings.toString().toStdString() << '\n';
 }
 
@@ -388,8 +398,13 @@ private:
 
 class MainComponent::MixerComponent final : public IndustrialPanel {
 public:
-    MixerComponent(const app::MixerPanelViewModel& model, JuceUiCommandAdapter& adapter, std::function<void()> refreshControls)
-        : IndustrialPanel("MixerComponent", "Mixer: Four Deck Command Surface", tokens().amber), refreshControls_(std::move(refreshControls)) {
+    MixerComponent(const app::MixerPanelViewModel& model,
+                   JuceUiCommandAdapter& adapter,
+                   CommandResultStatusSink statusSink,
+                   std::function<void()> refreshControls)
+        : IndustrialPanel("MixerComponent", "Mixer: Four Deck Command Surface", tokens().amber),
+          statusSink_(std::move(statusSink)),
+          refreshControls_(std::move(refreshControls)) {
         crossfader_.setName("MixerCrossfaderCommandSlider");
         crossfader_.setComponentID("MixerCrossfaderCommandSlider");
         configureMixerSlider(crossfader_, model.crossfader, 1.0);
@@ -400,15 +415,15 @@ public:
             const auto deckIndex = index;
             strip.play.setName("Deck" + juce::String(static_cast<int>(index + 1U)) + "PlayCommandButton");
             strip.play.setComponentID(strip.play.getName());
-            strip.play.onClick = [&adapter, deckIndex] { dispatchTransport(adapter, DeckTransportAction::Play, deckIndex); };
+            strip.play.onClick = [&adapter, this, deckIndex] { dispatchTransport(adapter, statusSink_, DeckTransportAction::Play, deckIndex); };
             configureUnavailableButton(strip.play, "Load Deck", "Load a browser track before transport controls become available.");
             strip.cue.setName("Deck" + juce::String(static_cast<int>(index + 1U)) + "CueCommandButton");
             strip.cue.setComponentID(strip.cue.getName());
-            strip.cue.onClick = [&adapter, deckIndex] { dispatchTransport(adapter, DeckTransportAction::Cue, deckIndex); };
+            strip.cue.onClick = [&adapter, this, deckIndex] { dispatchTransport(adapter, statusSink_, DeckTransportAction::Cue, deckIndex); };
             configureUnavailableButton(strip.cue, "Load Deck", "Load a browser track before cue becomes available.");
             strip.sync.setName("Deck" + juce::String(static_cast<int>(index + 1U)) + "SyncCommandButton");
             strip.sync.setComponentID(strip.sync.getName());
-            strip.sync.onClick = [&adapter, deckIndex] { dispatchTransport(adapter, DeckTransportAction::Sync, deckIndex); };
+            strip.sync.onClick = [&adapter, this, deckIndex] { dispatchTransport(adapter, statusSink_, DeckTransportAction::Sync, deckIndex); };
             configureUnavailableButton(strip.sync, "Load Deck", "Load a browser track before sync becomes available.");
             strip.volume.setName("Deck" + juce::String(static_cast<int>(index + 1U)) + "VolumeCommandSlider");
             strip.volume.setComponentID(strip.volume.getName());
@@ -507,12 +522,13 @@ private:
     };
 
     void dispatchMixerAndRefresh(JuceUiCommandAdapter& adapter, MixerAction action, std::size_t deckIndex, double value) {
-        dispatchMixer(adapter, action, deckIndex, value);
+        dispatchMixer(adapter, statusSink_, action, deckIndex, value);
         refreshControls_();
     }
 
     std::array<DeckStrip, audio::routing::kDeckCount> strips_{};
     juce::Slider crossfader_;
+    CommandResultStatusSink statusSink_;
     std::function<void()> refreshControls_;
 };
 
@@ -522,11 +538,13 @@ public:
                      JuceUiCommandAdapter& adapter,
                      std::vector<library::AudioImportClassification>& browserRows,
                      std::string smokeFixtureDirectory,
+                     CommandResultStatusSink statusSink,
                      std::function<void()> refreshControls)
         : IndustrialPanel("BrowserComponent", model.empty ? "Browser: Empty" : "Browser: Library", tokens().cyan),
           adapter_(adapter),
           browserRows_(browserRows),
           smokeFixtureDirectory_(std::move(smokeFixtureDirectory)),
+          statusSink_(std::move(statusSink)),
           refreshControls_(std::move(refreshControls)) {
         importFiles_.setName("ImportFilesButton");
         importFiles_.setComponentID("ImportFilesButton");
@@ -582,7 +600,7 @@ public:
     void selectedRowsChanged(int lastRowSelected) override {
         selectedRow_ = lastRowSelected < 0 ? npos : static_cast<std::size_t>(lastRowSelected);
         if (selectedRow_ != npos) {
-            (void)adapter_.dispatch(BrowserIntent{BrowserAction::SelectRow, {}, selectedDeckIndex(), selectedRow_});
+            statusSink_(adapter_.dispatch(BrowserIntent{BrowserAction::SelectRow, {}, selectedDeckIndex(), selectedRow_}));
         }
         refreshFromAuthoritativeState();
     }
@@ -682,11 +700,15 @@ private:
 
     void importEntry(library::FilesystemEntry entry) {
         const auto before = browserRows_.size();
-        (void)adapter_.dispatch(BrowserIntent{BrowserAction::Import, std::move(entry), selectedDeckIndex()});
+        const auto result = adapter_.dispatch(BrowserIntent{BrowserAction::Import, std::move(entry), selectedDeckIndex()});
+        statusSink_(result);
         trackTable_.updateContent();
         if (browserRows_.size() > before) {
             selectedRow_ = browserRows_.size() - 1U;
             trackTable_.selectRow(static_cast<int>(selectedRow_));
+            if (!result.ok()) {
+                statusSink_(result);
+            }
         }
         refreshFromAuthoritativeState();
     }
@@ -697,6 +719,7 @@ private:
             return;
         }
         const auto result = adapter_.dispatch(BrowserIntent{BrowserAction::LoadToDeck, browserRows_[selectedRow_].entry, selectedDeckIndex(), selectedRow_});
+        statusSink_(result);
         refreshFromAuthoritativeState();
         loadSelected_.setEnabled(result.ok() && canLoadSelectedRow());
         refreshControls_();
@@ -719,6 +742,7 @@ private:
     JuceUiCommandAdapter& adapter_;
     std::vector<library::AudioImportClassification>& browserRows_;
     std::string smokeFixtureDirectory_;
+    CommandResultStatusSink statusSink_;
     std::function<void()> refreshControls_;
     std::size_t selectedRow_{npos};
     juce::TextButton importFiles_{"ImportFilesButton"};
@@ -742,8 +766,10 @@ public:
 
 class MainComponent::PluginChainComponent final : public IndustrialPanel {
 public:
-    PluginChainComponent(const app::PluginChainPanelViewModel& model, JuceUiCommandAdapter& adapter)
-        : IndustrialPanel("PluginChainComponent", "Plugin Chain: Deck + Master Editor Panels", tokens().red), adapter_(adapter) {
+    PluginChainComponent(const app::PluginChainPanelViewModel& model, JuceUiCommandAdapter& adapter, CommandResultStatusSink statusSink)
+        : IndustrialPanel("PluginChainComponent", "Plugin Chain: Deck + Master Editor Panels", tokens().red),
+          adapter_(adapter),
+          statusSink_(std::move(statusSink)) {
         for (std::size_t index = 0; index < model.slots.size(); ++index) {
             const auto& slot = model.slots[index];
             auto row = std::make_unique<SlotControls>();
@@ -886,20 +912,21 @@ private:
     }
 
     void dispatch(const SlotControls& controls, PluginChainAction action, bool bypassed = false) {
-        (void)adapter_.dispatch(PluginChainIntent{action, controls.target, controls.deckIndex, controls.slotIndex, bypassed});
+        statusSink_(adapter_.dispatch(PluginChainIntent{action, controls.target, controls.deckIndex, controls.slotIndex, bypassed}));
     }
 
     void dispatchParameter(const SlotControls& controls) {
-        (void)adapter_.dispatch(PluginChainIntent{PluginChainAction::Parameter,
-                                                  controls.target,
-                                                  controls.deckIndex,
-                                                  controls.slotIndex,
-                                                  false,
-                                                  controls.parameterId,
-                                                  controls.parameter.getValue()});
+        statusSink_(adapter_.dispatch(PluginChainIntent{PluginChainAction::Parameter,
+                                                        controls.target,
+                                                        controls.deckIndex,
+                                                        controls.slotIndex,
+                                                        false,
+                                                        controls.parameterId,
+                                                        controls.parameter.getValue()}));
     }
 
     JuceUiCommandAdapter& adapter_;
+    CommandResultStatusSink statusSink_;
     std::vector<std::unique_ptr<SlotControls>> slotControls_;
 };
 
@@ -912,7 +939,30 @@ public:
 class MainComponent::StatusBarComponent final : public IndustrialPanel {
 public:
     explicit StatusBarComponent(const app::AppStatusViewModel& model)
-        : IndustrialPanel("StatusBarComponent", model.statusText, tokens().lime) {}
+        : IndustrialPanel("StatusBarComponent", model.statusText, tokens().lime) {
+        statusText_.setName("StatusTextLabel");
+        statusText_.setComponentID("StatusTextLabel");
+        statusText_.setJustificationType(juce::Justification::centredLeft);
+        statusText_.setColour(juce::Label::textColourId, tokens().text);
+        statusText_.setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+        statusText_.setInterceptsMouseClicks(false, false);
+        setStatusText(model.statusText);
+        addAndMakeVisible(statusText_);
+    }
+
+    void setStatusText(const juce::String& text) {
+        statusText_.setText(text, juce::dontSendNotification);
+    }
+
+    [[nodiscard]] juce::String statusText() const { return statusText_.getText(); }
+
+    void resized() override {
+        IndustrialPanel::resized();
+        statusText_.setBounds(getLocalBounds().reduced(12, 18));
+    }
+
+private:
+    juce::Label statusText_;
 };
 
 class MainComponent::AudioSettingsComponent final : public IndustrialPanel {
@@ -945,15 +995,22 @@ MainComponent::MainComponent(bool noAudioDevice)
         addAndMakeVisible(*decks_[index]);
     }
 
-    mixer_ = std::make_unique<MixerComponent>(snapshot_.mixer, commandAdapter_, [this] { refreshFromAuthoritativeState(); });
+    const CommandResultStatusSink statusSink = [this](const JuceUiCommandResult& result) {
+        if (statusBar_ != nullptr) {
+            statusBar_->setStatusText(formatCommandResultStatus(result));
+        }
+    };
+
+    mixer_ = std::make_unique<MixerComponent>(snapshot_.mixer, commandAdapter_, statusSink, [this] { refreshFromAuthoritativeState(); });
     browser_ = std::make_unique<BrowserComponent>(snapshot_.browser,
                                                   commandAdapter_,
                                                   browserRows_,
                                                   noAudioDevice ? "tests/fixtures/dj-workflow" : "",
+                                                  statusSink,
                                                   [this] { refreshFromAuthoritativeState(); });
     waveform_ = std::make_unique<WaveformComponent>();
     beatgridEditor_ = std::make_unique<BeatgridEditorComponent>();
-    pluginChain_ = std::make_unique<PluginChainComponent>(snapshot_.pluginChain, commandAdapter_);
+    pluginChain_ = std::make_unique<PluginChainComponent>(snapshot_.pluginChain, commandAdapter_, statusSink);
     midiLearn_ = std::make_unique<MidiLearnComponent>(snapshot_.midiLearn);
     statusBar_ = std::make_unique<StatusBarComponent>(snapshot_.status);
     audioSettings_ = std::make_unique<AudioSettingsComponent>();

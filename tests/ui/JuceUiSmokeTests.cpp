@@ -253,6 +253,24 @@ int expectVisibleDeckLabel(juce::Component* label, const std::string& expectedTe
     return 0;
 }
 
+
+int expectStatusText(juce::Component& root, const std::string& expectedText, const std::string& message) {
+    auto* status = dynamic_cast<juce::Label*>(findComponentById(root, "StatusTextLabel"));
+    if (expect(status != nullptr, message + " should expose the status label") != 0) {
+        return 1;
+    }
+    if (expect(!status->getComponentID().isEmpty(), message + " should keep a stable status label ID") != 0) {
+        return 1;
+    }
+    if (expect(hasUsableBounds(*status), message + " should have visible status bounds") != 0) {
+        return 1;
+    }
+    if (expect(status->getText().toStdString() == expectedText, message + " should render expected status text") != 0) {
+        return 1;
+    }
+    return 0;
+}
+
 int testDeckPanelStateContent() {
     deckflaxia::ui::MainComponent component(true);
     component.resized();
@@ -313,11 +331,17 @@ int testDeckMixerControlCallbacks() {
     if (expectDisabledNonActionable(deckOnePlay, "unloaded deck transport") != 0) {
         return 1;
     }
+    if (expectStatusText(component, component.snapshot().status.statusText, "startup AppStatusViewModel") != 0) {
+        return 1;
+    }
     if (expect(deckOnePlay->getButtonText() == "Load Deck", "unloaded deck transport should be labelled as unavailable") != 0) {
         return 1;
     }
 
     crossfader->setValue(0.75, juce::sendNotificationSync);
+    if (expectStatusText(component, "status-ok: mixer crossfader mixer-command-applied", "mixer adapter success") != 0) {
+        return 1;
+    }
     deckTwoVolume->setValue(0.25, juce::sendNotificationSync);
     deckThreeGain->setValue(0.5, juce::sendNotificationSync);
     deckFourEqHigh->setValue(0.25, juce::sendNotificationSync);
@@ -430,6 +454,9 @@ int testBrowserControlCallbacks() {
     }
 
     importFolder->onClick();
+    if (expectStatusText(component, "status-error: browser import not-regular-file", "browser adapter unavailable failure") != 0) {
+        return 1;
+    }
     if (expect(component.browserRows().size() == 2U && !component.browserRows()[1].importable() &&
                    component.browserRows()[1].error == deckflaxia::library::AudioImportError::NotRegularFile,
                "unsupported folder smoke import should append explicit unavailable row") != 0) {
