@@ -11,8 +11,12 @@ For a local JUCE checkout, see the runbook's `third_party/JUCE` setup commands; 
 Related references:
 
 - [Architecture boundaries](docs/architecture/alpha-architecture.md)
-- [CI, license, and static analysis hardening](docs/compliance/ci-license-static-analysis.md)
+- [Disabled CI, license, and static analysis hardening](docs/compliance/ci-license-static-analysis.md)
 - [CMake integration notes](cmake/README.md)
+
+## GitHub Actions Policy
+
+GitHub Actions CI is intentionally disabled. Future feature planning must not add or reactivate workflow triggers unless the user explicitly asks to re-enable CI; use the local verification commands in the runbook instead.
 
 ## Deferred Scope
 

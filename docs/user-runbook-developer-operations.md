@@ -9,7 +9,7 @@ The repository is `AGPL-3.0-or-later`. This is an engineering compliance note, n
 Dependency posture:
 
 - JUCE is used under `AGPL-3.0-only OR LicenseRef-JUCE-Commercial` terms. The repo doesn't vendor JUCE.
-- GitHub Actions checks out `juce-framework/JUCE` at pinned `JUCE_REF=8.0.10` into `third_party/JUCE` before `DECKFLAXIA_REQUIRE_JUCE=ON` configure. That checkout is CI-only and must not be committed.
+- Local JUCE-required verification may check out `juce-framework/JUCE` at pinned `JUCE_REF=8.0.10` into `third_party/JUCE` before `DECKFLAXIA_REQUIRE_JUCE=ON` configure. That checkout is local-only and must not be committed.
 - Steinberg VST3 SDK is listed as `MIT`.
 - Rubber Band is the guarded primary stretch engine and is listed as `GPL-2.0-or-later` when present as a system dependency.
 - Signalsmith is a non-vendored `MIT` fallback boundary.
@@ -24,14 +24,16 @@ cmake --build build --target license-report
 
 The report is written to `build/license-report.spdx.txt`.
 
-## Active CI Contract
+## Disabled CI Policy
 
-The active GitHub Actions workflow runs on `push`, `pull_request`, and `workflow_dispatch`. Routine push and pull request runs include two Ubuntu 24.04 jobs:
+GitHub Actions CI is intentionally disabled. There must be no active `.yml` or `.yaml` workflow under `.github/workflows`, and future feature planning must not add, move, rename, or trigger GitHub Actions workflows unless the user explicitly asks to re-enable CI. Preserve any old workflow definitions only as disabled reference artifacts outside `.github/workflows`.
+
+Use local verification instead of GitHub Actions. The preserved disabled workflow reference described these local-equivalent checks:
 
 - `linux-fallback` configures without JUCE and runs the fallback build, CTest, smoke, plugin sandbox, performance, packaging, and license gates. This is infrastructure coverage only. It doesn't prove native JUCE, native VST3, native editor windows, macOS runtime, screenshots, WAV output, Rubber Band DSP, or system SQLite persistence.
 - `linux-juce-required` installs the Ubuntu native GUI and media dependencies, checks out `juce-framework/JUCE` at pinned `JUCE_REF=8.0.10` into `third_party/JUCE`, verifies `third_party/JUCE/CMakeLists.txt`, configures with `DECKFLAXIA_REQUIRE_JUCE=ON` and `DECKFLAXIA_USE_VENDORED_JUCE=ON`, builds with `cmake --build build-juce --parallel 1`, builds `DeckflaxiaRealVst3Fixture` with `cmake --build build-juce --target DeckflaxiaRealVst3Fixture --parallel 1`, then runs static analysis, `plugin-sandbox-helper-packaging-check`, CTest, playable smoke, plugin sandbox smoke, performance, and license gates. The JUCE-required CTest suite includes `VST3Processing.AppSmoke`, `VST3Processing.RealFixture`, `VST3Processing.RealProcessing`, `VST3Processing.RealParameters`, and `VST3Processing.RealState` after the real fixture target has been built.
 
-The `macos-juce-required` job is optional and high-cost for routine presubmit. It runs only for manual `workflow_dispatch` executions or `main` branch runs through `if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'`. When it runs, it uses the same pinned JUCE checkout, checkout verification, required JUCE configure, low-memory build, real VST3 fixture build, `plugin-sandbox-helper-packaging-check`, CTest, playable smoke, plugin sandbox smoke, performance, and license contract as the Linux JUCE job, excluding Linux-only static analysis.
+The former `macos-juce-required` flow is high-cost and must be run manually on a local or explicitly provisioned macOS machine when needed. It uses the same pinned JUCE checkout, checkout verification, required JUCE configure, low-memory build, real VST3 fixture build, `plugin-sandbox-helper-packaging-check`, CTest, playable smoke, plugin sandbox smoke, performance, and license contract as the Linux JUCE-required flow, excluding Linux-only static analysis.
 
 CTest owns fixture setup through `Fixtures.Generate` in fallback and JUCE-required jobs. Don't add a separate fixture generation step before CTest unless a direct binary command needs generated files outside CTest.
 
@@ -42,9 +44,9 @@ Use one of these supported JUCE setup paths:
 - Provide an installed or exported JUCE CMake package with `-DCMAKE_PREFIX_PATH=/path/to/JUCE/install-or-build`.
 - Provide a licensed local checkout at `third_party/JUCE` and configure with `-DDECKFLAXIA_USE_VENDORED_JUCE=ON`.
 
-CI uses the second path by checking out JUCE at `JUCE_REF=8.0.10` during the workflow. JUCE is not stored in this repository.
+Local parity checks can use the second path by checking out JUCE at `JUCE_REF=8.0.10`. JUCE is not stored in this repository.
 
-To mirror the pinned CI checkout locally, run from the repository root:
+To create the pinned local checkout, run from the repository root:
 
 ```sh
 mkdir -p third_party
@@ -114,7 +116,7 @@ After a JUCE build:
 ./build-juce/Deckflaxia
 ```
 
-For CI or headless setup checks:
+For headless setup checks:
 
 ```sh
 ./build-juce/Deckflaxia --juce-shell-smoke-test --exit-after-init

@@ -1,6 +1,10 @@
-# CI, License, and Static Analysis Hardening
+# Disabled CI, License, and Static Analysis Hardening
 
-## Local CI Parity
+## GitHub Actions Policy
+
+GitHub Actions CI is intentionally disabled for this repository. Do not add active `.yml` or `.yaml` workflow files under `.github/workflows`, do not restore `push`, `pull_request`, `workflow_dispatch`, `schedule`, `workflow_call`, `workflow_run`, or dispatch-style triggers, and do not reactivate CI in future feature plans unless the user explicitly requests that change. Historical workflow definitions may be kept only as disabled reference artifacts outside `.github/workflows`.
+
+## Local Verification Parity
 
 Run these commands from the repository root to match the Linux fallback infrastructure flow:
 
@@ -25,7 +29,7 @@ cmake -S . -B build-juce -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMAND
 
 When JUCE is not available, this command must fail clearly and explain both supported setup paths: an installed/exported JUCE CMake package via `-DCMAKE_PREFIX_PATH=/path/to/JUCE/install-or-build`, or a licensed local `third_party/JUCE` checkout. Bootstrap fallback configuration remains available only with `DECKFLAXIA_REQUIRE_JUCE=OFF` for early CI/dev checks that do not claim JUCE functionality.
 
-Ubuntu JUCE-required validation needs Linux GUI/media development packages before configure and build. A `gtk/gtk.h` failure means `libgtk-3-dev` is missing; WebKitGTK failures from `juce_gui_extra` usually mean `libwebkit2gtk-4.1-dev` or the distro equivalent is missing. Keep fallback CI useful for infrastructure checks, but do not report fallback output as native JUCE success. See `docs/user-runbook-developer-operations.md` for the full Linux package list.
+Ubuntu JUCE-required validation needs Linux GUI/media development packages before configure and build. A `gtk/gtk.h` failure means `libgtk-3-dev` is missing; WebKitGTK failures from `juce_gui_extra` usually mean `libwebkit2gtk-4.1-dev` or the distro equivalent is missing. Keep fallback checks useful for infrastructure validation, but do not report fallback output as native JUCE success. See `docs/user-runbook-developer-operations.md` for the full Linux package list.
 
 When the real VST3 fixture target is available, local JUCE-required validation should build it before VST3 tests or app smokes:
 
@@ -38,13 +42,13 @@ ctest --test-dir build-juce -R "VST3Processing\.(AppSmoke|RealFixture|RealProces
 
 The fixture manifest is generated at `${CMAKE_BINARY_DIR}/generated/real-vst3-fixture/manifest.json`, with default local path `build-juce/generated/real-vst3-fixture/manifest.json`. Successful real fixture validation must include `backend=juce-vst3` and `real-vst3-instantiated=1` from the production host path. Fallback/no-JUCE output must not claim that marker from deterministic fixtures.
 
-The GitHub Actions workflow intentionally has no Windows job. The platform gates are `ubuntu-24.04` and `macos-latest`, and both check out `juce-framework/JUCE` at the pinned `JUCE_REF` into `third_party/JUCE` before running the JUCE-required configure/build/CTest sequence, `DeckflaxiaRealVst3Fixture`, `plugin-sandbox-helper-packaging-check`, playable smoke, plugin sandbox smoke, current performance-equivalent tempo/overload smokes, and `license-report`. This is a CI-only checkout under JUCE AGPL/commercial terms; JUCE is not vendored in this repository. Keep `linux-fallback` no-JUCE, and do not make `macos-juce-required` mandatory for pull requests.
+The disabled workflow reference intentionally had no Windows job. Local platform gates are still Ubuntu 24.04 and macOS latest-equivalent hosts, and both may check out `juce-framework/JUCE` at the pinned `JUCE_REF` into `third_party/JUCE` before running the JUCE-required configure/build/CTest sequence, `DeckflaxiaRealVst3Fixture`, `plugin-sandbox-helper-packaging-check`, playable smoke, plugin sandbox smoke, current performance-equivalent tempo/overload smokes, and `license-report`. This is a local-only licensed checkout under JUCE AGPL/commercial terms; JUCE is not vendored in this repository.
 
 `plugin-sandbox-helper-packaging-check` verifies that `DeckflaxiaPluginSandboxHelper` was built beside `Deckflaxia` and that `DeckflaxiaPluginSandboxHelper --helper-smoke` emits its readiness line. It does not claim OS-level sandbox hardening, notarization, or code signing.
 
 ## macOS Evidence Requirement
 
-The GitHub Actions macOS job configures, builds, runs helper packaging, CTest, playable smoke, plugin sandbox smoke, current performance-equivalent smokes, and the license report on `macos-latest`. If a local macOS agent is used instead, run the same `build-juce` command sequence from the workflow when JUCE is available. A fallback-only infrastructure check can use:
+For macOS evidence, use a local or explicitly provisioned macOS agent to configure, build, run helper packaging, CTest, playable smoke, plugin sandbox smoke, current performance-equivalent smokes, and the license report when JUCE is available. A fallback-only infrastructure check can use:
 
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -57,7 +61,7 @@ Save Task 14 macOS output to `.omo/evidence/real-playable-juce/task-14-macos-ci.
 
 ## Static Analysis Prerequisites
 
-`cmake --build build --target static-analysis` checks whether `clang-format` and `clang-tidy` are installed. This target intentionally stays non-failing when those tools are absent so bootstrap CI remains green in constrained containers. Full static analysis requires LLVM tooling, `.clang-format`, and a configure step with `CMAKE_EXPORT_COMPILE_COMMANDS=ON`.
+`cmake --build build --target static-analysis` checks whether `clang-format` and `clang-tidy` are installed. This target intentionally stays non-failing when those tools are absent so bootstrap local checks remain usable in constrained containers. Full static analysis requires LLVM tooling, `.clang-format`, and a configure step with `CMAKE_EXPORT_COMPILE_COMMANDS=ON`.
 
 ## License Inventory Policy
 
