@@ -207,6 +207,15 @@ bool rootHitTestsToControl(juce::Component& root, juce::Component& control) {
     return hit == &control || (hit != nullptr && control.isParentOf(hit));
 }
 
+bool isDescendantOf(const juce::Component& component, const juce::Component& ancestor) {
+    for (auto* parent = component.getParentComponent(); parent != nullptr; parent = parent->getParentComponent()) {
+        if (parent == &ancestor) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int expectEnabledHitTestable(juce::Component& root, juce::Component* control, const std::string& message) {
     if (expect(control != nullptr, message + " should exist") != 0) {
         return 1;
@@ -479,6 +488,12 @@ int testBrowserControlCallbacks() {
 int testPluginChainControls() {
     deckflaxia::ui::MainComponent component(true);
     component.resized();
+    auto* viewport = findComponentById(component, "PluginChainViewport");
+    auto* content = findComponentById(component, "PluginChainScrollableContent");
+    auto* deckOneLabel = dynamic_cast<juce::Label*>(findComponentById(component, "plugin-slot-deck-1-1DisplayLabel"));
+    auto* deckOneStatus = dynamic_cast<juce::Label*>(findComponentById(component, "plugin-slot-deck-1-1StatusLabel"));
+    auto* masterFourLabel = dynamic_cast<juce::Label*>(findComponentById(component, "plugin-slot-master-4DisplayLabel"));
+    auto* masterFourStatus = dynamic_cast<juce::Label*>(findComponentById(component, "plugin-slot-master-4StatusLabel"));
     auto* bypass = dynamic_cast<juce::Button*>(findComponentById(component, "plugin-slot-deck-1-1BypassCommandButton"));
     auto* remove = dynamic_cast<juce::Button*>(findComponentById(component, "plugin-slot-deck-1-1RemoveCommandButton"));
     auto* moveUp = dynamic_cast<juce::Button*>(findComponentById(component, "plugin-slot-deck-1-1MoveUpCommandButton"));
@@ -486,8 +501,37 @@ int testPluginChainControls() {
     auto* openEditor = dynamic_cast<juce::Button*>(findComponentById(component, "plugin-slot-deck-1-1OpenEditorCommandButton"));
     auto* closeEditor = dynamic_cast<juce::Button*>(findComponentById(component, "plugin-slot-deck-1-1CloseEditorCommandButton"));
     auto* parameter = dynamic_cast<juce::Slider*>(findComponentById(component, "plugin-slot-deck-1-1GenericGainParameterCommandSlider"));
-    if (expect(bypass != nullptr && remove != nullptr && moveUp != nullptr && moveDown != nullptr && openEditor != nullptr && closeEditor != nullptr && parameter != nullptr,
+    auto* deckTwoBypass = dynamic_cast<juce::Button*>(findComponentById(component, "plugin-slot-deck-1-2BypassCommandButton"));
+    auto* masterFourCloseEditor = dynamic_cast<juce::Button*>(findComponentById(component, "plugin-slot-master-4CloseEditorCommandButton"));
+    auto* masterFourParameter = dynamic_cast<juce::Slider*>(findComponentById(component, "plugin-slot-master-4GenericGainParameterCommandSlider"));
+    if (expect(viewport != nullptr && content != nullptr && deckOneLabel != nullptr && deckOneStatus != nullptr && masterFourLabel != nullptr && masterFourStatus != nullptr,
+               "plugin chain should expose named viewport/content and stable row labels") != 0) {
+        return 1;
+    }
+    if (expect(bypass != nullptr && remove != nullptr && moveUp != nullptr && moveDown != nullptr && openEditor != nullptr && closeEditor != nullptr && parameter != nullptr &&
+                   deckTwoBypass != nullptr && masterFourCloseEditor != nullptr && masterFourParameter != nullptr,
                "plugin slot controls should be split into stable reachable component IDs") != 0) {
+        return 1;
+    }
+    if (expect(isDescendantOf(*bypass, *content) && isDescendantOf(*masterFourParameter, *content),
+               "plugin row controls should live inside PluginChainScrollableContent") != 0) {
+        return 1;
+    }
+    if (expect(hasUsableBounds(*viewport) && hasUsableBounds(*content) && content->getHeight() > viewport->getHeight(),
+               "plugin chain content should be scrollable inside the named viewport") != 0) {
+        return 1;
+    }
+    if (expect(hasUsableBounds(*deckOneLabel) && hasUsableBounds(*bypass) && hasUsableBounds(*masterFourLabel) && hasUsableBounds(*masterFourParameter),
+               "row 1 and row 20 should keep non-empty reachable bounds inside scrollable content") != 0) {
+        return 1;
+    }
+    if (expect(deckOneLabel->getText() == "Deck 1 Slot 1" && deckOneStatus->getText().contains("empty plugin placeholder") &&
+                   masterFourLabel->getText() == "Master Slot 4" && masterFourStatus->getText().contains("empty master plugin placeholder"),
+               "plugin rows should surface data-backed labels/status without faking plugin availability") != 0) {
+        return 1;
+    }
+    if (expect(!bypass->getBounds().intersects(deckTwoBypass->getBounds()),
+               "representative visible plugin rows should not overlap inside scrollable content") != 0) {
         return 1;
     }
     if (expectDisabledNonActionable(bypass, "empty plugin bypass placeholder") != 0 ||
@@ -496,10 +540,13 @@ int testPluginChainControls() {
         expectDisabledNonActionable(moveDown, "empty plugin move-down placeholder") != 0 ||
         expectDisabledNonActionable(openEditor, "empty plugin open-editor placeholder") != 0 ||
         expectDisabledNonActionable(closeEditor, "empty plugin close-editor placeholder") != 0 ||
-        expectDisabledNonActionable(parameter, "empty plugin parameter placeholder") != 0) {
+        expectDisabledNonActionable(parameter, "empty plugin parameter placeholder") != 0 ||
+        expectDisabledNonActionable(masterFourCloseEditor, "empty master plugin close-editor placeholder") != 0 ||
+        expectDisabledNonActionable(masterFourParameter, "empty master plugin parameter placeholder") != 0) {
         return 1;
     }
-    if (expect(bypass->getButtonText() == "No Plugin" && remove->getButtonText() == "No Plugin" && openEditor->getButtonText() == "No Plugin",
+    if (expect(bypass->getButtonText() == "No Plugin" && remove->getButtonText() == "No Plugin" && openEditor->getButtonText() == "No Plugin" &&
+                   masterFourCloseEditor->getButtonText() == "No Plugin",
                "empty plugin placeholder buttons should not display action labels") != 0) {
         return 1;
     }
@@ -528,7 +575,7 @@ int testPluginChainControls() {
                "empty plugin descriptor parameter should return exact invalid slot result") != 0) {
         return 1;
     }
-    std::cout << "JuceUi.PluginControls split=1 empty-disabled=1\n";
+    std::cout << "JuceUi.PluginControls split=1 scrollable=1 empty-disabled=1\n";
     return 0;
 }
 

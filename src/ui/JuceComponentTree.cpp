@@ -770,12 +770,22 @@ public:
         : IndustrialPanel("PluginChainComponent", "Plugin Chain: Deck + Master Editor Panels", tokens().red),
           adapter_(adapter),
           statusSink_(std::move(statusSink)) {
+        viewport_.setName("PluginChainViewport");
+        viewport_.setComponentID("PluginChainViewport");
+        viewport_.setViewedComponent(&content_, false);
+        viewport_.setScrollBarsShown(true, false, true, false);
+        content_.setName("PluginChainScrollableContent");
+        content_.setComponentID("PluginChainScrollableContent");
+        addAndMakeVisible(viewport_);
+
         for (std::size_t index = 0; index < model.slots.size(); ++index) {
             const auto& slot = model.slots[index];
             auto row = std::make_unique<SlotControls>();
             row->target = pluginTargetForIndex(index);
             row->deckIndex = deckIndexForSlot(index);
             row->slotIndex = slotIndexForSlot(index);
+            configureSlotLabel(row->label, slot);
+            configureSlotStatus(row->status, slot);
             configureButton(row->bypass, slot, "BypassCommandButton", slot.bypassed ? "Enable" : "Bypass", !slot.placeholder);
             configureButton(row->remove, slot, "RemoveCommandButton", "Remove", !slot.placeholder && slot.removable);
             configureButton(row->moveUp, slot, "MoveUpCommandButton", "Move Up", !slot.placeholder && slot.canMoveUp);
@@ -791,13 +801,15 @@ public:
             row->openEditor.onClick = [this, controls = row.get()] { dispatch(*controls, PluginChainAction::OpenEditor); };
             row->closeEditor.onClick = [this, controls = row.get()] { dispatch(*controls, PluginChainAction::CloseEditor); };
             row->parameter.onValueChange = [this, controls = row.get()] { dispatchParameter(*controls); };
-            addAndMakeVisible(row->bypass);
-            addAndMakeVisible(row->remove);
-            addAndMakeVisible(row->moveUp);
-            addAndMakeVisible(row->moveDown);
-            addAndMakeVisible(row->openEditor);
-            addAndMakeVisible(row->closeEditor);
-            addAndMakeVisible(row->parameter);
+            content_.addAndMakeVisible(row->label);
+            content_.addAndMakeVisible(row->status);
+            content_.addAndMakeVisible(row->bypass);
+            content_.addAndMakeVisible(row->remove);
+            content_.addAndMakeVisible(row->moveUp);
+            content_.addAndMakeVisible(row->moveDown);
+            content_.addAndMakeVisible(row->openEditor);
+            content_.addAndMakeVisible(row->closeEditor);
+            content_.addAndMakeVisible(row->parameter);
             slotControls_.push_back(std::move(row));
         }
     }
@@ -805,26 +817,26 @@ public:
     void resized() override {
         IndustrialPanel::resized();
         auto area = getLocalBounds().reduced(12, 34);
-        const auto rows = static_cast<int>(std::min<std::size_t>(slotControls_.size(), 6U));
-        if (rows == 0) {
+        viewport_.setBounds(area);
+        if (slotControls_.empty()) {
+            content_.setBounds({});
             return;
         }
-        const auto rowHeight = std::max(18, area.getHeight() / rows);
-        for (std::size_t index = 0; index < slotControls_.size(); ++index) {
-            auto& row = *slotControls_[index];
-            if (index >= 6U) {
-                setRowBounds(row, {});
-                continue;
-            }
-            auto rowArea = area.removeFromTop(rowHeight).reduced(0, 1);
-            const auto actionWidth = std::max(20, rowArea.getWidth() / 7);
-            row.bypass.setBounds(rowArea.removeFromLeft(actionWidth));
-            row.remove.setBounds(rowArea.removeFromLeft(actionWidth));
-            row.moveUp.setBounds(rowArea.removeFromLeft(actionWidth));
-            row.moveDown.setBounds(rowArea.removeFromLeft(actionWidth));
-            row.openEditor.setBounds(rowArea.removeFromLeft(actionWidth));
-            row.closeEditor.setBounds(rowArea.removeFromLeft(actionWidth));
-            row.parameter.setBounds(rowArea);
+
+        constexpr int rowHeight = 44;
+        constexpr int rowGap = 4;
+        const auto contentHeight = static_cast<int>(slotControls_.size()) * (rowHeight + rowGap);
+        content_.setBounds(0, 0, area.getWidth(), std::max(area.getHeight(), contentHeight));
+
+        auto contentArea = content_.getLocalBounds();
+        for (auto& controls : slotControls_) {
+            auto rowArea = contentArea.removeFromTop(rowHeight).reduced(0, 1);
+            contentArea.removeFromTop(rowGap);
+            auto headerArea = rowArea.removeFromTop(16);
+            controls->label.setBounds(headerArea.removeFromLeft(std::min(112, headerArea.getWidth())));
+            controls->status.setBounds(headerArea);
+            rowArea.removeFromTop(2);
+            layoutRowControls(*controls, rowArea);
         }
     }
 
@@ -832,6 +844,8 @@ public:
         for (std::size_t index = 0; index < slotControls_.size() && index < model.slots.size(); ++index) {
             const auto& slot = model.slots[index];
             auto& row = *slotControls_[index];
+            updateSlotLabel(row.label, slot);
+            updateSlotStatus(row.status, slot);
             updateButton(row.bypass, slot, slot.bypassed ? "Enable" : "Bypass", !slot.placeholder);
             updateButton(row.remove, slot, "Remove", !slot.placeholder && slot.removable);
             updateButton(row.moveUp, slot, "Move Up", !slot.placeholder && slot.canMoveUp);
@@ -856,6 +870,8 @@ private:
         std::size_t deckIndex{};
         std::size_t slotIndex{};
         std::string parameterId{"gain"};
+        juce::Label label;
+        juce::Label status;
         juce::TextButton bypass;
         juce::TextButton remove;
         juce::TextButton moveUp;
@@ -875,6 +891,36 @@ private:
 
     static std::size_t slotIndexForSlot(std::size_t index) noexcept {
         return index % audio::routing::kPluginSlotsPerDeck;
+    }
+
+    static void configureSlotLabel(juce::Label& label, const app::PluginSlotViewModel& slot) {
+        const auto name = juce::String(slot.componentName) + "DisplayLabel";
+        label.setName(name);
+        label.setComponentID(name);
+        label.setJustificationType(juce::Justification::centredLeft);
+        label.setColour(juce::Label::textColourId, tokens().text);
+        label.setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+        label.setInterceptsMouseClicks(false, false);
+        updateSlotLabel(label, slot);
+    }
+
+    static void configureSlotStatus(juce::Label& label, const app::PluginSlotViewModel& slot) {
+        const auto name = juce::String(slot.componentName) + "StatusLabel";
+        label.setName(name);
+        label.setComponentID(name);
+        label.setJustificationType(juce::Justification::centredLeft);
+        label.setColour(juce::Label::textColourId, tokens().mutedText);
+        label.setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+        label.setInterceptsMouseClicks(false, false);
+        updateSlotStatus(label, slot);
+    }
+
+    static void updateSlotLabel(juce::Label& label, const app::PluginSlotViewModel& slot) {
+        label.setText(slot.displayName, juce::dontSendNotification);
+    }
+
+    static void updateSlotStatus(juce::Label& label, const app::PluginSlotViewModel& slot) {
+        label.setText(juce::String(slot.statusText) + " / " + juce::String(slot.boundaryStatus), juce::dontSendNotification);
     }
 
     static void configureButton(juce::TextButton& button, const app::PluginSlotViewModel& slot, const char* suffix, const char* text, bool enabled) {
@@ -901,14 +947,15 @@ private:
         slider.setTooltip(slot.placeholder ? "No plugin loaded in this slot." : "Generic gain parameter.");
     }
 
-    static void setRowBounds(SlotControls& row, juce::Rectangle<int> bounds) {
-        row.bypass.setBounds(bounds);
-        row.remove.setBounds(bounds);
-        row.moveUp.setBounds(bounds);
-        row.moveDown.setBounds(bounds);
-        row.openEditor.setBounds(bounds);
-        row.closeEditor.setBounds(bounds);
-        row.parameter.setBounds(bounds);
+    static void layoutRowControls(SlotControls& row, juce::Rectangle<int> rowArea) {
+        const auto actionWidth = std::max(20, rowArea.getWidth() / 7);
+        row.bypass.setBounds(rowArea.removeFromLeft(actionWidth));
+        row.remove.setBounds(rowArea.removeFromLeft(actionWidth));
+        row.moveUp.setBounds(rowArea.removeFromLeft(actionWidth));
+        row.moveDown.setBounds(rowArea.removeFromLeft(actionWidth));
+        row.openEditor.setBounds(rowArea.removeFromLeft(actionWidth));
+        row.closeEditor.setBounds(rowArea.removeFromLeft(actionWidth));
+        row.parameter.setBounds(rowArea);
     }
 
     void dispatch(const SlotControls& controls, PluginChainAction action, bool bypassed = false) {
@@ -927,6 +974,8 @@ private:
 
     JuceUiCommandAdapter& adapter_;
     CommandResultStatusSink statusSink_;
+    juce::Viewport viewport_;
+    juce::Component content_;
     std::vector<std::unique_ptr<SlotControls>> slotControls_;
 };
 
