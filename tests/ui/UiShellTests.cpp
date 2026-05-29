@@ -35,8 +35,25 @@ int main(int argc, char* argv[]) {
         if (expect(fullSnapshot.pluginChain.slots.size() == 20, "plugin chain should expose four slots per deck plus master") != 0) {
             return 1;
         }
+        if (expect(fullSnapshot.pluginChain.componentName == "plugin-chain-panel", "plugin chain panel should be named") != 0) {
+            return 1;
+        }
+        if (expect(fullSnapshot.mixer.componentName == "mixer-controls-panel", "mixer panel should be named") != 0) {
+            return 1;
+        }
         if (expect(fullSnapshot.midiLearn.componentName == "midi-learn-indicator" && fullSnapshot.midiLearn.mappingCount > 0U,
                    "MIDI learn indicator should expose registry snapshot") != 0) {
+            return 1;
+        }
+        if (expect(fullSnapshot.status.componentName == "app-status-errors", "status/errors panel should be named") != 0) {
+            return 1;
+        }
+        if (expect(fullSnapshot.pluginChain.slots[0].componentName == "plugin-slot-deck-1-1" && fullSnapshot.pluginChain.slots[0].placeholder,
+                   "first plugin slot should represent no-plugin placeholder state") != 0) {
+            return 1;
+        }
+        if (expect(!fullSnapshot.pluginChain.slots[0].nativeEditorAvailable,
+                   "placeholder plugin slot should represent unavailable native editor honestly") != 0) {
             return 1;
         }
         if (expect(!fullSnapshot.decks[0].waveform.placeholder, "first smoke deck should render waveform summary") != 0) {
@@ -46,6 +63,9 @@ int main(int argc, char* argv[]) {
 
     const auto emptySnapshot = shell.buildSnapshot(deckflaxia::app::createUiSmokeInput(true));
     if (expect(emptySnapshot.browser.empty, "empty library should produce browser empty state") != 0) {
+        return 1;
+    }
+    if (expect(emptySnapshot.browser.tracks.empty(), "empty library should expose zero browser tracks") != 0) {
         return 1;
     }
     if (expect(emptySnapshot.decks[0].waveform.placeholder && emptySnapshot.decks[3].waveform.placeholder,
