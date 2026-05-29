@@ -236,6 +236,62 @@ int expectDisabledNonActionable(juce::Component* control, const std::string& mes
     return 0;
 }
 
+int expectVisibleDeckLabel(juce::Component* label, const std::string& expectedText, const std::string& message) {
+    auto* deckLabel = dynamic_cast<juce::Label*>(label);
+    if (expect(deckLabel != nullptr, message + " should be a reachable JUCE label") != 0) {
+        return 1;
+    }
+    if (expect(!deckLabel->getComponentID().isEmpty(), message + " should keep a stable component ID") != 0) {
+        return 1;
+    }
+    if (expect(hasUsableBounds(*deckLabel), message + " should have non-empty bounds") != 0) {
+        return 1;
+    }
+    if (expect(deckLabel->getText().toStdString() == expectedText, message + " should render data-backed text") != 0) {
+        return 1;
+    }
+    return 0;
+}
+
+int testDeckPanelStateContent() {
+    deckflaxia::ui::MainComponent component(true);
+    component.resized();
+    const auto& snapshot = component.snapshot();
+    auto* deckOneState = findComponentById(component, "Deck1StateLabel");
+    auto* deckOneAccent = findComponentById(component, "Deck1AccentLabel");
+    auto* deckOneWaveform = findComponentById(component, "Deck1WaveformLabel");
+    auto* deckOneMeter = findComponentById(component, "Deck1MeterLabel");
+    auto* deckFourState = findComponentById(component, "Deck4StateLabel");
+    auto* deckFourAccent = findComponentById(component, "Deck4AccentLabel");
+    auto* deckFourWaveform = findComponentById(component, "Deck4WaveformLabel");
+    auto* deckFourMeter = findComponentById(component, "Deck4MeterLabel");
+    if (expectVisibleDeckLabel(deckOneState, "No track loaded", "deck 1 unloaded state") != 0 ||
+        expectVisibleDeckLabel(deckOneAccent, "Accent: " + snapshot.decks[0].accentName, "deck 1 accent") != 0 ||
+        expectVisibleDeckLabel(deckOneWaveform, "Waveform: " + snapshot.decks[0].waveform.statusText, "deck 1 waveform") != 0 ||
+        expectVisibleDeckLabel(deckOneMeter, "Meter: " + snapshot.decks[0].meter.statusText, "deck 1 meter") != 0 ||
+        expectVisibleDeckLabel(deckFourState, "No track loaded", "deck 4 unloaded state") != 0 ||
+        expectVisibleDeckLabel(deckFourAccent, "Accent: " + snapshot.decks[3].accentName, "deck 4 accent") != 0 ||
+        expectVisibleDeckLabel(deckFourWaveform, "Waveform: " + snapshot.decks[3].waveform.statusText, "deck 4 waveform") != 0 ||
+        expectVisibleDeckLabel(deckFourMeter, "Meter: " + snapshot.decks[3].meter.statusText, "deck 4 meter") != 0) {
+        return 1;
+    }
+
+    std::ostringstream output;
+    deckflaxia::ui::writeComponentTreeReport(component, output);
+    const auto text = output.str();
+    if (expect(lineContains(text, "DeckComponent[1]", "children=4") && lineContains(text, "DeckComponent[4]", "children=4"),
+               "deck components should not regress to title-only childless panels") != 0) {
+        return 1;
+    }
+    if (expect(lineContains(text, "Deck1StateLabel", "bounds=") && !lineContains(text, "Deck1StateLabel", "bounds=0 0 0 0") &&
+                   lineContains(text, "Deck4MeterLabel", "bounds=") && !lineContains(text, "Deck4MeterLabel", "bounds=0 0 0 0"),
+               "component dump should expose non-empty deck state child bounds") != 0) {
+        return 1;
+    }
+    std::cout << "JuceUi.DeckPanelStateContent labels=16 unloaded=NoTrackLoaded\n";
+    return 0;
+}
+
 int testDeckMixerControlCallbacks() {
     deckflaxia::ui::MainComponent component(true);
     component.resized();
@@ -533,6 +589,14 @@ int main(int argc, char* argv[]) {
         return 0;
 #endif
     }
+    if (filter == "deck-panels") {
+#if DECKFLAXIA_HAS_JUCE
+        return testDeckPanelStateContent();
+#else
+        std::cout << "JuceUi.DeckPanelStateContent blocked reason=DECKFLAXIA_HAS_JUCE=0\n";
+        return 0;
+#endif
+    }
     if (filter == "browser") {
 #if DECKFLAXIA_HAS_JUCE
         return testBrowserControlCallbacks();
@@ -565,7 +629,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 #if DECKFLAXIA_HAS_JUCE
-    if (testDeckMixerControlCallbacks() != 0 || testBrowserControlCallbacks() != 0 || testPluginChainControls() != 0 || testRefreshHonestyRules() != 0) {
+    if (testDeckPanelStateContent() != 0 || testDeckMixerControlCallbacks() != 0 || testBrowserControlCallbacks() != 0 || testPluginChainControls() != 0 || testRefreshHonestyRules() != 0) {
         return 1;
     }
 #endif

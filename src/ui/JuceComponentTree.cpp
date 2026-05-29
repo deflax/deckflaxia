@@ -253,6 +253,16 @@ void configureUnavailableButton(juce::TextButton& button, const juce::String& la
     button.setEnabled(false);
 }
 
+void configureDeckStateLabel(juce::Label& label, const juce::String& componentId, const juce::String& text, juce::Colour textColour) {
+    label.setName(componentId);
+    label.setComponentID(componentId);
+    label.setText(text, juce::dontSendNotification);
+    label.setJustificationType(juce::Justification::centredLeft);
+    label.setColour(juce::Label::textColourId, textColour);
+    label.setColour(juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+    label.setInterceptsMouseClicks(false, false);
+}
+
 app::HybridUiShellInputSnapshot currentShellInput(const decks::FourDeckPlaybackCore& playbackCore) {
     app::HybridUiShellInputSnapshot input;
     input.routing = playbackCore.routingSnapshot();
@@ -284,10 +294,18 @@ void writeSmokeTreeSkeleton(std::ostream& output) {
     writeNativeControlInventory(output);
     output << "tree:\n";
     output << "MainComponent children=9 bounds=0 0 1280 720\n";
-    output << "  DeckComponent[1] children=0 bounds=" << layout.decks[0].toString().toStdString() << '\n';
-    output << "  DeckComponent[2] children=0 bounds=" << layout.decks[1].toString().toStdString() << '\n';
-    output << "  DeckComponent[3] children=0 bounds=" << layout.decks[2].toString().toStdString() << '\n';
-    output << "  DeckComponent[4] children=0 bounds=" << layout.decks[3].toString().toStdString() << '\n';
+    for (std::size_t index = 0; index < audio::routing::kDeckCount; ++index) {
+        const auto deckNumber = index + 1U;
+        output << "  DeckComponent[" << deckNumber << "] children=4 bounds=" << layout.decks[index].toString().toStdString() << '\n';
+        auto deckArea = juce::Rectangle<int>{0, 0, layout.decks[index].getWidth(), layout.decks[index].getHeight()}.reduced(12, 34);
+        output << "    Deck" << deckNumber << "StateLabel children=0 bounds=" << deckArea.removeFromTop(24).toString().toStdString() << '\n';
+        deckArea.removeFromTop(6);
+        output << "    Deck" << deckNumber << "AccentLabel children=0 bounds=" << deckArea.removeFromTop(20).toString().toStdString() << '\n';
+        deckArea.removeFromTop(6);
+        output << "    Deck" << deckNumber << "WaveformLabel children=0 bounds=" << deckArea.removeFromTop(20).toString().toStdString() << '\n';
+        deckArea.removeFromTop(6);
+        output << "    Deck" << deckNumber << "MeterLabel children=0 bounds=" << deckArea.removeFromTop(20).toString().toStdString() << '\n';
+    }
     output << "  MixerComponent children=1 bounds=" << layout.mixer.toString().toStdString() << '\n';
     output << "  BrowserComponent children=5 bounds=" << layout.browser.toString().toStdString() << '\n';
     output << "  WaveformComponent children=0 bounds=" << layout.waveform.toString().toStdString() << '\n';
@@ -326,7 +344,46 @@ public:
     DeckComponent(std::size_t index, const app::DeckPanelViewModel& model)
         : IndustrialPanel("DeckComponent[" + juce::String(static_cast<int>(index + 1U)) + "]",
                           model.displayName,
-                          accentForDeck(index)) {}
+                          accentForDeck(index)),
+          index_(index) {
+        const auto deckNumber = juce::String(static_cast<int>(index + 1U));
+        configureDeckStateLabel(state_, juce::String("Deck") + deckNumber + "StateLabel", "No track loaded", tokens().text);
+        configureDeckStateLabel(accent_, juce::String("Deck") + deckNumber + "AccentLabel", "", accentForDeck(index));
+        configureDeckStateLabel(waveform_, juce::String("Deck") + deckNumber + "WaveformLabel", "", tokens().mutedText);
+        configureDeckStateLabel(meter_, juce::String("Deck") + deckNumber + "MeterLabel", "", tokens().mutedText);
+        refreshFromSnapshot(model);
+        addAndMakeVisible(state_);
+        addAndMakeVisible(accent_);
+        addAndMakeVisible(waveform_);
+        addAndMakeVisible(meter_);
+    }
+
+    void refreshFromSnapshot(const app::DeckPanelViewModel& model) {
+        state_.setText("No track loaded", juce::dontSendNotification);
+        accent_.setText(juce::String("Accent: ") + juce::String(model.accentName), juce::dontSendNotification);
+        waveform_.setText(juce::String("Waveform: ") + juce::String(model.waveform.statusText), juce::dontSendNotification);
+        meter_.setText(juce::String("Meter: ") + juce::String(model.meter.statusText), juce::dontSendNotification);
+        accent_.setColour(juce::Label::textColourId, accentForDeck(index_));
+    }
+
+    void resized() override {
+        IndustrialPanel::resized();
+        auto area = getLocalBounds().reduced(12, 34);
+        state_.setBounds(area.removeFromTop(24));
+        area.removeFromTop(6);
+        accent_.setBounds(area.removeFromTop(20));
+        area.removeFromTop(6);
+        waveform_.setBounds(area.removeFromTop(20));
+        area.removeFromTop(6);
+        meter_.setBounds(area.removeFromTop(20));
+    }
+
+private:
+    std::size_t index_{};
+    juce::Label state_;
+    juce::Label accent_;
+    juce::Label waveform_;
+    juce::Label meter_;
 };
 
 class MainComponent::MixerComponent final : public IndustrialPanel {
@@ -924,6 +981,9 @@ const std::vector<library::AudioImportClassification>& MainComponent::browserRow
 
 void MainComponent::refreshFromAuthoritativeState() {
     snapshot_ = shellModel_.buildSnapshot(currentShellInput(playbackCore_));
+    for (std::size_t index = 0; index < decks_.size(); ++index) {
+        decks_[index]->refreshFromSnapshot(snapshot_.decks[index]);
+    }
     mixer_->refreshFromSnapshot(snapshot_, playbackCore_);
     browser_->refreshFromAuthoritativeState();
     pluginChain_->refreshFromSnapshot(snapshot_.pluginChain);
