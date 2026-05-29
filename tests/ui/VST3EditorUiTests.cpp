@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -67,7 +68,14 @@ int testModelControls() {
     if (expect(model.slots.size() == 2U, "model should expose chain slots") != 0) {
         return 1;
     }
-    if (expect(model.slots[0].controls.size() == 6U && !model.slots[0].parameters.empty(), "slot should expose controls and parameters") != 0) {
+    const std::vector<std::string> expectedControls{"bypass", "remove", "move-up", "move-down", "open-editor", "close-editor"};
+    if (expect(model.slots[0].controls == expectedControls && !model.slots[0].parameters.empty(), "slot should expose exact controls and parameters") != 0) {
+        return 1;
+    }
+    if (expect(model.slots[0].componentName == "deck-plugin-slot-1" &&
+                   model.slots[0].parameters[0].componentName == "deck-plugin-slot-1-parameter-gain" &&
+                   model.slots[0].parameters[0].identifier == "gain",
+               "plugin model should expose exact stable component and parameter names") != 0) {
         return 1;
     }
     if (expect(model.sandboxStatus.find("cross-process") != std::string::npos, "model should disclose sandbox boundary") != 0) {
@@ -90,6 +98,40 @@ int testModelControls() {
         return 1;
     }
     std::cout << "VST3EditorUi.ModelControls slots=" << model.slots.size() << " controls=" << model.slots[0].controls.size() << '\n';
+    return 0;
+}
+
+
+int testEmptyPluginChain() {
+    deckflaxia::core::PluginChainDescriptor empty{"empty", {}};
+    deckflaxia::plugins::OfflinePluginChainHost host;
+    if (expect(host.configure(deckflaxia::plugins::PluginChainTargetKind::Deck, empty, 48000.0, 512).ok(), "empty host configure should pass") != 0) {
+        return 1;
+    }
+    const auto model = deckflaxia::ui::buildPluginChainEditorModel(deckflaxia::plugins::PluginChainTargetKind::Deck, host.chainState(), host.status());
+    if (expect(model.slots.empty(), "empty plugin chain model should expose no fake active slots") != 0) {
+        return 1;
+    }
+    if (expect(!deckflaxia::ui::setPluginSlotBypass(empty, 0, true), "empty chain bypass helper should not report success") != 0) {
+        return 1;
+    }
+    if (expect(!deckflaxia::ui::setPluginParameter(empty, 0, "gain", 0.5), "empty chain parameter helper should not report success") != 0) {
+        return 1;
+    }
+    if (expect(!deckflaxia::ui::removePluginSlot(empty, 0), "empty chain remove helper should not report success") != 0) {
+        return 1;
+    }
+    if (expect(!deckflaxia::ui::movePluginSlot(empty, 0, 1), "empty chain reorder helper should not report success") != 0) {
+        return 1;
+    }
+    if (expect(empty.plugins.empty(), "empty chain helper failures should leave authoritative descriptor empty") != 0) {
+        return 1;
+    }
+    const auto editor = host.openSeparateEditorWindow(0);
+    if (expect(!editor.open && editor.statusText == "invalid-slot", "empty host editor open should be explicitly invalid") != 0) {
+        return 1;
+    }
+    std::cout << "VST3EditorUi.EmptyPluginChain no-fake-slots=1\n";
     return 0;
 }
 
@@ -145,11 +187,14 @@ int main(int argc, char* argv[]) {
     if (filter == "no-editor") {
         return testNoEditorGenericFallback(fixtures);
     }
+    if (filter == "empty") {
+        return testEmptyPluginChain();
+    }
     if (filter != "all") {
         std::cerr << "FAILED: unknown VST3EditorUi filter " << filter << '\n';
         return 1;
     }
-    if (testModelControls() != 0 || testNoEditorGenericFallback(fixtures) != 0 || testProcessingPreserved() != 0) {
+    if (testModelControls() != 0 || testEmptyPluginChain() != 0 || testNoEditorGenericFallback(fixtures) != 0 || testProcessingPreserved() != 0) {
         return 1;
     }
     std::cout << "VST3 editor UI tests passed\n";
