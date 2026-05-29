@@ -1,3 +1,9 @@
+# DISABLED INTENTIONALLY.
+# GitHub Actions CI must remain disabled for this repository. Do not move this
+# file back under `.github/workflows/`, restore a `.yml`/`.yaml` extension there,
+# or add workflow triggers unless the user explicitly asks to re-enable CI.
+# Keep this file only as a historical/local-command reference.
+
 name: CI
 
 permissions:
