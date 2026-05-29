@@ -211,6 +211,46 @@ bool rootHitTestsToControl(juce::Component& root, juce::Component& control) {
     return hit == &control || (hit != nullptr && control.isParentOf(hit));
 }
 
+bool componentCenterVisibleInViewport(juce::Component& viewport, juce::Component& component) {
+    if (!hasUsableBounds(component)) {
+        return false;
+    }
+    const auto viewportPoint = viewport.getLocalPoint(&component, component.getLocalBounds().getCentre());
+    return viewport.getLocalBounds().contains(viewportPoint);
+}
+
+bool componentDumpClickable(const juce::Component& component) {
+    return (dynamic_cast<const juce::Button*>(&component) != nullptr ||
+            dynamic_cast<const juce::Slider*>(&component) != nullptr ||
+            dynamic_cast<const juce::ComboBox*>(&component) != nullptr ||
+            dynamic_cast<const juce::TableListBox*>(&component) != nullptr) &&
+           component.isEnabled() && hasUsableBounds(component);
+}
+
+int expectDumpMatchesRuntime(const std::string& text, const juce::Component& component, const std::string& message) {
+    const auto id = component.getComponentID().toStdString();
+    const auto line = lineContaining(text, id);
+    if (expect(!id.empty(), message + " should keep a stable component ID") != 0) {
+        return 1;
+    }
+    if (expect(!line.empty(), message + " should appear in live component dump") != 0) {
+        return 1;
+    }
+    const auto expectedEnabled = std::string("enabled=") + (component.isEnabled() ? "true" : "false");
+    const auto expectedBounds = std::string("bounds=") + component.getBounds().toString().toStdString();
+    const auto expectedClickable = std::string("clickable=") + (componentDumpClickable(component) ? "true" : "false");
+    if (expect(contains(line, expectedEnabled), message + " dump enabled state should match runtime") != 0) {
+        return 1;
+    }
+    if (expect(contains(line, expectedBounds), message + " dump bounds should match runtime") != 0) {
+        return 1;
+    }
+    if (expect(contains(line, expectedClickable), message + " dump clickable state should match runtime") != 0) {
+        return 1;
+    }
+    return 0;
+}
+
 bool isDescendantOf(const juce::Component& component, const juce::Component& ancestor) {
     for (auto* parent = component.getParentComponent(); parent != nullptr; parent = parent->getParentComponent()) {
         if (parent == &ancestor) {
@@ -314,36 +354,31 @@ int testDeckPanelStateContent() {
     deckflaxia::ui::MainComponent component(true);
     component.resized();
     const auto& snapshot = component.snapshot();
-    auto* deckOneState = findComponentById(component, "Deck1StateLabel");
-    auto* deckOneAccent = findComponentById(component, "Deck1AccentLabel");
-    auto* deckOneWaveform = findComponentById(component, "Deck1WaveformLabel");
-    auto* deckOneMeter = findComponentById(component, "Deck1MeterLabel");
-    auto* deckFourState = findComponentById(component, "Deck4StateLabel");
-    auto* deckFourAccent = findComponentById(component, "Deck4AccentLabel");
-    auto* deckFourWaveform = findComponentById(component, "Deck4WaveformLabel");
-    auto* deckFourMeter = findComponentById(component, "Deck4MeterLabel");
-    if (expectVisibleDeckLabel(deckOneState, "No track loaded", "deck 1 unloaded state") != 0 ||
-        expectVisibleDeckLabel(deckOneAccent, "Accent: " + snapshot.decks[0].accentName, "deck 1 accent") != 0 ||
-        expectVisibleDeckLabel(deckOneWaveform, "Waveform: " + snapshot.decks[0].waveform.statusText, "deck 1 waveform") != 0 ||
-        expectVisibleDeckLabel(deckOneMeter, "Meter: " + snapshot.decks[0].meter.statusText, "deck 1 meter") != 0 ||
-        expectVisibleDeckLabel(deckFourState, "No track loaded", "deck 4 unloaded state") != 0 ||
-        expectVisibleDeckLabel(deckFourAccent, "Accent: " + snapshot.decks[3].accentName, "deck 4 accent") != 0 ||
-        expectVisibleDeckLabel(deckFourWaveform, "Waveform: " + snapshot.decks[3].waveform.statusText, "deck 4 waveform") != 0 ||
-        expectVisibleDeckLabel(deckFourMeter, "Meter: " + snapshot.decks[3].meter.statusText, "deck 4 meter") != 0) {
-        return 1;
+    for (std::size_t index = 0; index < snapshot.decks.size(); ++index) {
+        const auto deckNumber = std::to_string(index + 1U);
+        if (expectVisibleDeckLabel(findComponentById(component, "Deck" + deckNumber + "StateLabel"), "No track loaded", "deck " + deckNumber + " unloaded state") != 0 ||
+            expectVisibleDeckLabel(findComponentById(component, "Deck" + deckNumber + "AccentLabel"), "Accent: " + snapshot.decks[index].accentName, "deck " + deckNumber + " accent") != 0 ||
+            expectVisibleDeckLabel(findComponentById(component, "Deck" + deckNumber + "WaveformLabel"), "Waveform: " + snapshot.decks[index].waveform.statusText, "deck " + deckNumber + " waveform") != 0 ||
+            expectVisibleDeckLabel(findComponentById(component, "Deck" + deckNumber + "MeterLabel"), "Meter: " + snapshot.decks[index].meter.statusText, "deck " + deckNumber + " meter") != 0) {
+            return 1;
+        }
     }
 
     std::ostringstream output;
     deckflaxia::ui::writeComponentTreeReport(component, output);
     const auto text = output.str();
-    if (expect(lineContains(text, "DeckComponent[1]", "children=4") && lineContains(text, "DeckComponent[4]", "children=4"),
-               "deck components should not regress to title-only childless panels") != 0) {
-        return 1;
-    }
-    if (expect(lineContains(text, "Deck1StateLabel", "bounds=") && !lineContains(text, "Deck1StateLabel", "bounds=0 0 0 0") &&
-                   lineContains(text, "Deck4MeterLabel", "bounds=") && !lineContains(text, "Deck4MeterLabel", "bounds=0 0 0 0"),
-               "component dump should expose non-empty deck state child bounds") != 0) {
-        return 1;
+    for (std::size_t index = 0; index < snapshot.decks.size(); ++index) {
+        const auto deckNumber = std::to_string(index + 1U);
+        if (expect(lineContains(text, "DeckComponent[" + deckNumber + "]", "children=4"),
+                   "deck " + deckNumber + " should not regress to a title-only childless panel") != 0) {
+            return 1;
+        }
+        for (const auto* suffix : {"StateLabel", "AccentLabel", "WaveformLabel", "MeterLabel"}) {
+            const auto componentId = "Deck" + deckNumber + suffix;
+            if (expectDumpMatchesRuntime(text, *findComponentById(component, componentId), "deck " + deckNumber + " " + suffix) != 0) {
+                return 1;
+            }
+        }
     }
     std::cout << "JuceUi.DeckPanelStateContent labels=16 unloaded=NoTrackLoaded\n";
     return 0;
@@ -550,11 +585,27 @@ int testPluginChainControls() {
         return 1;
     }
     if (expect(hasUsableBounds(*viewport) && hasUsableBounds(*content) && content->getHeight() > viewport->getHeight(),
-               "plugin chain content should be scrollable inside the named viewport") != 0) {
+                "plugin chain content should be scrollable inside the named viewport") != 0) {
+        return 1;
+    }
+    auto* nativeViewport = dynamic_cast<juce::Viewport*>(viewport);
+    if (expect(nativeViewport != nullptr && nativeViewport->getViewedComponent() == content,
+               "plugin viewport should expose PluginChainScrollableContent as its native viewed component") != 0) {
         return 1;
     }
     if (expect(hasUsableBounds(*deckOneLabel) && hasUsableBounds(*bypass) && hasUsableBounds(*masterFourLabel) && hasUsableBounds(*masterFourParameter),
-               "row 1 and row 20 should keep non-empty reachable bounds inside scrollable content") != 0) {
+                "row 1 and row 20 should keep non-empty bounds inside scrollable content") != 0) {
+        return 1;
+    }
+    nativeViewport->setViewPosition(0, 0);
+    if (expect(componentCenterVisibleInViewport(*viewport, *deckOneLabel),
+               "plugin row 1 label should be reachable through the viewport at the top scroll position") != 0) {
+        return 1;
+    }
+    const auto bottomViewPosition = content->getHeight() > viewport->getHeight() ? content->getHeight() - viewport->getHeight() : 0;
+    nativeViewport->setViewPosition(0, bottomViewPosition);
+    if (expect(componentCenterVisibleInViewport(*viewport, *masterFourLabel),
+               "plugin row 20 label should be reachable through the viewport after scrolling to the bottom") != 0) {
         return 1;
     }
     if (expect(deckOneLabel->getText() == "Deck 1 Slot 1" && deckOneStatus->getText().contains("empty plugin placeholder") &&
@@ -562,8 +613,10 @@ int testPluginChainControls() {
                "plugin rows should surface data-backed labels/status without faking plugin availability") != 0) {
         return 1;
     }
-    if (expect(!bypass->getBounds().intersects(deckTwoBypass->getBounds()),
-               "representative visible plugin rows should not overlap inside scrollable content") != 0) {
+    if (expect(!bypass->getBounds().intersects(deckTwoBypass->getBounds()) &&
+                   !deckOneLabel->getBounds().intersects(masterFourLabel->getBounds()) &&
+                   masterFourParameter->getBounds().getY() > bypass->getBounds().getBottom(),
+                "representative visible plugin rows should not overlap inside scrollable content") != 0) {
         return 1;
     }
     if (expectDisabledButtonSemantics(bypass, "No Plugin", "No plugin loaded in this slot.", "empty plugin bypass placeholder") != 0 ||
@@ -619,8 +672,9 @@ int testRefreshHonestyRules() {
     auto* deckOnePlay = dynamic_cast<juce::Button*>(findComponentById(component, "Deck1PlayCommandButton"));
     auto* loadSelected = dynamic_cast<juce::Button*>(findComponentById(component, "LoadSelectedBrowserTrackButton"));
     auto* pluginParameter = dynamic_cast<juce::Slider*>(findComponentById(component, "plugin-slot-deck-1-1GenericGainParameterCommandSlider"));
-    if (expect(crossfader != nullptr && deckTwoVolume != nullptr && deckOnePlay != nullptr && loadSelected != nullptr && pluginParameter != nullptr,
-               "refresh test controls should be reachable by stable component IDs") != 0) {
+    auto* statusText = dynamic_cast<juce::Label*>(findComponentById(component, "StatusTextLabel"));
+    if (expect(crossfader != nullptr && deckTwoVolume != nullptr && deckOnePlay != nullptr && loadSelected != nullptr && pluginParameter != nullptr && statusText != nullptr,
+                "refresh test controls should be reachable by stable component IDs") != 0) {
         return 1;
     }
 
@@ -651,8 +705,18 @@ int testRefreshHonestyRules() {
     std::ostringstream output;
     deckflaxia::ui::writeComponentTreeReport(component, output);
     const auto text = output.str();
+    for (const auto* control : {static_cast<juce::Component*>(crossfader),
+                                static_cast<juce::Component*>(deckTwoVolume),
+                                static_cast<juce::Component*>(deckOnePlay),
+                                static_cast<juce::Component*>(loadSelected),
+                                static_cast<juce::Component*>(pluginParameter),
+                                static_cast<juce::Component*>(statusText)}) {
+        if (expectDumpMatchesRuntime(text, *control, control->getComponentID().toStdString()) != 0) {
+            return 1;
+        }
+    }
     if (expect(lineContains(text, "Deck1PlayCommandButton", "enabled=false") && lineContains(text, "LoadSelectedBrowserTrackButton", "enabled=false"),
-                "component dump should expose disabled placeholder state after refresh") != 0) {
+                 "component dump should expose disabled placeholder state after refresh") != 0) {
         return 1;
     }
     if (expect(lineContains(text, "MixerCrossfaderCommandSlider", "enabled=true") &&
