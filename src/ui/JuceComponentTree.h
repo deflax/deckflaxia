@@ -1,10 +1,13 @@
 #pragma once
 
 #include "app/UiShell.h"
+#include "ui/JuceUiCommandAdapter.h"
 
+#include <array>
 #include <filesystem>
 #include <iosfwd>
 #include <memory>
+#include <vector>
 
 #if DECKFLAXIA_HAS_JUCE
 #include <juce_audio_utils/juce_audio_utils.h>
@@ -24,6 +27,11 @@ public:
     [[nodiscard]] bool commandManagerPresent() const noexcept;
     [[nodiscard]] const juce::String& audioInitializationMessage() const noexcept;
     [[nodiscard]] const app::HybridUiShellSnapshot& snapshot() const noexcept;
+    [[nodiscard]] const decks::FourDeckPlaybackCore& playbackCore() const noexcept;
+    [[nodiscard]] const audio::MixerSnapshot& mixerSnapshot() const noexcept;
+    [[nodiscard]] const std::vector<library::AudioImportClassification>& browserRows() const noexcept;
+
+    void refreshFromAuthoritativeState();
 
     void paint(juce::Graphics& graphics) override;
     void resized() override;
@@ -45,6 +53,9 @@ private:
     bool audioDeviceManagerInitialized_{};
     app::HybridUiShellModel shellModel_;
     app::HybridUiShellSnapshot snapshot_;
+    decks::FourDeckPlaybackCore playbackCore_;
+    std::vector<library::AudioImportClassification> browserRows_;
+    JuceUiCommandAdapter commandAdapter_;
     std::array<std::unique_ptr<DeckComponent>, audio::routing::kDeckCount> decks_{};
     std::unique_ptr<MixerComponent> mixer_;
     std::unique_ptr<BrowserComponent> browser_;
