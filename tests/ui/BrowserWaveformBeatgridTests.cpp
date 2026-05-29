@@ -53,6 +53,11 @@ int testImportClassification(const std::filesystem::path& fixtureDir) {
     if (expect(rows.size() == imports.size() && rows[0].trackId.find("track:") == 0U, "browser table rows should expose deterministic track ids") != 0) {
         return 1;
     }
+    if (expect(rows[0].title == "track_120bpm" && rows[0].format == "wav" && rows[0].importError == deckflaxia::library::AudioImportError::None &&
+                   rows[4].importError == deckflaxia::library::AudioImportError::UnsupportedFormat,
+               "browser rows should expose exact happy/error status labels") != 0) {
+        return 1;
+    }
     std::cout << "BrowserWaveformBeatgrid.ImportClassification wav=importable mp3=" << deckflaxia::library::toString(imports[2].error)
               << " corrupt=" << deckflaxia::library::toString(imports[3].error) << " text=" << deckflaxia::library::toString(imports[4].error) << '\n';
     return 0;
@@ -107,6 +112,36 @@ int testBeatgridPersistence(const std::filesystem::path&) {
     return 0;
 }
 
+int testInvalidImportRows(const std::filesystem::path& fixtureDir) {
+    const deckflaxia::ui::BrowserWaveformBeatgridModel model;
+    const std::vector<deckflaxia::library::FilesystemEntry> invalidEntries{{(fixtureDir / "not_audio.txt").string(), true},
+                                                                             {(fixtureDir / "missing-folder").string(), false}};
+    const auto imports = deckflaxia::library::classifyAudioImports(invalidEntries);
+    const auto rows = model.buildBrowserRows(imports);
+    if (expect(rows.size() == 2U, "invalid import model should preserve explicit rows") != 0) {
+        return 1;
+    }
+    if (expect(!rows[0].importable && rows[0].importError == deckflaxia::library::AudioImportError::UnsupportedFormat,
+               "unsupported file row should expose unavailable status") != 0) {
+        return 1;
+    }
+    if (expect(!rows[1].importable && rows[1].importError == deckflaxia::library::AudioImportError::NotRegularFile,
+               "invalid path row should expose not-regular-file status") != 0) {
+        return 1;
+    }
+    if (expect(model.buildBrowserRows({}).empty(), "empty library should remain empty without placeholder rows") != 0) {
+        return 1;
+    }
+    if (expect(rows[0].importError == deckflaxia::library::AudioImportError::UnsupportedFormat &&
+                   rows[1].importError == deckflaxia::library::AudioImportError::NotRegularFile,
+               "invalid browser rows should preserve exact error status labels") != 0) {
+        return 1;
+    }
+    std::cout << "BrowserWaveformBeatgrid.InvalidImportRows text=" << deckflaxia::library::toString(rows[0].importError)
+              << " path=" << deckflaxia::library::toString(rows[1].importError) << '\n';
+    return 0;
+}
+
 }
 
 int main(int argc, char* argv[]) {
@@ -121,11 +156,14 @@ int main(int argc, char* argv[]) {
     if (filter == "beatgrid") {
         return testBeatgridPersistence(fixtureDir);
     }
+    if (filter == "invalid") {
+        return testInvalidImportRows(fixtureDir);
+    }
     if (filter != "all") {
         std::cerr << "FAILED: unknown BrowserWaveformBeatgrid filter " << filter << '\n';
         return 1;
     }
-    if (testImportClassification(fixtureDir) != 0 || testWaveformPrimitive(fixtureDir) != 0 || testBeatgridPersistence(fixtureDir) != 0) {
+    if (testImportClassification(fixtureDir) != 0 || testWaveformPrimitive(fixtureDir) != 0 || testBeatgridPersistence(fixtureDir) != 0 || testInvalidImportRows(fixtureDir) != 0) {
         return 1;
     }
     std::cout << "Browser waveform beatgrid tests passed\n";
