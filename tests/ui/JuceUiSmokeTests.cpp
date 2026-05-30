@@ -227,6 +227,19 @@ bool componentDumpClickable(const juce::Component& component) {
            component.isEnabled() && hasUsableBounds(component);
 }
 
+juce::String componentTooltipText(juce::Component* control) {
+    if (auto* button = dynamic_cast<juce::Button*>(control)) {
+        return button->getTooltip();
+    }
+    if (auto* slider = dynamic_cast<juce::Slider*>(control)) {
+        return slider->getTooltip();
+    }
+    if (auto* tooltipClient = dynamic_cast<juce::TooltipClient*>(control)) {
+        return tooltipClient->getTooltip();
+    }
+    return {};
+}
+
 int expectDumpMatchesRuntime(const std::string& text, const juce::Component& component, const std::string& message) {
     const auto id = component.getComponentID().toStdString();
     const auto line = lineContaining(text, id);
@@ -286,7 +299,7 @@ int expectDisabledNonActionable(juce::Component* control, const std::string& mes
     if (expect(!control->getComponentID().isEmpty(), message + " should keep a stable component ID") != 0) {
         return 1;
     }
-    if (expect(!control->getTooltip().isEmpty(), message + " should expose a stable disabled reason tooltip") != 0) {
+    if (expect(!componentTooltipText(control).isEmpty(), message + " should expose a stable disabled reason tooltip") != 0) {
         return 1;
     }
     return 0;
@@ -299,7 +312,7 @@ int expectDisabledButtonSemantics(juce::Button* control, const std::string& labe
     if (expect(control->getButtonText().toStdString() == label, message + " should keep an honest disabled label") != 0) {
         return 1;
     }
-    if (expect(control->getTooltip().toStdString() == tooltip, message + " should expose the expected disabled reason") != 0) {
+    if (expect(componentTooltipText(control).toStdString() == tooltip, message + " should expose the expected disabled reason") != 0) {
         return 1;
     }
     return 0;
@@ -309,7 +322,7 @@ int expectDisabledTooltip(juce::Component* control, const std::string& tooltip, 
     if (expectDisabledNonActionable(control, message) != 0) {
         return 1;
     }
-    if (expect(control->getTooltip().toStdString() == tooltip, message + " should expose the expected disabled reason") != 0) {
+    if (expect(componentTooltipText(control).toStdString() == tooltip, message + " should expose the expected disabled reason") != 0) {
         return 1;
     }
     return 0;
